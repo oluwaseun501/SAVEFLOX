@@ -1,0 +1,309 @@
+.facebook {
+  min-height: calc(100vh - 68px);
+  background: linear-gradient(180deg, #f0f7ff 0%, #f0fdf4 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  transition: background 0.3s;
+}
+
+.dark .facebook {
+  background: linear-gradient(180deg, #0f172a 0%, #0c1f1a 100%);
+}
+
+.facebook-content {
+  max-width: 800px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Icon Badge */
+.facebook-icon {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1d4ed8;
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.2),
+    0 2px 6px rgba(29, 78, 216, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.15);
+}
+
+.dark .facebook-icon {
+  background: linear-gradient(135deg, #1e293b 0%, #0c1f1a 100%);
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.2);
+}
+
+/* Heading */
+.facebook-heading {
+  font-size: 3.25rem;
+  font-weight: 800;
+  color: #1e3a5f;
+  line-height: 1.1;
+  margin: 0;
+  letter-spacing: -1px;
+}
+
+.facebook-heading span {
+  background: linear-gradient(90deg, #1d4ed8 0%, #22c55e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .facebook-heading {
+  color: #f1f5f9;
+}
+
+/* Subtext */
+.facebook-subtext {
+  font-size: 1.05rem;
+  color: #6b7280;
+  max-width: 560px;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.dark .facebook-subtext {
+  color: #94a3b8;
+}
+
+/* Downloader Card */
+.facebook-card {
+  width: 100%;
+  max-width: 720px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 10px 40px rgba(29, 78, 216, 0.08);
+  border: 1px solid #e5e7eb;
+  margin-top: 1rem;
+}
+
+.dark .facebook-card {
+  background-color: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Input + Button group */
+.facebook-input-group {
+  display: flex;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.facebook-input-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0 1rem;
+  gap: 0.5rem;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.facebook-input-wrapper:focus-within {
+  border-color: #1d4ed8;
+  background-color: #ffffff;
+}
+
+.dark .facebook-input-wrapper {
+  background-color: #0f172a;
+  border-color: #334155;
+}
+
+.dark .facebook-input-wrapper:focus-within {
+  border-color: #3b82f6;
+}
+
+.facebook-input-icon {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.facebook-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.95rem;
+  color: #111827;
+  padding: 0.85rem 0;
+  font-family: inherit;
+}
+
+.dark .facebook-input {
+  color: #f1f5f9;
+}
+
+.facebook-input::placeholder {
+  color: #9ca3af;
+}
+
+/* Download Button */
+.facebook-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #1d4ed8 0%, #22c55e 100%);
+  background-size: 200% 200%;
+  background-position: 0% 50%;
+  color: white;
+  border: none;
+  padding: 0 1.75rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-position 0.4s ease, transform 0.1s, box-shadow 0.3s;
+  font-family: inherit;
+}
+
+.facebook-btn:hover {
+  background-position: 100% 50%;
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.35);
+}
+
+.facebook-btn:active {
+  transform: scale(0.98);
+}
+
+/* Options Row */
+.facebook-options {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+  flex-wrap: wrap;
+}
+
+.dark .facebook-options {
+  border-top-color: #334155;
+}
+
+.facebook-options-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.dark .facebook-options-label {
+  color: #94a3b8;
+}
+
+.facebook-option-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.facebook-option-pill:hover {
+  border-color: #22c55e;
+  color: #16a34a;
+}
+
+.facebook-option-pill.active {
+  background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+  border-color: #22c55e;
+  color: #1d4ed8;
+}
+
+.dark .facebook-option-pill {
+  background-color: #0f172a;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+.dark .facebook-option-pill:hover {
+  border-color: #4ade80;
+  color: #4ade80;
+}
+
+.dark .facebook-option-pill.active {
+  background: linear-gradient(135deg, #1e3a5f 0%, #0c1f1a 100%);
+  border-color: #4ade80;
+  color: #60a5fa;
+}
+
+/* Quality Select */
+.facebook-quality-select {
+  background-color: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.facebook-quality-select:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+.dark .facebook-quality-select {
+  background-color: #0f172a;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+.dark .facebook-quality-select:focus {
+  border-color: #4ade80;
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.15);
+}
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+  .facebook-heading {
+    font-size: 2.25rem;
+  }
+
+  .facebook-subtext {
+    font-size: 0.95rem;
+  }
+
+  .facebook-input-group {
+    flex-direction: column;
+  }
+
+  .facebook-btn {
+    padding: 0.85rem 1.5rem;
+    justify-content: center;
+  }
+
+  .facebook-options {
+    justify-content: center;
+  }
+}

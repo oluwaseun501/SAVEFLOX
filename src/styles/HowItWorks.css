@@ -1,0 +1,162 @@
+.how-it-works {
+  background: linear-gradient(180deg, #f0f7ff 0%, #f0fdf4 100%);
+  padding: 5rem 1.5rem;
+  transition: background 0.3s;
+}
+
+.dark .how-it-works {
+  background: linear-gradient(180deg, #0f172a 0%, #0c1f1a 100%);
+}
+
+.how-container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Header */
+.how-header {
+  text-align: center;
+  margin-bottom: 3.5rem;
+}
+
+.how-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #1e3a5f;
+  margin: 0 0 0.75rem 0;
+  letter-spacing: -0.5px;
+}
+
+.dark .how-title {
+  color: #f1f5f9;
+}
+
+.how-subtitle {
+  font-size: 1rem;
+  color: #6b7280;
+  max-width: 520px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.dark .how-subtitle {
+  color: #94a3b8;
+}
+
+/* Steps Grid */
+.how-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  position: relative;
+}
+
+/* Connecting line between steps */
+.how-steps::before {
+  content: "";
+  position: absolute;
+  top: 38px;
+  left: 16.66%;
+  right: 16.66%;
+  height: 2px;
+  background: linear-gradient(90deg, #1d4ed8 0%, #22c55e 100%);
+  opacity: 0.3;
+  z-index: 0;
+}
+
+/* Step Card */
+.how-step {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+  padding: 0 1rem;
+}
+
+/* Icon Circle */
+.how-step-icon {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1d4ed8 0%, #22c55e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  margin-bottom: 1rem;
+  box-shadow: 0 8px 24px rgba(29, 78, 216, 0.25);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.how-step:hover .how-step-icon {
+  transform: translateY(-5px) scale(1.05);
+  box-shadow: 0 12px 32px rgba(34, 197, 94, 0.35);
+}
+
+/* Step Badge */
+.how-step-badge {
+  background-color: #ffffff;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 0.75rem;
+  letter-spacing: 0.03em;
+}
+
+.dark .how-step-badge {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+/* Step Title */
+.how-step-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin: 0 0 0.6rem 0;
+}
+
+.dark .how-step-title {
+  color: #f1f5f9;
+}
+
+/* Step Description */
+.how-step-description {
+  font-size: 0.9rem;
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 260px;
+}
+
+.dark .how-step-description {
+  color: #94a3b8;
+}
+
+/* RESPONSIVE */
+@media (max-width: 800px) {
+  .how-steps {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .how-steps::before {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .how-it-works {
+    padding: 3rem 1.25rem;
+  }
+
+  .how-title {
+    font-size: 1.75rem;
+  }
+}
