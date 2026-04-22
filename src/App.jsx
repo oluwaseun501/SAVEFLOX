@@ -14,6 +14,9 @@ import AdminLogin from "./components/AdminLogin";
 import AdminDashboard from "./components/AdminDashboard";
 import Analytics from "./components/Analytics";
 import { Navigate } from "react-router-dom";
+import Pinterest from "./components/Pinterest";
+
+
 
 function ProtectedAdmin({ children }) {
   const isLogged = localStorage.getItem("sf_admin") === "true";
@@ -33,6 +36,8 @@ function App() {
         <Route path="/twitter-downloader" element={<Twitter />} />
         <Route path="/instagram-downloader" element={<Instagram />} />
         <Route path="/facebook-downloader" element={<Facebook />} />
+        <Route path="/pinterest-downloader" element={<Pinterest />} />
+
         <Route path="/mp3-converter" element={<Mp3Converter />} />
 
         {/* Admin */}

@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Download, Link, Music2, Video } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import "../styles/Tiktok.css";
 
 export default function Tiktok() {
+  const { t } = useTranslation();
   const [url, setUrl] = useState("");
   const [quality, setQuality] = useState("1080p HD");
 
@@ -10,6 +12,9 @@ export default function Tiktok() {
     if (!url) return;
     console.log("TikTok Download URL:", url, "Quality:", quality);
   };
+
+  // Split the translated heading around {{platform}} so we can wrap "TikTok" in the gradient span
+  const headingParts = t("download_videos", { platform: "###" }).split("###");
 
   return (
     <section className="tiktok">
@@ -21,13 +26,14 @@ export default function Tiktok() {
 
         {/* Heading */}
         <h1 className="tiktok-heading">
-          Download <span>TikTok</span> Videos
+          {headingParts[0]}
+          <span>TikTok</span>
+          {headingParts[1]}
         </h1>
 
         {/* Subtext */}
         <p className="tiktok-subtext">
-          Download TikTok videos without watermark in HD quality. Fast, free,
-          and secure.
+          {t("tiktok_subtext")}
         </p>
 
         {/* Downloader Card */}
@@ -40,13 +46,13 @@ export default function Tiktok() {
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="Paste TikTok video link here..."
+                placeholder={t("paste_link", { platform: "TikTok" })}
                 className="tiktok-input"
               />
             </div>
             <button className="tiktok-btn" onClick={handleDownload}>
               <Download size={18} />
-              Download
+              {t("download")}
             </button>
           </div>
 
@@ -67,12 +73,12 @@ export default function Tiktok() {
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
-              Options:
+              {t("options")}:
             </span>
 
             <button className="tiktok-option-pill active">
               <Video size={14} />
-              Video (MP4)
+              {t("video_mp4")}
             </button>
 
             <select
