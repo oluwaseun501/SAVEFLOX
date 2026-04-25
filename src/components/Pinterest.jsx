@@ -2,6 +2,10 @@ import { useState } from "react";
 import { Download, Link, Video } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import "../styles/Pinterest.css";
+import WhyChoose from "./WhyChoose";
+import HowItWorks from "./HowItWorks";
+import FAQ from "./FAQ";
+import AdSlot from "./AdSlot";
 
 export default function Pinterest() {
   const { t } = useTranslation();
@@ -16,6 +20,7 @@ export default function Pinterest() {
   const headingParts = t("download_videos", { platform: "###" }).split("###");
 
   return (
+    <>
     <section className="pinterest">
       <div className="pinterest-content">
         {/* Pinterest Logo Icon */}
@@ -78,5 +83,15 @@ export default function Pinterest() {
         </div>
       </div>
     </section>
+
+    
+          <AdSlot slot="pinterest-top" format="leaderboard" />
+    
+          <WhyChoose />
+          <AdSlot slot="pinterest-bottom" format="leaderboard" />
+          <HowItWorks />
+          <FAQ />
+    
+        </>
   );
 }

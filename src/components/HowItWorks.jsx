@@ -1,28 +1,28 @@
 import { Link2, SlidersHorizontal, Download } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import "../styles/HowItWorks.css";
 
 export default function HowItWorks() {
+  const { t } = useTranslation();
+
   const steps = [
     {
       icon: <Link2 size={26} />,
-      step: "Step 1",
-      title: "Paste URL",
-      description:
-        "Copy the video link from TikTok, YouTube, Instagram, or Facebook and paste it into the search box.",
+      step: `${t("step")} 1`,
+      title: t("step1_title"),
+      description: t("step1_desc"),
     },
     {
       icon: <SlidersHorizontal size={26} />,
-      step: "Step 2",
-      title: "Select Format",
-      description:
-        "Choose your desired format (MP4 or MP3) and quality (up to 4K) for the download.",
+      step: `${t("step")} 2`,
+      title: t("step2_title"),
+      description: t("step2_desc"),
     },
     {
       icon: <Download size={26} />,
-      step: "Step 3",
-      title: "Download",
-      description:
-        "Click the download button and your file will be saved to your device instantly.",
+      step: `${t("step")} 3`,
+      title: t("step3_title"),
+      description: t("step3_desc"),
     },
   ];
 
@@ -31,10 +31,8 @@ export default function HowItWorks() {
       <div className="how-container">
         {/* Header */}
         <div className="how-header">
-          <h2 className="how-title">How It Works</h2>
-          <p className="how-subtitle">
-            Download your favorite videos in three simple steps.
-          </p>
+          <h2 className="how-title">{t("how_title")}</h2>
+          <p className="how-subtitle">{t("how_subtitle")}</p>
         </div>
 
         {/* Steps */}

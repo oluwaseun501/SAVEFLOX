@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { Download, Link, Video } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import "../styles/Facebook.css";
+import "../styles/Instagram.css";
+import WhyChoose from "./WhyChoose";
+import HowItWorks from "./HowItWorks";
+import FAQ from "./FAQ";
+import AdSlot from "./AdSlot";
 
 export default function Facebook() {
   const { t } = useTranslation();
@@ -16,6 +20,7 @@ export default function Facebook() {
   const headingParts = t("download_videos", { platform: "###" }).split("###");
 
   return (
+    <>
     <section className="facebook">
       <div className="facebook-content">
       <div className="instagram-icon">
@@ -31,7 +36,7 @@ export default function Facebook() {
 </div>
         <h1 className="facebook-heading">
           {headingParts[0]}
-          <span>Facebook</span>
+          <span>Instagram</span>
           {headingParts[1]}
         </h1>
 
@@ -82,5 +87,15 @@ export default function Facebook() {
         </div>
       </div>
     </section>
+
+    
+      <AdSlot slot="Instagram-top" format="leaderboard" />
+
+      <WhyChoose />
+      <AdSlot slot="Instagram-bottom" format="leaderboard" />
+      <HowItWorks />
+      <FAQ />
+
+    </>
   );
 }

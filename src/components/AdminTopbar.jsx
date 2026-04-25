@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Sun, Moon, ChevronDown, ExternalLink, LogOut, User } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import "../styles/AdminTopbar.css";
+import { logout } from "../utils/auth";
 
 
 export default function AdminTopbar({ email = "admin@saveflux.com" }) {
@@ -9,8 +10,8 @@ export default function AdminTopbar({ email = "admin@saveflux.com" }) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("sf_admin");
-    navigate("/admin/login");
+    logout();
+navigate("/admin/login");
   };
 
   return (

@@ -2,6 +2,10 @@ import { useState } from "react";
 import { Download, Link, Video } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import "../styles/Twitter.css";
+import AdSlot from "./AdSlot";
+import WhyChoose from "./WhyChoose";
+import HowItWorks from "./HowItWorks";
+import FAQ from "./FAQ";
 
 export default function Twitter() {
   const { t } = useTranslation();
@@ -16,6 +20,7 @@ export default function Twitter() {
   const headingParts = t("download_videos", { platform: "###" }).split("###");
 
   return (
+    <>
     <section className="twitter">
       <div className="twitter-content">
        <div className="twitter-icon">
@@ -77,5 +82,14 @@ export default function Twitter() {
         </div>
       </div>
     </section>
+
+    <AdSlot slot="twitter-top" format="leaderboard" />
+
+      <WhyChoose />
+      <AdSlot slot="twitter-bottom" format="leaderboard" />
+      <HowItWorks />
+      <FAQ />
+
+      </>
   );
 }

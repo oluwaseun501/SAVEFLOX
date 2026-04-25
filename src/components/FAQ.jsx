@@ -1,36 +1,18 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import "../styles/FAQ.css";
 
 export default function FAQ() {
-  const [openIndex, setOpenIndex] = useState(4); // Last item open by default (matches screenshot)
+  const { t } = useTranslation();
+  const [openIndex, setOpenIndex] = useState(4);
 
   const faqs = [
-    {
-      question: "Is SaveFlux completely free to use?",
-      answer:
-        "Yes! SaveFlux is 100% free to use. There are no hidden fees, subscriptions, or limits on how many videos you can download.",
-    },
-    {
-      question: "Do I need to install any software?",
-      answer:
-        "No installation is required. SaveFlux is a web-based tool that works directly in your browser on any device (PC, Mac, Android, iOS).",
-    },
-    {
-      question: "Can I download videos without watermarks?",
-      answer:
-        "Yes, our TikTok and Instagram downloaders automatically remove watermarks from the videos, giving you clean, original quality files.",
-    },
-    {
-      question: "Where are the videos saved after downloading?",
-      answer:
-        "Files are typically saved to your device's default \"Downloads\" folder. On mobile devices, you can usually find them in your Files app or Gallery.",
-    },
-    {
-      question: "Is it legal to download videos?",
-      answer:
-        "Downloading videos for personal, offline use is generally acceptable. However, you should not re-upload or use copyrighted content for commercial purposes without the creator's permission.",
-    },
+    { question: t("faq_q1"), answer: t("faq_a1") },
+    { question: t("faq_q2"), answer: t("faq_a2") },
+    { question: t("faq_q3"), answer: t("faq_a3") },
+    { question: t("faq_q4"), answer: t("faq_a4") },
+    { question: t("faq_q5"), answer: t("faq_a5") },
   ];
 
   const toggleFAQ = (idx) => {
@@ -40,13 +22,11 @@ export default function FAQ() {
   return (
     <section className="faq">
       <div className="faq-container">
-        {/* Header */}
         <div className="faq-header">
-          <h2 className="faq-title">Frequently Asked Questions</h2>
-          <p className="faq-subtitle">Everything you need to know about SaveFlux.</p>
+          <h2 className="faq-title">{t("faq_title")}</h2>
+          <p className="faq-subtitle">{t("faq_subtitle")}</p>
         </div>
 
-        {/* List */}
         <div className="faq-list">
           {faqs.map((faq, idx) => (
             <div

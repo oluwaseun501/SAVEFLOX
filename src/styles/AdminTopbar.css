@@ -248,3 +248,9 @@
   background: #450a0a;
   color: #fca5a5;
 }
+
+@media (max-width: 640px) {
+  .admin-topbar {
+    padding-left: 4rem;
+  }
+}

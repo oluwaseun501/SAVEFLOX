@@ -1,8 +1,14 @@
 import { useState } from "react";
 import { Download, Link, Music, Scissors, Mic, Volume2, Play } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import "../styles/Mp3Converter.css";
+import AdSlot from "./AdSlot";
+import WhyChoose from "./WhyChoose";
+import HowItWorks from "./HowItWorks";
+import FAQ from "./FAQ";
 
 export default function Mp3Converter() {
+  const { t } = useTranslation();
   const [url, setUrl] = useState("");
   const [converted, setConverted] = useState(false);
   const [quality, setQuality] = useState("320 kbps");
@@ -24,7 +30,17 @@ export default function Mp3Converter() {
     console.log("Download MP3", { quality, trimStart, trimEnd, volume, pitch, voice });
   };
 
+  const voices = [
+    { key: "Original", label: t("voice_original") },
+    { key: "Male",     label: t("voice_male") },
+    { key: "Female",   label: t("voice_female") },
+    { key: "Chipmunk", label: t("voice_chipmunk") },
+    { key: "Deep",     label: t("voice_deep") },
+    { key: "Robot",    label: t("voice_robot") },
+  ];
+
   return (
+    <>
     <section className="mp3">
       <div className="mp3-content">
         {/* Icon */}
@@ -34,13 +50,12 @@ export default function Mp3Converter() {
 
         {/* Heading */}
         <h1 className="mp3-heading">
-          Convert Video to <span>MP3</span>
+          {t("mp3_heading")} <span>{t("mp3_highlight")}</span>
         </h1>
 
         {/* Subtext */}
         <p className="mp3-subtext">
-          Paste any video link, convert it to high-quality MP3, edit the sound,
-          change the voice, and download — all in one place.
+          {t("mp3_subtext")}
         </p>
 
         {/* Converter Card */}
@@ -53,19 +68,19 @@ export default function Mp3Converter() {
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="Paste video link here (TikTok, YouTube, Instagram...)"
+                placeholder={t("mp3_placeholder")}
                 className="mp3-input"
               />
             </div>
             <button className="mp3-btn" onClick={handleConvert}>
               <Music size={18} />
-              Convert
+              {t("mp3_convert")}
             </button>
           </div>
 
           {/* Quality row */}
           <div className="mp3-options">
-            <span className="mp3-options-label">Quality:</span>
+            <span className="mp3-options-label">{t("mp3_quality")}:</span>
             <select
               className="mp3-quality-select"
               value={quality}
@@ -82,13 +97,13 @@ export default function Mp3Converter() {
         {/* Editor Panel - shown after convert */}
         {converted && (
           <div className="mp3-editor">
-            <h2 className="mp3-editor-title">Edit your MP3</h2>
+            <h2 className="mp3-editor-title">{t("mp3_edit_title")}</h2>
 
             {/* Trim */}
             <div className="mp3-control">
               <label className="mp3-control-label">
                 <Scissors size={16} />
-                Trim ({trimStart}s – {trimEnd}s)
+                {t("mp3_trim")} ({trimStart}s – {trimEnd}s)
               </label>
               <div className="mp3-slider-row">
                 <input
@@ -118,7 +133,7 @@ export default function Mp3Converter() {
             <div className="mp3-control">
               <label className="mp3-control-label">
                 <Volume2 size={16} />
-                Volume ({volume}%)
+                {t("mp3_volume")} ({volume}%)
               </label>
               <input
                 type="range"
@@ -134,7 +149,7 @@ export default function Mp3Converter() {
             <div className="mp3-control">
               <label className="mp3-control-label">
                 <Mic size={16} />
-                Pitch ({pitch > 0 ? `+${pitch}` : pitch} semitones)
+                {t("mp3_pitch")} ({pitch > 0 ? `+${pitch}` : pitch} {t("mp3_pitch_unit")})
               </label>
               <input
                 type="range"
@@ -150,22 +165,18 @@ export default function Mp3Converter() {
             <div className="mp3-control">
               <label className="mp3-control-label">
                 <Mic size={16} />
-                Voice Effect
+                {t("mp3_voice_effect")}
               </label>
               <div className="mp3-voice-row">
-                {["Original", "Male", "Female", "Chipmunk", "Deep", "Robot"].map(
-                  (v) => (
-                    <button
-                      key={v}
-                      className={`mp3-voice-pill ${
-                        voice === v ? "active" : ""
-                      }`}
-                      onClick={() => setVoice(v)}
-                    >
-                      {v}
-                    </button>
-                  ),
-                )}
+                {voices.map((v) => (
+                  <button
+                    key={v.key}
+                    className={`mp3-voice-pill ${voice === v.key ? "active" : ""}`}
+                    onClick={() => setVoice(v.key)}
+                  >
+                    {v.label}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -173,16 +184,26 @@ export default function Mp3Converter() {
             <div className="mp3-actions">
               <button className="mp3-preview-btn">
                 <Play size={16} />
-                Preview
+                {t("mp3_preview")}
               </button>
               <button className="mp3-download-btn" onClick={handleDownload}>
                 <Download size={18} />
-                Download MP3
+                {t("mp3_download")}
               </button>
             </div>
           </div>
         )}
       </div>
     </section>
+
+    
+      <AdSlot slot="Mp3Converter-top" format="leaderboard" />
+
+      <WhyChoose />
+      <AdSlot slot="Mp3Converter-bottom" format="leaderboard" />
+      <HowItWorks />
+      <FAQ />
+
+    </>
   );
 }

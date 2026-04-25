@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, Mail, LogIn } from "lucide-react";
 import "../styles/AdminLogin.css";
+import { login } from "../utils/auth";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ export default function AdminLogin() {
     e.preventDefault();
     // Demo only — replace with real auth later
     if (email === "admin@saveflux.com" && password === "admin123") {
-      localStorage.setItem("sf_admin", "true");
+      login();
       navigate("/admin");
     } else {
       setError("Invalid email or password");
