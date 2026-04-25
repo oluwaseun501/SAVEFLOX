@@ -19,6 +19,7 @@ import DownloadLogs from "./components/DownloadLogs";
 import MyBlog from "./components/MyBlog";
 import Settings from "./components/Settings";
 import AdSlot from "./components/AdSlot";
+import NotFound from "./components/NotFound";
 
 import { isAuthenticated } from "./utils/auth";
 
@@ -57,6 +58,7 @@ function App() {
         <Route path="/pinterest-downloader" element={<Pinterest />} />
         <Route path="/mp3-converter" element={<Mp3Converter />} />
         <Route path="/blog" element={<Blog />} />
+          <Route path="*" element={<NotFound />} />
 
         {/* Admin */}
         <Route path="/admin/login" element={<AdminLogin />} />
