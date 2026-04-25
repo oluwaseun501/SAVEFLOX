@@ -254,3 +254,309 @@
     padding-left: 4rem;
   }
 }
+
+/* ===================== Profile Modal ===================== */
+.adt-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: adt-fade 0.18s ease;
+}
+
+@keyframes adt-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.adt-modal {
+  width: 100%;
+  max-width: 460px;
+  max-height: 92vh;
+  background: #ffffff;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: adt-pop 0.22s ease;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+  font-family: 'Inter', sans-serif;
+}
+
+@keyframes adt-pop {
+  from { transform: scale(0.96); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+.dark .adt-modal { background: #0f172a; }
+
+.adt-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.adt-modal-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e3a5f;
+}
+
+.dark .adt-modal-header { border-bottom-color: #1e293b; }
+.dark .adt-modal-header h2 { color: #f1f5f9; }
+
+.adt-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.adt-modal-close:hover { background: #f1f5f9; color: #1e3a5f; }
+.dark .adt-modal-close:hover { background: #1e293b; color: #f1f5f9; }
+
+/* Tabs */
+.adt-tabs {
+  display: flex;
+  padding: 0 1.5rem;
+  gap: 0.25rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+.dark .adt-tabs { border-bottom-color: #1e293b; }
+
+.adt-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #6b7280;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+
+.adt-tab:hover { color: #1d4ed8; }
+
+.adt-tab.active {
+  color: #1d4ed8;
+  border-bottom-color: #22c55e;
+}
+
+.dark .adt-tab { color: #94a3b8; }
+.dark .adt-tab:hover { color: #4ade80; }
+.dark .adt-tab.active { color: #4ade80; border-bottom-color: #4ade80; }
+
+/* Body / Form */
+.adt-modal-body {
+  padding: 1.25rem 1.5rem 1.5rem;
+  overflow-y: auto;
+}
+
+.adt-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.adt-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.dark .adt-form label { color: #cbd5e1; }
+
+.adt-required { color: #dc2626; }
+
+.adt-form input[type="email"],
+.adt-form input[type="password"],
+.adt-form input[type="text"] {
+  padding: 0.65rem 0.85rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1e3a5f;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.adt-form input:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+}
+
+.adt-form input:disabled {
+  background: #f8fafc;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.dark .adt-form input {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+.dark .adt-form input:disabled {
+  background: #0b1220;
+  color: #64748b;
+}
+
+.adt-input-wrap {
+  position: relative;
+}
+
+.adt-input-wrap input {
+  padding-right: 2.5rem;
+}
+
+.adt-eye {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+}
+
+.adt-eye:hover {
+  color: #1d4ed8;
+  background: #f1f5f9;
+}
+
+.dark .adt-eye:hover { color: #4ade80; background: #1e293b; }
+
+/* Status messages */
+.adt-msg {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.adt-msg.success {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.adt-msg.error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.dark .adt-msg.success {
+  background: rgba(34, 197, 94, 0.1);
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+.dark .adt-msg.error {
+  background: rgba(220, 38, 38, 0.1);
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+/* Buttons */
+.adt-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.dark .adt-form-actions { border-top-color: #1e293b; }
+
+.adt-btn-primary,
+.adt-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: box-shadow 0.2s, transform 0.1s, border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.adt-btn-primary {
+  background: linear-gradient(135deg, #1d4ed8 0%, #22c55e 100%);
+  color: #ffffff;
+}
+
+.adt-btn-primary:hover { box-shadow: 0 6px 18px rgba(34, 197, 94, 0.25); }
+.adt-btn-primary:active { transform: scale(0.97); }
+
+.adt-btn-secondary {
+  background: #ffffff;
+  color: #1e3a5f;
+  border-color: #e5e7eb;
+}
+
+.adt-btn-secondary:hover {
+  border-color: #22c55e;
+  color: #1d4ed8;
+}
+
+.dark .adt-btn-secondary {
+  background: #1e293b;
+  color: #f1f5f9;
+  border-color: #334155;
+}
+
+.dark .adt-btn-secondary:hover {
+  border-color: #4ade80;
+  color: #4ade80;
+}
+
+@media (max-width: 520px) {
+  .adt-modal { max-width: 100%; }
+  .adt-form-actions { flex-direction: column-reverse; }
+  .adt-btn-primary, .adt-btn-secondary { width: 100%; }
+}

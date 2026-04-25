@@ -17,7 +17,7 @@ const menu = [
   { name: "Analytics",     icon: BarChart3,       path: "/admin/analytics" },
   { name: "Downloads Log", icon: Download,        path: "/admin/downloads" },
   { name: "Blog Posts",    icon: FileText,        path: "/admin/blog" },
-  { name: "Settings",      icon: Settings,        path: "/admin/settings" },
+  // { name: "Settings",      icon: Settings,        path: "/admin/settings" },
 ];
 
 export default function AdminSidebar() {

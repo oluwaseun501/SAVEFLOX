@@ -17,9 +17,10 @@ import AdminDashboard from "./components/AdminDashboard";
 import Analytics from "./components/Analytics";
 import DownloadLogs from "./components/DownloadLogs";
 import MyBlog from "./components/MyBlog";
-import Settings from "./components/Settings";
+// import Settings from "./components/Settings";
 import AdSlot from "./components/AdSlot";
 import NotFound from "./components/NotFound";
+import BlogPost from "./components/BlogPost";
 
 import { isAuthenticated } from "./utils/auth";
 
@@ -57,11 +58,12 @@ function App() {
         <Route path="/facebook-downloader" element={<Facebook />} />
         <Route path="/pinterest-downloader" element={<Pinterest />} />
         <Route path="/mp3-converter" element={<Mp3Converter />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/blog" element={<Blog />} />
-          <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<NotFound />} />
 
         {/* Admin */}
-        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/login" element={<AdminLogin />} />
         <Route
           path="/admin"
           element={
@@ -94,14 +96,14 @@ function App() {
             </ProtectedAdmin>
           }
         />
-        <Route
+        {/* <Route
           path="/admin/settings"
           element={
             <ProtectedAdmin>
               <Settings />
             </ProtectedAdmin>
           }
-        />
+        /> */}
       </Routes>
 
       {!isAdmin && <Footer />}
