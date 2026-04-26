@@ -122,19 +122,43 @@ export default function Navbar() {
           {isDark ? <Sun size={20} /> : <Moon size={20} />}
         </button>
       </div>
+{/* Mobile Right Side */}
+<div className="navbar-mobile-right">
+  {/* Language selector - mobile */}
+  <div className="navbar-lang-wrapper">
+    <button
+      className="navbar-lang-btn navbar-lang-btn-mobile"
+      onClick={() => setLangOpen(!langOpen)}
+      aria-label={t("language")}
+    >
+      <span>{currentLang.flag} {currentLang.code.toUpperCase()}</span>
+    </button>
+    {langOpen && (
+      <ul className="navbar-lang-dropdown navbar-lang-dropdown-mobile">
+        {LANGUAGES.map((lang) => (
+          <li
+            key={lang.code}
+            className={lang.code === i18n.language ? "active" : ""}
+            onClick={() => changeLanguage(lang.code)}
+          >
+            <span className="lang-flag">{lang.flag}</span>
+            <span>{lang.label}</span>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
 
-      {/* Mobile Right Side */}
-      <div className="navbar-mobile-right">
-        <button className="navbar-theme-toggle" onClick={toggleTheme}>
-          {isDark ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
-        <button
-          className="navbar-hamburger"
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          {menuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </div>
+  <button className="navbar-theme-toggle" onClick={toggleTheme}>
+    {isDark ? <Sun size={20} /> : <Moon size={20} />}
+  </button>
+  <button
+    className="navbar-hamburger"
+    onClick={() => setMenuOpen(!menuOpen)}
+  >
+    {menuOpen ? <X size={24} /> : <Menu size={24} />}
+  </button>
+</div>
 
       {/* Mobile Dropdown Menu */}
       {menuOpen && (

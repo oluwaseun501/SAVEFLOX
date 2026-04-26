@@ -22,6 +22,12 @@ import AdSlot from "./components/AdSlot";
 import NotFound from "./components/NotFound";
 import BlogPost from "./components/BlogPost";
 
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Copyright from "./pages/Copyright";
+import Contact from "./pages/Contact";
+
+
 import { isAuthenticated } from "./utils/auth";
 
 function ProtectedAdmin({ children }) {
@@ -61,6 +67,12 @@ function App() {
         <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="*" element={<NotFound />} />
+  
+<Route path="/terms" element={<Terms />} />
+<Route path="/privacy" element={<Privacy />} />
+<Route path="/copyright" element={<Copyright />} />
+<Route path="/contact" element={<Contact />} />
+
 
         {/* Admin */}
         <Route path="/login" element={<AdminLogin />} />

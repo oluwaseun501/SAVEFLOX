@@ -295,3 +295,27 @@
 
 /* RTL support for Arabic */
 html[dir="rtl"] .navbar-lang-dropdown { right: auto; left: 0; }
+
+/* Compact language button for mobile navbar bar */
+.navbar-lang-btn-mobile {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.78rem;
+  gap: 0.25rem;
+}
+
+/* Mobile dropdown positioning — keep it on screen */
+.navbar-lang-dropdown-mobile {
+  right: 0;
+  min-width: 170px;
+  max-height: 60vh;
+}
+
+@media (max-width: 360px) {
+  .navbar-lang-btn-mobile {
+    padding: 0.3rem 0.4rem;
+    font-size: 0.72rem;
+  }
+}
+
+/* RTL: align the mobile dropdown to the left edge of its button */
+html[dir="rtl"] .navbar-lang-dropdown-mobile { right: auto; left: 0; }

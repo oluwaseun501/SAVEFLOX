@@ -1,0 +1,96 @@
+.legal-page {
+  background-color: #f9fafb;
+  padding: 4rem 1.5rem;
+  min-height: 70vh;
+  font-family: 'Inter', sans-serif;
+  transition: background-color 0.3s;
+}
+
+.dark .legal-page {
+  background-color: #0c1424;
+}
+
+.legal-container {
+  max-width: 850px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.dark .legal-container {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+.legal-container h1 {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: #1e3a5f;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.5px;
+}
+
+.legal-container h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin: 2rem 0 0.75rem;
+}
+
+.dark .legal-container h1,
+.dark .legal-container h2 {
+  color: #f1f5f9;
+}
+
+.legal-container p {
+  font-size: 0.95rem;
+  color: #4b5563;
+  line-height: 1.7;
+  margin: 0 0 0.5rem;
+}
+
+.dark .legal-container p {
+  color: #cbd5e1;
+}
+
+.legal-updated {
+  font-size: 0.85rem !important;
+  color: #9ca3af !important;
+  margin-bottom: 1.5rem !important;
+}
+
+/* Contact page */
+.contact-page {
+  text-align: center;
+}
+
+.contact-whatsapp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+  padding: 0.85rem 1.6rem;
+  background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+  color: #ffffff;
+  border-radius: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.contact-whatsapp-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(37, 211, 102, 0.35);
+}
+
+@media (max-width: 600px) {
+  .legal-container {
+    padding: 1.5rem;
+  }
+  .legal-container h1 {
+    font-size: 1.5rem;
+  }
+}

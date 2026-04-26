@@ -1,6 +1,9 @@
 import { FaTwitter, FaInstagram, FaFacebookF, FaTiktok } from "react-icons/fa";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "../styles/Footer.css";
+
+const WHATSAPP_NUMBER = "1234567890"; // <-- replace with your number, no "+" or spaces
 
 export default function Footer() {
   const { t } = useTranslation();
@@ -9,28 +12,32 @@ export default function Footer() {
     {
       title: t("footer_downloaders"),
       links: [
-        t("footer_tiktok_dl"),
-        t("footer_twitter_dl"),
-        t("footer_instagram_dl"),
-        t("footer_facebook_dl"),
+        { label: t("footer_tiktok_dl"),    to: "/tiktok-downloader" },
+        { label: t("footer_twitter_dl"),   to: "/twitter-downloader" },
+        { label: t("footer_instagram_dl"), to: "/instagram-downloader" },
+        { label: t("footer_facebook_dl"),  to: "/facebook-downloader" },
       ],
     },
     {
       title: t("footer_tools"),
       links: [
-        t("footer_video_editor"),
-        t("footer_mp3_converter"),
-        t("footer_video_trimmer"),
-        t("footer_video_cropper"),
+        { label: t("footer_video_downloader"), to: "/" },
+        { label: t("footer_mp3_converter"),    to: "/mp3-converter" },
+        { label: t("footer_change_voice"),     to: "/mp3-converter" },
+        { label: t("footer_edit_voice"),       to: "/mp3-converter" },
       ],
     },
     {
       title: t("footer_legal"),
       links: [
-        t("footer_terms"),
-        t("footer_privacy"),
-        t("footer_copyright_info"),
-        t("footer_contact"),
+        { label: t("footer_terms"),          to: "/terms" },
+        { label: t("footer_privacy"),        to: "/privacy" },
+        { label: t("footer_copyright_info"), to: "/copyright" },
+        {
+          label: t("footer_contact"),
+          href: `https://wa.me/${WHATSAPP_NUMBER}`,
+          external: true,
+        },
       ],
     },
   ];
@@ -60,7 +67,19 @@ export default function Footer() {
               <h4 className="footer-column-title">{section.title}</h4>
               <ul className="footer-links">
                 {section.links.map((link, i) => (
-                  <li key={i}><a href="#">{link}</a></li>
+                  <li key={i}>
+                    {link.external ? (
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link to={link.to}>{link.label}</Link>
+                    )}
+                  </li>
                 ))}
               </ul>
             </div>
