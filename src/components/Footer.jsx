@@ -2,6 +2,8 @@ import { FaTwitter, FaInstagram, FaFacebookF, FaTiktok } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "../styles/Footer.css";
+import logo from "../assets/logo.png";
+
 
 const WHATSAPP_NUMBER = "1234567890"; // <-- replace with your number, no "+" or spaces
 
@@ -48,9 +50,11 @@ export default function Footer() {
         <div className="footer-top">
           <div className="footer-brand">
             <div className="footer-logo">
-              <span className="footer-logo-icon">SF</span>
+             <Link to="/">
+          <img src={logo} alt="SaveFlux" className="navbar-logo-img" />
+        </Link>
               <span className="footer-logo-text">
-                Save<span>Flux</span>
+                Save<span>Flox</span>
               </span>
             </div>
             <p className="footer-tagline">{t("footer_tagline")}</p>

@@ -14,8 +14,8 @@ export default function WhyChoose() {
     { icon: <Smartphone size={22} />, title: t("devices_title"), description: t("devices_desc") },
   ];
 
-  // Split "Why Choose SaveFlux?" so the brand name keeps the gradient
-  const titleParts = t("why_title").split("SaveFlux");
+  // Split "Why Choose SaveFlox?" so the brand name keeps the gradient
+  const titleParts = t("why_title").split("SaveFlox");
 
   return (
     <section className="why-choose">
@@ -24,7 +24,7 @@ export default function WhyChoose() {
         <div className="why-choose-header">
           <h2 className="why-choose-title">
             {titleParts[0]}
-            <span>SaveFlux{titleParts[1]?.startsWith("?") ? "" : ""}</span>
+            <span>SaveFlox</span>
             {titleParts[1] || ""}
           </h2>
           <p className="why-choose-subtitle">

@@ -13,7 +13,7 @@ export default function AdminLogin() {
   const handleLogin = (e) => {
     e.preventDefault();
     // Demo only — replace with real auth later
-    if (email === "admin@saveflux.com" && password === "admin123") {
+    if (email === "admin@saveflox.com" && password === "admin123") {
       login();
       navigate("/admin");
     } else {
@@ -27,14 +27,14 @@ export default function AdminLogin() {
         <div className="admin-login-icon">
           <Lock size={26} />
         </div>
-        <h1 className="admin-login-title">SaveFlux Admin</h1>
+        <h1 className="admin-login-title">Saveflox Admin</h1>
         <p className="admin-login-subtitle">Sign in to manage your dashboard</p>
 
         <div className="admin-login-field">
           <Mail size={16} className="admin-login-field-icon" />
           <input
             type="email"
-            placeholder="admin@saveflux.com"
+            placeholder="admin@Saveflox.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
