@@ -9,6 +9,7 @@ export default function PageLoader() {
         {/* Input bar skeleton */}
         <div className="h-14 bg-gray-200 dark:bg-gray-700 rounded-2xl mb-10" />
 
+
         {/* Cards row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
           <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl" />
