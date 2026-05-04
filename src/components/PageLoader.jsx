@@ -16,6 +16,8 @@ export default function PageLoader() {
           <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl" />
         </div>
 
+
+
         {/* Text lines */}
         <div className="space-y-3">
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full" />
