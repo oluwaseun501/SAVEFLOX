@@ -43,6 +43,7 @@ function Home() {
       <WhyChoose />
       <AdSlot slot="home-bottom" format="leaderboard" />
       <HowItWorks />
+      <AdSlot slot="home-bottom" format="leaderboard" />
       <FAQ />
     </>
   );
