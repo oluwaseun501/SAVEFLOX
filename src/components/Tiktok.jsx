@@ -92,6 +92,7 @@ export default function Tiktok() {
       <WhyChoose />
       <AdSlot slot="tiktok-bottom" format="leaderboard" />
       <HowItWorks />
+      <AdSlot slot="tiktok-bottom" format="leaderboard" />
       <FAQ />
 
     </>

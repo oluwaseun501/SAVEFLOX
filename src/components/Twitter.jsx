@@ -88,6 +88,7 @@ export default function Twitter() {
       <WhyChoose />
       <AdSlot slot="twitter-bottom" format="leaderboard" />
       <HowItWorks />
+      <AdSlot slot="twitter-bottom" format="leaderboard" />
       <FAQ />
 
       </>

@@ -90,6 +90,7 @@ export default function Pinterest() {
           <WhyChoose />
           <AdSlot slot="pinterest-bottom" format="leaderboard" />
           <HowItWorks />
+          <AdSlot slot="pinterest-bottom" format="leaderboard" />
           <FAQ />
     
         </>

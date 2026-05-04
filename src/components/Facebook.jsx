@@ -95,6 +95,7 @@ export default function Facebook() {
           <WhyChoose />
           <AdSlot slot="Facebook-bottom" format="leaderboard" />
           <HowItWorks />
+          <AdSlot slot="Facebook-bottom" format="leaderboard" />
           <FAQ />
           </>
   );

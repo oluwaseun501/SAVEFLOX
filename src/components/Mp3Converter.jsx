@@ -202,6 +202,7 @@ export default function Mp3Converter() {
       <WhyChoose />
       <AdSlot slot="Mp3Converter-bottom" format="leaderboard" />
       <HowItWorks />
+      <AdSlot slot="Mp3Converter-bottom" format="leaderboard" />
       <FAQ />
 
     </>

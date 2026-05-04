@@ -94,6 +94,7 @@ export default function Facebook() {
       <WhyChoose />
       <AdSlot slot="Instagram-bottom" format="leaderboard" />
       <HowItWorks />
+      <AdSlot slot="Instagram-bottom" format="leaderboard" />
       <FAQ />
 
     </>
