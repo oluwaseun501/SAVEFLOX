@@ -8,6 +8,8 @@ import "./i18n";
 import { AdsProvider } from "./context/AdsContext";
 
 
+
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
