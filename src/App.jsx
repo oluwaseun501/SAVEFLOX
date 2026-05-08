@@ -36,6 +36,7 @@ function ProtectedAdmin({ children }) {
   return isAuthenticated() ? children : <Navigate to="/admin/login" replace />;
 }
 
+
 function Home() {
   return (
     <>
