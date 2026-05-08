@@ -10,26 +10,26 @@ import "../styles/DownloadLogs.css";
 /* SAMPLE DATA — replace with API response when backend is ready */
 const SAMPLE_LOGS = [
   { id: 1,  timestamp: "2026-04-24 11:42:18", platform: "TikTok",    url: "https://tiktok.com/@user/video/72987...",  format: "MP4", quality: "1080p HD", fileSize: "12.4 MB", status: "success", ip: "102.89.34.12",  country: "Nigeria"      },
-  { id: 2,  timestamp: "2026-04-24 11:38:02", platform: "YouTube",   url: "https://youtube.com/watch?v=dQw4w9WgX...", format: "MP3", quality: "320 kbps", fileSize: "4.1 MB",  status: "success", ip: "85.214.132.117",country: "Germany"      },
+  { id: 2,  timestamp: "2026-04-24 11:38:02", platform: "Snapchat", url: "https://snapchat.com/spotlight/abc123...", format: "MP4", quality: "720p", fileSize: "9.3 MB",  status: "success", ip: "85.214.132.117",country: "Germany"      },
   { id: 3,  timestamp: "2026-04-24 11:25:51", platform: "Instagram", url: "https://instagram.com/reel/Cx7p2K...",     format: "MP4", quality: "720p",     fileSize: "8.7 MB",  status: "success", ip: "45.122.65.9",   country: "Indonesia"    },
   { id: 4,  timestamp: "2026-04-24 11:18:33", platform: "Facebook",  url: "https://facebook.com/watch/?v=4427...",    format: "MP4", quality: "1080p HD", fileSize: "22.6 MB", status: "failed",  ip: "201.93.44.18",  country: "Brazil"       },
   { id: 5,  timestamp: "2026-04-24 11:09:14", platform: "TikTok",    url: "https://tiktok.com/@dance/video/729...",   format: "MP3", quality: "256 kbps", fileSize: "3.8 MB",  status: "success", ip: "78.142.5.201",  country: "Spain"        },
   { id: 6,  timestamp: "2026-04-24 10:54:27", platform: "Pinterest", url: "https://pinterest.com/pin/9128345...",     format: "MP4", quality: "720p",     fileSize: "5.2 MB",  status: "success", ip: "162.45.88.6",   country: "United States"},
   { id: 7,  timestamp: "2026-04-24 10:42:08", platform: "Twitter",   url: "https://twitter.com/user/status/178...",   format: "MP4", quality: "480p",     fileSize: "3.1 MB",  status: "success", ip: "190.22.144.7",  country: "Mexico"       },
-  { id: 8,  timestamp: "2026-04-24 10:31:55", platform: "YouTube",   url: "https://youtube.com/shorts/abc12...",      format: "MP4", quality: "1080p HD", fileSize: "18.9 MB", status: "success", ip: "37.205.66.91",  country: "France"       },
+  { id: 8,  timestamp: "2026-04-24 10:31:55", platform: "Snapchat", url: "https://snapchat.com/spotlight/def456...",      format: "MP4", quality: "1080p HD", fileSize: "18.9 MB", status: "success", ip: "37.205.66.91",  country: "France"       },
   { id: 9,  timestamp: "2026-04-24 10:20:41", platform: "Instagram", url: "https://instagram.com/p/Cy8q4K...",        format: "MP3", quality: "192 kbps", fileSize: "2.3 MB",  status: "failed",  ip: "92.118.43.55",  country: "Italy"        },
   { id: 10, timestamp: "2026-04-24 10:08:19", platform: "TikTok",    url: "https://tiktok.com/@cook/video/729...",    format: "MP4", quality: "1080p HD", fileSize: "14.7 MB", status: "success", ip: "115.85.123.40", country: "Vietnam"      },
   { id: 11, timestamp: "2026-04-24 09:56:02", platform: "Facebook",  url: "https://facebook.com/reel/8821...",        format: "MP4", quality: "720p",     fileSize: "6.5 MB",  status: "success", ip: "203.45.7.122",  country: "India"        },
-  { id: 12, timestamp: "2026-04-24 09:41:28", platform: "YouTube",   url: "https://youtube.com/watch?v=k8h3...",      format: "MP3", quality: "320 kbps", fileSize: "5.6 MB",  status: "success", ip: "41.78.89.5",    country: "South Africa" },
+  { id: 12, timestamp: "2026-04-24 09:41:28", platform: "Snapchat", url: "https://snapchat.com/spotlight/ghi789...",      format: "MP3", quality: "256 kbps", fileSize: "5.6 MB",  status: "success", ip: "41.78.89.5",    country: "South Africa" },
   { id: 13, timestamp: "2026-04-24 09:30:10", platform: "Twitter",   url: "https://twitter.com/news/status/178...",   format: "MP4", quality: "720p",     fileSize: "7.8 MB",  status: "success", ip: "176.44.91.18",  country: "Russia"       },
   { id: 14, timestamp: "2026-04-24 09:18:47", platform: "Instagram", url: "https://instagram.com/reel/Dz9r5L...",     format: "MP4", quality: "1080p HD", fileSize: "11.2 MB", status: "success", ip: "151.66.34.7",   country: "United Kingdom"},
   { id: 15, timestamp: "2026-04-24 09:05:33", platform: "TikTok",    url: "https://tiktok.com/@art/video/728...",     format: "MP3", quality: "320 kbps", fileSize: "4.4 MB",  status: "failed",  ip: "188.22.5.143",  country: "Turkey"       },
   { id: 16, timestamp: "2026-04-24 08:52:11", platform: "Pinterest", url: "https://pinterest.com/pin/8876123...",     format: "MP4", quality: "480p",     fileSize: "2.9 MB",  status: "success", ip: "104.55.78.221", country: "Canada"       },
   { id: 17, timestamp: "2026-04-24 08:40:04", platform: "Facebook",  url: "https://facebook.com/watch/?v=4498...",    format: "MP3", quality: "256 kbps", fileSize: "3.3 MB",  status: "success", ip: "84.122.166.4",  country: "Netherlands"  },
-  { id: 18, timestamp: "2026-04-24 08:28:50", platform: "YouTube",   url: "https://youtube.com/watch?v=p2x9...",      format: "MP4", quality: "4K Ultra HD", fileSize: "48.2 MB", status: "success", ip: "118.45.66.9", country: "Japan"      },
+  { id: 18, timestamp: "2026-04-24 08:28:50", platform: "Snapchat", url: "https://snapchat.com/spotlight/jkl012...",      format: "MP4", quality: "1080p HD", fileSize: "28.4 MB", status: "success", ip: "118.45.66.9", country: "Japan"      },
 ];
 
-const PLATFORMS = ["All", "TikTok", "YouTube", "Instagram", "Facebook", "Twitter", "Pinterest"];
+const PLATFORMS = ["All", "TikTok", "Instagram", "Facebook", "Twitter", "Pinterest", "Snapchat"];
 const FORMATS   = ["All", "MP4", "MP3"];
 const STATUSES  = ["All", "success", "failed"];
 const PAGE_SIZE = 10;

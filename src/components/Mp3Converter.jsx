@@ -201,8 +201,8 @@ export default function Mp3Converter() {
           <Music size={28} />
         </div>
 
-        <h1>YouTube to <span>MP3 Converter</span></h1>
-        <p>Extract audio from YouTube, TikTok, Instagram videos</p>
+        <h1>Video to <span>MP3 Converter</span></h1>
+        <p>Extract audio from TikTok, Instagram, Facebook, Pinterest, and Snapchat videos</p>
 
         <div className="mp3-card">
           <div className="input-group">

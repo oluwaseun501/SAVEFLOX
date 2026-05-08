@@ -53,7 +53,7 @@ export default function VideoPreviewModal({
     facebook: ["1080p", "720p", "480p"],
     twitter: ["720p", "480p", "360p"],
     pinterest: ["1080p", "720p", "480p"],
-    youtube: ["4K", "1080p", "720p", "480p", "360p"],
+    snapchat: ["1080p", "720p", "480p"],
   };
 
   const resolutions = resolutionsByPlatform[platform] || ["720p", "480p"];

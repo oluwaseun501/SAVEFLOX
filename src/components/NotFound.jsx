@@ -34,7 +34,6 @@ export default function NotFound() {
           </p>
           <div className="nf-suggestions-grid">
             <Link to="/tiktok-downloader">TikTok Downloader</Link>
-            <Link to="/youtube-downloader">YouTube Downloader</Link>
             <Link to="/instagram-downloader">Instagram Downloader</Link>
             <Link to="/facebook-downloader">Facebook Downloader</Link>
             <Link to="/twitter-downloader">Twitter Downloader</Link>

@@ -39,7 +39,7 @@ const platformData = [
 
 const recentDownloads = [
   { time: "2 mins ago", platform: "TikTok", format: "MP4 (1080p)", status: "Completed" },
-  { time: "5 mins ago", platform: "YouTube", format: "MP3 (320kbps)", status: "Completed" },
+  { time: "5 mins ago", platform: "Snapchat", format: "MP4 (720p)", status: "Completed" },
   { time: "12 mins ago", platform: "Instagram", format: "MP4 (720p)", status: "Failed" },
   { time: "18 mins ago", platform: "Facebook", format: "MP4 (1080p)", status: "Completed" },
 ];

@@ -20,11 +20,12 @@ export default function Hero() {
 
   const detectPlatformFromUrl = (url) => {
     const urlLower = url.toLowerCase();
-    if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be')) return 'youtube';
     if (urlLower.includes('tiktok.com')) return 'tiktok';
-    if (urlLower.includes('twitter.com') || urlLower.includes('x.com')) return 'twitter';
     if (urlLower.includes('instagram.com')) return 'instagram';
     if (urlLower.includes('facebook.com') || urlLower.includes('fb.com')) return 'facebook';
+    if (urlLower.includes('pinterest.com') || urlLower.includes('pin.it')) return 'pinterest';
+    if (urlLower.includes('snapchat.com')) return 'snapchat';
+    if (urlLower.includes('twitter.com') || urlLower.includes('x.com')) return 'twitter';
     return null;
   };
 
@@ -36,7 +37,7 @@ export default function Hero() {
 
     const platform = detectPlatformFromUrl(url);
     if (!platform) {
-      setError("Unsupported platform. Please use YouTube, TikTok, Twitter, Instagram, or Facebook");
+      setError("Unsupported platform. Please use TikTok, Instagram, Facebook, Pinterest, or Snapchat");
       return;
     }
 

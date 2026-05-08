@@ -11,8 +11,8 @@ export default function VideoPreviewBox({ platform, onResolutionSelect, isLoadin
     instagram: ["1080p", "720p", "480p"],
     facebook: ["1080p", "720p", "480p"],
     twitter: ["720p", "480p", "360p"],
-    youtube: ["4K", "1080p", "720p", "480p", "360p"],
     pinterest: ["1080p", "720p", "480p"],
+    snapchat: ["1080p", "720p", "480p"],
   };
 
   const availableResolutions = resolutions[platform?.toLowerCase()] || ["720p", "480p"];
