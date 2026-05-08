@@ -17,6 +17,7 @@ import { AdsProvider } from "./context/AdsContext";
   </AdsProvider>
 </ThemeProvider>
 
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
