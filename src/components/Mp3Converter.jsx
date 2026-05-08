@@ -1,210 +1,321 @@
-import { useState } from "react";
-import { Download, Link, Music, Scissors, Mic, Volume2, Play } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { useState, useRef, useEffect } from "react";
+import { Download, Link, Music, Play, Pause, Volume2, Mic, Scissors, Loader } from "lucide-react";
 import "../styles/Mp3Converter.css";
-import AdSlot from "./AdSlot";
-import WhyChoose from "./WhyChoose";
-import HowItWorks from "./HowItWorks";
-import FAQ from "./FAQ";
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function Mp3Converter() {
-  const { t } = useTranslation();
   const [url, setUrl] = useState("");
-  const [converted, setConverted] = useState(false);
-  const [quality, setQuality] = useState("320 kbps");
+  const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const [error, setError] = useState(null);
+  const [downloading, setDownloading] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioElement, setAudioElement] = useState(null);
+  const [effects, setEffects] = useState({
+    volume: 100,      // UI range 0-200%
+    pitch: 0,
+    voice: "Original",
+    trimStart: 0,
+    trimEnd: 100
+  });
 
-  // Editing controls
-  const [trimStart, setTrimStart] = useState(0);
-  const [trimEnd, setTrimEnd] = useState(100);
-  const [volume, setVolume] = useState(100);
-  const [pitch, setPitch] = useState(0);
-  const [voice, setVoice] = useState("Original");
+  const fetchAudioPreview = async () => {
+    if (!url) {
+      setError("Please enter a URL");
+      return;
+    }
 
-  const handleConvert = () => {
+    setLoading(true);
+    setError(null);
+    setPreview(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/mp3/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setPreview(data);
+      } else {
+        setError(data.error || "Failed to fetch audio info");
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Convert UI volume (0-200) to audio volume (0-1)
+  const getAudioVolume = (uiVolume) => {
+    return Math.min(1, uiVolume / 100);
+  };
+
+  const getPlaybackRate = () => {
+    let rate = Math.pow(2, effects.pitch / 12);
+    if (effects.voice === "Chipmunk") {
+      rate = 1.5;
+    } else if (effects.voice === "Deep") {
+      rate = 0.7;
+    }
+    return Math.min(4, Math.max(0.25, rate)); // Clamp between 0.25 and 4
+  };
+
+  const playAudio = () => {
+    if (!preview || !preview.audio_url) return;
+    
+    // Stop any existing audio
+    if (audioElement) {
+      audioElement.pause();
+      audioElement.currentTime = 0;
+    }
+    
+    // Create audio element
+    const audio = new Audio(preview.audio_url);
+    
+    // Set volume (clamped to 0-1 range)
+    const audioVolume = getAudioVolume(effects.volume);
+    audio.volume = audioVolume;
+    
+    // Set playback rate
+    audio.playbackRate = getPlaybackRate();
+    
+    audio.onended = () => {
+      setIsPlaying(false);
+    };
+    
+    audio.onerror = (e) => {
+      console.error("Audio playback error:", e);
+      setError("Failed to play audio preview");
+      setIsPlaying(false);
+    };
+    
+    audio.play().catch(err => {
+      console.error("Play failed:", err);
+      setError("Cannot play audio. Your browser may block autoplay.");
+      setIsPlaying(false);
+    });
+    
+    setAudioElement(audio);
+    setIsPlaying(true);
+  };
+
+  const stopAudio = () => {
+    if (audioElement) {
+      audioElement.pause();
+      audioElement.currentTime = 0;
+      setIsPlaying(false);
+    }
+  };
+
+  const togglePlay = () => {
+    if (isPlaying) {
+      stopAudio();
+    } else {
+      playAudio();
+    }
+  };
+
+  // Update audio properties when effects change (while playing)
+  useEffect(() => {
+    if (audioElement && isPlaying) {
+      // Volume: clamp to valid range (0-1)
+      const audioVolume = getAudioVolume(effects.volume);
+      audioElement.volume = Math.min(1, Math.max(0, audioVolume));
+      
+      // Playback rate: clamp to valid range (0.25-4)
+      audioElement.playbackRate = getPlaybackRate();
+    }
+  }, [effects.volume, effects.pitch, effects.voice, audioElement, isPlaying]);
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.src = "";
+      }
+    };
+  }, [audioElement]);
+
+  const handleDownload = async () => {
     if (!url) return;
-    console.log("Converting to MP3:", url);
-    setConverted(true);
+
+    setDownloading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/mp3/download`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Download failed");
+      }
+
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let filename = "audio.m4a";
+      
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match) filename = match[1];
+      }
+
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+      
+    } catch (err) {
+      setError(err.message || "Download failed. Please try again.");
+    } finally {
+      setDownloading(false);
+    }
   };
 
-  const handleDownload = () => {
-    console.log("Download MP3", { quality, trimStart, trimEnd, volume, pitch, voice });
+  // Display volume percentage with clamp note
+  const getVolumeDisplay = () => {
+    if (effects.volume > 100) {
+      return `${effects.volume}% (Boosted - may distort)`;
+    }
+    return `${effects.volume}%`;
   };
-
-  const voices = [
-    { key: "Original", label: t("voice_original") },
-    { key: "Male",     label: t("voice_male") },
-    { key: "Female",   label: t("voice_female") },
-    { key: "Chipmunk", label: t("voice_chipmunk") },
-    { key: "Deep",     label: t("voice_deep") },
-    { key: "Robot",    label: t("voice_robot") },
-  ];
 
   return (
-    <>
-    <section className="mp3">
+    <section className="mp3-converter">
       <div className="mp3-content">
-        {/* Icon */}
         <div className="mp3-icon">
           <Music size={28} />
         </div>
 
-        {/* Heading */}
-        <h1 className="mp3-heading">
-          {t("mp3_heading")} <span>{t("mp3_highlight")}</span>
-        </h1>
+        <h1>YouTube to <span>MP3 Converter</span></h1>
+        <p>Extract audio from YouTube, TikTok, Instagram videos</p>
 
-        {/* Subtext */}
-        <p className="mp3-subtext">
-          {t("mp3_subtext")}
-        </p>
-
-        {/* Converter Card */}
         <div className="mp3-card">
-          {/* Input + Button */}
-          <div className="mp3-input-group">
-            <div className="mp3-input-wrapper">
-              <Link size={18} className="mp3-input-icon" />
-              <input
-                type="text"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder={t("mp3_placeholder")}
-                className="mp3-input"
-              />
-            </div>
-            <button className="mp3-btn" onClick={handleConvert}>
-              <Music size={18} />
-              {t("mp3_convert")}
+          <div className="input-group">
+            <Link size={18} />
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Paste video URL here..."
+              onKeyPress={(e) => e.key === 'Enter' && fetchAudioPreview()}
+            />
+            <button onClick={fetchAudioPreview} disabled={loading}>
+              {loading ? <Loader size={18} className="spinner" /> : "Preview"}
             </button>
-          </div>
-
-          {/* Quality row */}
-          <div className="mp3-options">
-            <span className="mp3-options-label">{t("mp3_quality")}:</span>
-            <select
-              className="mp3-quality-select"
-              value={quality}
-              onChange={(e) => setQuality(e.target.value)}
-            >
-              <option>320 kbps</option>
-              <option>256 kbps</option>
-              <option>192 kbps</option>
-              <option>128 kbps</option>
-            </select>
           </div>
         </div>
 
-        {/* Editor Panel - shown after convert */}
-        {converted && (
-          <div className="mp3-editor">
-            <h2 className="mp3-editor-title">{t("mp3_edit_title")}</h2>
-
-            {/* Trim */}
-            <div className="mp3-control">
-              <label className="mp3-control-label">
-                <Scissors size={16} />
-                {t("mp3_trim")} ({trimStart}s – {trimEnd}s)
-              </label>
-              <div className="mp3-slider-row">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={trimStart}
-                  onChange={(e) =>
-                    setTrimStart(Math.min(Number(e.target.value), trimEnd - 1))
-                  }
-                  className="mp3-slider"
-                />
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={trimEnd}
-                  onChange={(e) =>
-                    setTrimEnd(Math.max(Number(e.target.value), trimStart + 1))
-                  }
-                  className="mp3-slider"
-                />
-              </div>
-            </div>
-
-            {/* Volume */}
-            <div className="mp3-control">
-              <label className="mp3-control-label">
-                <Volume2 size={16} />
-                {t("mp3_volume")} ({volume}%)
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="200"
-                value={volume}
-                onChange={(e) => setVolume(Number(e.target.value))}
-                className="mp3-slider"
-              />
-            </div>
-
-            {/* Pitch */}
-            <div className="mp3-control">
-              <label className="mp3-control-label">
-                <Mic size={16} />
-                {t("mp3_pitch")} ({pitch > 0 ? `+${pitch}` : pitch} {t("mp3_pitch_unit")})
-              </label>
-              <input
-                type="range"
-                min="-12"
-                max="12"
-                value={pitch}
-                onChange={(e) => setPitch(Number(e.target.value))}
-                className="mp3-slider"
-              />
-            </div>
-
-            {/* Voice */}
-            <div className="mp3-control">
-              <label className="mp3-control-label">
-                <Mic size={16} />
-                {t("mp3_voice_effect")}
-              </label>
-              <div className="mp3-voice-row">
-                {voices.map((v) => (
-                  <button
-                    key={v.key}
-                    className={`mp3-voice-pill ${voice === v.key ? "active" : ""}`}
-                    onClick={() => setVoice(v.key)}
-                  >
-                    {v.label}
+        {preview && (
+          <div className="mp3-preview">
+            <div className="preview-header">
+              <img src={preview.thumbnail} alt="Preview" />
+              <div>
+                <h3>{preview.title}</h3>
+                <p>{preview.uploader} • {preview.duration}</p>
+                <div className="audio-controls">
+                  <button className="play-btn" onClick={togglePlay}>
+                    {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                    {isPlaying ? "Pause Preview" : "Play Preview"}
                   </button>
-                ))}
+                </div>
               </div>
             </div>
 
-            {/* Action row */}
-            <div className="mp3-actions">
-              <button className="mp3-preview-btn">
-                <Play size={16} />
-                {t("mp3_preview")}
-              </button>
-              <button className="mp3-download-btn" onClick={handleDownload}>
-                <Download size={18} />
-                {t("mp3_download")}
-              </button>
+            <div className="effects-panel">
+              <h3>Audio Effects (Live Preview)</h3>
+              
+              <div className="effect-control">
+                <label><Volume2 size={16} /> Volume: {getVolumeDisplay()}</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="200"
+                  value={effects.volume}
+                  onChange={(e) => setEffects({...effects, volume: parseInt(e.target.value)})}
+                />
+                <small className="effect-note">100% = normal, 200% = double volume (may cause distortion)</small>
+              </div>
+
+              <div className="effect-control">
+                <label><Mic size={16} /> Pitch: {effects.pitch} semitones</label>
+                <input
+                  type="range"
+                  min="-12"
+                  max="12"
+                  step="1"
+                  value={effects.pitch}
+                  onChange={(e) => setEffects({...effects, pitch: parseInt(e.target.value)})}
+                />
+                <small className="effect-note">-12 = lower, +12 = higher pitch</small>
+              </div>
+
+              <div className="effect-control">
+                <label><Mic size={16} /> Voice Effect</label>
+                <div className="voice-buttons">
+                  {["Original", "Chipmunk", "Deep", "Robot"].map(v => (
+                    <button
+                      key={v}
+                      className={effects.voice === v ? "active" : ""}
+                      onClick={() => setEffects({...effects, voice: v})}
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="effect-control">
+                <label><Scissors size={16} /> Trim (Preview only)</label>
+                <div className="trim-controls">
+                  <span>Start: {effects.trimStart}%</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max={Math.max(1, effects.trimEnd - 1)}
+                    value={effects.trimStart}
+                    onChange={(e) => setEffects({...effects, trimStart: parseInt(e.target.value)})}
+                  />
+                  <span>End: {effects.trimEnd}%</span>
+                  <input
+                    type="range"
+                    min={Math.min(99, effects.trimStart + 1)}
+                    max="100"
+                    value={effects.trimEnd}
+                    onChange={(e) => setEffects({...effects, trimEnd: parseInt(e.target.value)})}
+                  />
+                </div>
+                <small className="effect-note">Note: Trim only affects preview playback, not downloaded file</small>
+              </div>
             </div>
+
+            <button 
+              className="download-btn" 
+              onClick={handleDownload} 
+              disabled={downloading}
+            >
+              <Download size={18} />
+              {downloading ? "Downloading..." : "Download Audio"}
+            </button>
           </div>
         )}
+
+        {error && <div className="error">❌ {error}</div>}
       </div>
     </section>
-
-    
-      <AdSlot slot="Mp3Converter-top" format="leaderboard" />
-
-      <WhyChoose />
-      <AdSlot slot="Mp3Converter-bottom" format="leaderboard" />
-      <HowItWorks />
-      <AdSlot slot="Mp3Converter-bottom" format="leaderboard" />
-      <FAQ />
-
-    </>
   );
 }
