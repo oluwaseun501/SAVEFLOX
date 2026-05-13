@@ -9,6 +9,10 @@ import FAQ from "./FAQ";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+const mountStyle = (delayMs) => ({
+  animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both`,
+});
+
 export default function Facebook() {
   const { t } = useTranslation();
   const [url, setUrl] = useState("");
@@ -19,7 +23,6 @@ export default function Facebook() {
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadSpeed, setDownloadSpeed] = useState(0);
-  
   const abortControllerRef = useRef(null);
 
   const detectPlatformFromUrl = (url) => {
@@ -34,147 +37,80 @@ export default function Facebook() {
   };
 
   const handlePreview = async () => {
-    if (!url) {
-      setError("Please enter a URL");
-      return;
-    }
-
+    if (!url) { setError("Please enter a URL"); return; }
     const platform = detectPlatformFromUrl(url);
-    if (!platform) {
-      setError("Unsupported platform. Please use TikTok, Instagram, Facebook, Pinterest, Snapchat, or Twitter");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setPreview(null);
-
+    if (!platform) { setError("Unsupported platform. Please use TikTok, Instagram, Facebook, Pinterest, Snapchat, or Twitter"); return; }
+    setLoading(true); setError(null); setPreview(null);
     try {
       const response = await fetch(`${API_BASE_URL}/preview`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          url: url,
-          platform: platform
-        }),
+        body: JSON.stringify({ url, platform }),
       });
-
       const data = await response.json();
-
-      // ALWAYS stop loading here, even on error
       setLoading(false);
-
       if (data.success) {
         setPreview(data);
-        if (data.formats && data.formats.length > 0) {
-          setQuality(data.formats[0].quality);
-        }
+        if (data.formats && data.formats.length > 0) setQuality(data.formats[0].quality);
       } else {
-        // Show the actual error from backend
         setError(data.error || "Failed to fetch video info");
-        console.error("Preview error:", data.error);
       }
     } catch (err) {
       setLoading(false);
       setError("Network error. Please try again.");
-      console.error("Fetch error:", err);
     }
   };
 
   const handleDownload = async () => {
     if (!url || !preview) return;
-
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    
+    if (abortControllerRef.current) abortControllerRef.current.abort();
     abortControllerRef.current = new AbortController();
-    
-    setDownloading(true);
-    setDownloadProgress(0);
-    setDownloadSpeed(0);
-
+    setDownloading(true); setDownloadProgress(0); setDownloadSpeed(0);
     try {
       const response = await fetch(`${API_BASE_URL}/download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: url,
-          platform: "facebook",
-          quality: quality,
-        }),
-        signal: abortControllerRef.current.signal
+        body: JSON.stringify({ url, platform: "facebook", quality }),
+        signal: abortControllerRef.current.signal,
       });
-
-      if (!response.ok) {
-        throw new Error("Download failed");
-      }
-
+      if (!response.ok) throw new Error("Download failed");
       const contentLength = response.headers.get("Content-Length");
       const totalSize = contentLength ? parseInt(contentLength, 10) : 0;
-      
       const reader = response.body.getReader();
       const chunks = [];
       let receivedLength = 0;
       let startTime = Date.now();
       let lastUpdate = Date.now();
-      
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
-        chunks.push(value);
-        receivedLength += value.length;
-        
+        chunks.push(value); receivedLength += value.length;
         const now = Date.now();
         if (now - lastUpdate > 100 || done) {
           lastUpdate = now;
-          
-          if (totalSize > 0) {
-            const progress = (receivedLength / totalSize) * 100;
-            setDownloadProgress(progress);
-          } else {
-            setDownloadProgress(prev => (prev + 5) % 95);
-          }
-          
+          if (totalSize > 0) setDownloadProgress((receivedLength / totalSize) * 100);
+          else setDownloadProgress(prev => (prev + 5) % 95);
           const elapsed = (now - startTime) / 1000;
-          if (elapsed > 0) {
-            const speed = receivedLength / elapsed / 1024 / 1024;
-            setDownloadSpeed(speed);
-          }
+          if (elapsed > 0) setDownloadSpeed(receivedLength / elapsed / 1024 / 1024);
         }
       }
-      
       setDownloadProgress(100);
-      
       const blob = new Blob(chunks);
       const contentDisposition = response.headers.get("Content-Disposition");
       let filename = "facebook_video.mp4";
-      
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="?([^"]+)"?/);
         if (match) filename = match[1];
       }
-
       const downloadUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(downloadUrl);
-      
+      a.href = downloadUrl; a.download = filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(downloadUrl);
     } catch (err) {
-      if (err.name !== 'AbortError') {
-        setError("Download failed. Please try again.");
-      }
+      if (err.name !== 'AbortError') setError("Download failed. Please try again.");
     } finally {
-      setTimeout(() => {
-        setDownloading(false);
-        setDownloadProgress(0);
-        setDownloadSpeed(0);
-      }, 1000);
+      setTimeout(() => { setDownloading(false); setDownloadProgress(0); setDownloadSpeed(0); }, 1000);
       abortControllerRef.current = null;
     }
   };
@@ -192,23 +128,24 @@ export default function Facebook() {
     <>
       <section className="facebook">
         <div className="facebook-content">
-          <div className="facebook-icon">
+
+          <div className="facebook-icon" style={mountStyle(0)}>
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
               <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
             </svg>
           </div>
 
-          <h1 className="facebook-heading">
+          <h1 className="facebook-heading" style={mountStyle(150)}>
             {headingParts[0]}
             <span>Facebook</span>
             {headingParts[1]}
           </h1>
 
-          <p className="facebook-subtext">
+          <p className="facebook-subtext" style={mountStyle(300)}>
             {t("facebook_subtext")}
           </p>
 
-          <div className="facebook-card">
+          <div className="facebook-card" style={mountStyle(450)}>
             <div className="facebook-input-group">
               <div className="facebook-input-wrapper">
                 <Link size={18} className="facebook-input-icon" />
@@ -220,11 +157,7 @@ export default function Facebook() {
                   className="facebook-input"
                 />
               </div>
-              <button 
-                className="facebook-btn" 
-                onClick={handlePreview}
-                disabled={loading}
-              >
+              <button className="facebook-btn" onClick={handlePreview} disabled={loading}>
                 {loading ? <Loader size={18} className="spinner" /> : <Download size={18} />}
                 {loading ? "Analyzing..." : t("download")}
               </button>
@@ -234,21 +167,15 @@ export default function Facebook() {
               <span className="facebook-options-label">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="3"/>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                 </svg>
                 {t("options")}:
               </span>
-
               <button className="facebook-option-pill active">
                 <Video size={14} />
                 {t("video_mp4")}
               </button>
-
-              <select
-                className="facebook-quality-select"
-                value={quality}
-                onChange={(e) => setQuality(e.target.value)}
-              >
+              <select className="facebook-quality-select" value={quality} onChange={(e) => setQuality(e.target.value)}>
                 {preview?.formats?.map((format) => (
                   <option key={format.quality} value={format.quality}>
                     {format.quality} {format.filesize_mb ? `(${format.filesize_mb} MB)` : ''}
@@ -266,9 +193,8 @@ export default function Facebook() {
             </div>
           </div>
 
-          {/* Download Progress Bar - Same as Hero */}
           {downloading && (
-            <div className="download-progress">
+            <div className="download-progress" style={mountStyle(0)}>
               <div className="progress-label">
                 <span>Downloading video...</span>
                 <span>{Math.round(downloadProgress)}%</span>
@@ -284,9 +210,8 @@ export default function Facebook() {
             </div>
           )}
 
-          {/* Preview Section */}
           {preview && !downloading && (
-            <div className="facebook-preview">
+            <div className="facebook-preview" style={mountStyle(0)}>
               <div className="preview-header">
                 <img src={preview.thumbnail} alt="Preview" className="preview-thumbnail" />
                 <div className="preview-info">
@@ -308,17 +233,11 @@ export default function Facebook() {
                       onClick={() => setQuality(format.quality)}
                     >
                       {format.quality}
-                      {format.filesize_mb && (
-                        <span className="format-size">({format.filesize_mb} MB)</span>
-                      )}
+                      {format.filesize_mb && <span className="format-size">({format.filesize_mb} MB)</span>}
                     </button>
                   ))}
                 </div>
-                <button 
-                  className="facebook-download-btn"
-                  onClick={handleDownload}
-                  disabled={downloading}
-                >
+                <button className="facebook-download-btn" onClick={handleDownload} disabled={downloading}>
                   <Download size={18} />
                   Download Now
                 </button>
@@ -327,10 +246,11 @@ export default function Facebook() {
           )}
 
           {error && (
-            <div className="facebook-error">
+            <div className="facebook-error" style={mountStyle(0)}>
               <span>❌ {error}</span>
             </div>
           )}
+
         </div>
       </section>
 

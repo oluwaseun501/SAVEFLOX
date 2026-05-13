@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import "../styles/FAQ.css";
+import GlideIn from "./GlideIn";
 
 export default function FAQ() {
   const { t } = useTranslation();
@@ -22,31 +23,36 @@ export default function FAQ() {
   return (
     <section className="faq">
       <div className="faq-container">
-        <div className="faq-header">
-          <h2 className="faq-title">{t("faq_title")}</h2>
-          <p className="faq-subtitle">{t("faq_subtitle")}</p>
-        </div>
 
+        {/* Header glides in */}
+        <GlideIn>
+          <div className="faq-header">
+            <h2 className="faq-title">{t("faq_title")}</h2>
+            <p className="faq-subtitle">{t("faq_subtitle")}</p>
+          </div>
+        </GlideIn>
+
+        {/* Each FAQ item glides in with staggered delay */}
         <div className="faq-list">
           {faqs.map((faq, idx) => (
-            <div
-              key={idx}
-              className={`faq-item ${openIndex === idx ? "open" : ""}`}
-            >
-              <button
-                className="faq-question"
-                onClick={() => toggleFAQ(idx)}
-                aria-expanded={openIndex === idx}
-              >
-                <span>{faq.question}</span>
-                <ChevronDown size={20} className="faq-chevron" />
-              </button>
-              <div className="faq-answer-wrapper">
-                <p className="faq-answer">{faq.answer}</p>
+            <GlideIn key={idx} delay={idx * 100}>
+              <div className={`faq-item ${openIndex === idx ? "open" : ""}`}>
+                <button
+                  className="faq-question"
+                  onClick={() => toggleFAQ(idx)}
+                  aria-expanded={openIndex === idx}
+                >
+                  <span>{faq.question}</span>
+                  <ChevronDown size={20} className="faq-chevron" />
+                </button>
+                <div className="faq-answer-wrapper">
+                  <p className="faq-answer">{faq.answer}</p>
+                </div>
               </div>
-            </div>
+            </GlideIn>
           ))}
         </div>
+
       </div>
     </section>
   );
