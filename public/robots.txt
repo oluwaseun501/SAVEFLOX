@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Sitemap: https://www.saveflox.com/sitemap.xml
+Host: www.saveflox.com

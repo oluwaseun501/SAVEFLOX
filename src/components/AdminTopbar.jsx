@@ -6,25 +6,35 @@ import {
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import "../styles/AdminTopbar.css";
-import { logout } from "../utils/auth";
+import { logout, setToken } from "../utils/auth";
+import { authAPI } from "../services/api";
 
-const EMAIL_KEY = "sf_admin_email";
 const PASSWORD_KEY = "sf_admin_password";
-const DEFAULT_EMAIL = "admin@saveflux.com";
 const DEFAULT_PASSWORD = "admin123";
 
-export default function AdminTopbar({ email: emailProp = DEFAULT_EMAIL }) {
+export default function AdminTopbar() {
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState(
-    () => localStorage.getItem(EMAIL_KEY) || emailProp
-  );
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
-    if (!localStorage.getItem(EMAIL_KEY)) localStorage.setItem(EMAIL_KEY, DEFAULT_EMAIL);
-    if (!localStorage.getItem(PASSWORD_KEY)) localStorage.setItem(PASSWORD_KEY, DEFAULT_PASSWORD);
+    // Fetch email from API on mount
+    authAPI
+      .getProfile()
+      .then((res) => {
+        if (res.data?.success && res.data?.user?.email) {
+          setEmail(res.data.user.email);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch profile:", err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   const handleLogout = () => {
@@ -54,7 +64,7 @@ export default function AdminTopbar({ email: emailProp = DEFAULT_EMAIL }) {
               </div>
               <div className="admin-topbar-user-info">
                 <span className="admin-topbar-user-name">Admin</span>
-                <span className="admin-topbar-user-email">{email}</span>
+                <span className="admin-topbar-user-email">{loading ? "Loading..." : email}</span>
               </div>
               <ChevronDown size={16} className="admin-topbar-chevron" />
             </button>
@@ -62,7 +72,7 @@ export default function AdminTopbar({ email: emailProp = DEFAULT_EMAIL }) {
             <div className="admin-topbar-dropdown">
               <div className="admin-topbar-dropdown-header">
                 <div className="admin-topbar-dropdown-name">Signed in as</div>
-                <div className="admin-topbar-dropdown-email">{email}</div>
+                <div className="admin-topbar-dropdown-email">{loading ? "Loading..." : email}</div>
               </div>
 
               <button
@@ -120,8 +130,6 @@ function ProfileModal({ currentEmail, onClose, onEmailChange }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [pwdMsg, setPwdMsg] = useState(null);
 
-  const storedPwd = localStorage.getItem(PASSWORD_KEY) || DEFAULT_PASSWORD;
-
   const saveEmail = (e) => {
     e.preventDefault();
     setEmailMsg(null);
@@ -133,8 +141,8 @@ function ProfileModal({ currentEmail, onClose, onEmailChange }) {
       setEmailMsg({ type: "error", text: "Please enter a valid email address." });
       return;
     }
-    if (emailPwd !== storedPwd) {
-      setEmailMsg({ type: "error", text: "Current password is incorrect." });
+    if (!emailPwd) {
+      setEmailMsg({ type: "error", text: "Current password is required to confirm changes." });
       return;
     }
     if (trimmed === currentEmail) {
@@ -142,15 +150,32 @@ function ProfileModal({ currentEmail, onClose, onEmailChange }) {
       return;
     }
 
-    localStorage.setItem(EMAIL_KEY, trimmed);
-    onEmailChange(trimmed);
-    setEmailPwd("");
-    setEmailMsg({ type: "success", text: "Email updated successfully." });
+    // Call backend to persist change
+    authAPI.updateEmail(trimmed, emailPwd)
+      .then((res) => {
+        const data = res.data || {};
+        if (data.success) {
+          // Update token if provided
+          if (data.token) setToken(data.token);
+          onEmailChange(trimmed);
+          setEmailPwd("");
+          setEmailMsg({ type: "success", text: "Email updated successfully." });
+        } else {
+          setEmailMsg({ type: "error", text: data.error || "Failed to update email." });
+        }
+      })
+      .catch((err) => {
+        const msg = err?.response?.data?.error || err.message || "Failed to update email.";
+        setEmailMsg({ type: "error", text: msg });
+      });
   };
 
   const savePassword = (e) => {
     e.preventDefault();
     setPwdMsg(null);
+
+    // Get stored password from localStorage for local verification only
+    const storedPwd = localStorage.getItem(PASSWORD_KEY) || DEFAULT_PASSWORD;
 
     if (currentPwd !== storedPwd) {
       setPwdMsg({ type: "error", text: "Current password is incorrect." });
@@ -169,11 +194,24 @@ function ProfileModal({ currentEmail, onClose, onEmailChange }) {
       return;
     }
 
-    localStorage.setItem(PASSWORD_KEY, newPwd);
-    setCurrentPwd("");
-    setNewPwd("");
-    setConfirmPwd("");
-    setPwdMsg({ type: "success", text: "Password updated successfully." });
+    // Call backend to change password
+    authAPI.changePassword(currentPwd, newPwd, confirmPwd)
+      .then((res) => {
+        const data = res.data || {};
+        if (data.success) {
+          localStorage.setItem(PASSWORD_KEY, newPwd);
+          setCurrentPwd("");
+          setNewPwd("");
+          setConfirmPwd("");
+          setPwdMsg({ type: "success", text: "Password updated successfully." });
+        } else {
+          setPwdMsg({ type: "error", text: data.error || "Failed to update password." });
+        }
+      })
+      .catch((err) => {
+        const msg = err?.response?.data?.error || err.message || "Failed to update password.";
+        setPwdMsg({ type: "error", text: msg });
+      });
   };
 
   return (

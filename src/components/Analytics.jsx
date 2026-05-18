@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   LineChart,
   Line,
@@ -21,11 +21,13 @@ import {
   Download,
   Percent,
   Clock,
+  Music,
 } from "lucide-react";
 import AdminSidebar from "./AdminSidebar";
 import AdminTopbar from "./AdminTopbar";
 import "../styles/AdminDashboard.css";
 import "../styles/Analytics.css";
+import { analyticsAPI } from "../services/api";
 
 const ranges = ["Last 7 days", "Last 30 days", "Last 90 days", "Custom"];
 
@@ -78,15 +80,63 @@ const heatmap = days.map((d, di) =>
   })
 );
 
-const kpis = [
-  { label: "Total Visits", value: "124,500", change: "+18.2%", up: true, icon: Eye },
-  { label: "Total Downloads", value: "84,200", change: "+12.4%", up: true, icon: Download },
-  { label: "Conversion Rate", value: "67.6%", change: "-2.1%", up: false, icon: Percent },
-  { label: "Avg. Session", value: "3m 42s", change: "+8.5%", up: true, icon: Clock },
-];
+const DEFAULT_EMPTY = [];
 
 export default function Analytics() {
   const [range, setRange] = useState("Last 30 days");
+  const [stats, setStats] = useState({});
+  const [trendDataState, setTrendDataState] = useState(DEFAULT_EMPTY);
+  const [platformDataState, setPlatformDataState] = useState(DEFAULT_EMPTY);
+  const [countryDataState, setCountryDataState] = useState(DEFAULT_EMPTY);
+  const [deviceDataState, setDeviceDataState] = useState(DEFAULT_EMPTY);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const [statsRes, platformsRes, countriesRes, devicesRes] = await Promise.all([
+          analyticsAPI.getDashboardStats(),
+          analyticsAPI.getPlatformAnalytics(),
+          analyticsAPI.getCountryAnalytics(),
+          analyticsAPI.getDeviceAnalytics(),
+        ]);
+
+        setStats(statsRes?.data || {});
+
+        const platforms = platformsRes?.data?.platforms || [];
+        setPlatformDataState(platforms.map((p, i) => ({ name: p.platform, value: p.count, fill: ["#0f172a","#1d4ed8","#ec4899","#2563eb","#22c55e"][i % 5] })));
+
+        const countries = countriesRes?.data?.countries || [];
+        setCountryDataState(countries.map((c) => ({ name: c.country, count: c.count })));
+
+        const devices = devicesRes?.data?.devices || [];
+        setDeviceDataState(devices.map((d, i) => ({ name: d.device || 'Unknown', value: d.count, fill: ["#1d4ed8","#22c55e","#f59e0b"][i % 3] })));
+
+        // Trend: load default 30d range
+        const now = new Date();
+        const end = now.toISOString();
+        const start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const trendRes = await analyticsAPI.getAnalyticsByRange(start, end);
+        setTrendDataState(trendRes?.data?.trend || DEFAULT_EMPTY);
+      } catch (err) {
+        setError(err?.response?.data?.error || err?.message || 'Failed to load analytics');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, []);
+
+  const kpis = [
+    { label: "Total Downloads", value: stats.total_downloads?.toLocaleString?.() || "—", change: "+0%", up: true, icon: Download },
+    { label: "Downloads Today", value: stats.downloads_today || "—", change: "+0%", up: true, icon: Clock },
+    { label: "Success Rate", value: stats.success_rate ? `${stats.success_rate}%` : "—", change: "-", up: stats.success_rate >= 0, icon: Percent },
+    { label: "MP3 Downloads", value: stats.mp3_downloads?.toLocaleString?.() || "—", change: "-", up: true, icon: Music },
+  ];
 
   return (
     <div className="admin">
@@ -143,14 +193,13 @@ export default function Analytics() {
               <h2 className="admin-chart-title">Traffic &amp; Downloads Trend</h2>
               <span className="analytics-pill">{range}</span>
             </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={trendData}>
+              <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={trendDataState.length ? trendDataState : trendData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
                 <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} />
                 <YAxis stroke="#94a3b8" fontSize={12} />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="visits" stroke="#1d4ed8" strokeWidth={2.5} dot={{ r: 3 }} />
                 <Line type="monotone" dataKey="downloads" stroke="#22c55e" strokeWidth={2.5} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
@@ -163,16 +212,16 @@ export default function Analytics() {
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
-                    data={platformData}
+                      data={platformDataState.length ? platformDataState : platformData}
                     dataKey="value"
                     nameKey="name"
                     innerRadius={55}
                     outerRadius={90}
                     paddingAngle={3}
                   >
-                    {platformData.map((entry, i) => (
-                      <Cell key={i} fill={entry.fill} />
-                    ))}
+                      {(platformDataState.length ? platformDataState : platformData).map((entry, i) => (
+                        <Cell key={i} fill={entry.fill} />
+                      ))}
                   </Pie>
                   <Tooltip />
                   <Legend />
@@ -185,14 +234,14 @@ export default function Analytics() {
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
-                    data={deviceData}
+                    data={deviceDataState.length ? deviceDataState : deviceData}
                     dataKey="value"
                     nameKey="name"
                     innerRadius={55}
                     outerRadius={90}
                     paddingAngle={3}
                   >
-                    {deviceData.map((entry, i) => (
+                    {(deviceDataState.length ? deviceDataState : deviceData).map((entry, i) => (
                       <Cell key={i} fill={entry.fill} />
                     ))}
                   </Pie>
@@ -221,8 +270,8 @@ export default function Analytics() {
             <div className="admin-chart-card">
               <h2 className="admin-chart-title">Top Countries</h2>
               <ul className="analytics-country-list">
-                {countryData.map((c) => {
-                  const max = countryData[0].count;
+                {countryDataState.length ? countryDataState.map((c, index) => {
+                  const max = countryDataState[0]?.count || 1;
                   const pct = (c.count / max) * 100;
                   return (
                     <li key={c.name} className="analytics-country">
@@ -240,7 +289,11 @@ export default function Analytics() {
                       </div>
                     </li>
                   );
-                })}
+                }) : (
+                  <li className="analytics-country">
+                    <span className="analytics-country-name">No country data available</span>
+                  </li>
+                )}
               </ul>
             </div>
           </div>

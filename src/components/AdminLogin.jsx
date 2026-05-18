@@ -1,25 +1,44 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, Mail, LogIn } from "lucide-react";
 import "../styles/AdminLogin.css";
-import { login } from "../utils/auth";
+import { authAPI } from "../services/api";
+import { login, isAuthenticated } from "../utils/auth";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Demo only — replace with real auth later
-    if (email === "admin@saveflox.com" && password === "admin123") {
-      login();
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await authAPI.login(email, password);
+      const token = response?.data?.token;
+      if (!token) {
+        throw new Error("Login failed. No token returned.");
+      }
+      login(token);
       navigate("/admin");
-    } else {
-      setError("Invalid email or password");
+    } catch (err) {
+      const message = err?.response?.data?.error || err?.message || "Invalid email or password.";
+      setError(message);
+    } finally {
+      setLoading(false);
     }
   };
+
+  // Redirect to admin if already authenticated
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate("/admin", { replace: true });
+    }
+  }, []);
 
   return (
     <section className="admin-login">
@@ -54,9 +73,9 @@ export default function AdminLogin() {
 
         {error && <div className="admin-login-error">{error}</div>}
 
-        <button type="submit" className="admin-login-btn">
+        <button type="submit" className="admin-login-btn" disabled={loading}>
           <LogIn size={16} />
-          Sign In
+          {loading ? "Signing in..." : "Sign In"}
         </button>
       </form>
     </section>

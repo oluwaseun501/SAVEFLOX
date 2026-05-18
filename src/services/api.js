@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { getToken, removeToken, setToken } from '../utils/auth';
 
-// Get API base URL from environment or default
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+// Get API base URL from environment or default (backend runs on port 5000)
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
 
 // Create axios instance
 const apiClient = axios.create({
@@ -57,6 +57,9 @@ export const authAPI = {
   
   getProfile: () =>
     apiClient.get('/admin/auth/profile'),
+  
+  updateEmail: (newEmail, password) =>
+    apiClient.post('/admin/auth/update-email', { new_email: newEmail, password }),
 };
 
 // DASHBOARD & ANALYTICS ENDPOINTS
