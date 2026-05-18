@@ -9,6 +9,10 @@ import FAQ from "./FAQ";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 
+const mountStyle = (delayMs) => ({
+  animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both`,
+});
+
 export default function Twitter() {
   const { t } = useTranslation();
   const [url, setUrl] = useState("");
@@ -30,92 +34,52 @@ export default function Twitter() {
   };
 
   const handlePreview = async () => {
-    if (!url) {
-      setError("Please enter a URL");
-      return;
-    }
-
+    if (!url) { setError("Please enter a URL"); return; }
     const platform = detectPlatformFromUrl(url);
-    if (!platform) {
-      setError("Unsupported platform. Please use TikTok, Instagram, Facebook, Pinterest, Snapchat, or Twitter");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setPreview(null);
-
+    if (!platform) { setError("Unsupported platform. Please use TikTok, Instagram, Facebook, Pinterest, Snapchat, or Twitter"); return; }
+    setLoading(true); setError(null); setPreview(null);
     try {
       const response = await fetch(`${API_BASE_URL}/preview`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          url: url,
-          platform: platform
-        }),
+        body: JSON.stringify({ url, platform }),
       });
-
       const data = await response.json();
-
-      // ALWAYS stop loading here, even on error
       setLoading(false);
-
       if (data.success) {
         setPreview(data);
-        if (data.formats && data.formats.length > 0) {
-          setQuality(data.formats[0].quality);
-        }
+        if (data.formats && data.formats.length > 0) setQuality(data.formats[0].quality);
       } else {
-        // Show the actual error from backend
         setError(data.error || "Failed to fetch video info");
-        console.error("Preview error:", data.error);
       }
     } catch (err) {
       setLoading(false);
       setError("Network error. Please try again.");
-      console.error("Fetch error:", err);
     }
   };
 
   const handleDownload = async () => {
     if (!url || !preview) return;
-
     setDownloading(true);
-
     try {
       const response = await fetch(`${API_BASE_URL}/download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: url,
-          platform: "twitter",
-          quality: quality,
-          format_type: "video"
-        }),
+        body: JSON.stringify({ url, platform: "twitter", quality, format_type: "video" }),
       });
-
-      if (!response.ok) {
-        throw new Error("Download failed");
-      }
-
+      if (!response.ok) throw new Error("Download failed");
       const blob = await response.blob();
       const contentDisposition = response.headers.get("Content-Disposition");
       let filename = "twitter_video.mp4";
-      
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="?([^"]+)"?/);
         if (match) filename = match[1];
       }
-
       const downloadUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(downloadUrl);
-      
+      a.href = downloadUrl; a.download = filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(downloadUrl);
     } catch (err) {
       setError("Download failed. Please try again.");
     } finally {
@@ -136,23 +100,24 @@ export default function Twitter() {
     <>
       <section className="twitter">
         <div className="twitter-content">
-          <div className="twitter-icon">
+
+          <div className="twitter-icon" style={mountStyle(0)}>
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
               <path d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.868-.4.69-.63 1.49-.63 2.342 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.392.106-.803.162-1.227.162-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z"/>
             </svg>
           </div>
 
-          <h1 className="twitter-heading">
+          <h1 className="twitter-heading" style={mountStyle(150)}>
             {headingParts[0]}
             <span>Twitter/X</span>
             {headingParts[1]}
           </h1>
 
-          <p className="twitter-subtext">
+          <p className="twitter-subtext" style={mountStyle(300)}>
             {t("twitter_subtext")}
           </p>
 
-          <div className="twitter-card">
+          <div className="twitter-card" style={mountStyle(450)}>
             <div className="twitter-input-group">
               <div className="twitter-input-wrapper">
                 <Link size={18} className="twitter-input-icon" />
@@ -164,11 +129,7 @@ export default function Twitter() {
                   className="twitter-input"
                 />
               </div>
-              <button 
-                className="twitter-btn" 
-                onClick={handlePreview}
-                disabled={loading}
-              >
+              <button className="twitter-btn" onClick={handlePreview} disabled={loading}>
                 {loading ? <Loader size={18} className="spinner" /> : <Download size={18} />}
                 {loading ? "Analyzing..." : t("download")}
               </button>
@@ -178,7 +139,7 @@ export default function Twitter() {
               <span className="twitter-options-label">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="3"/>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                 </svg>
                 {t("options")}:
               </span>
@@ -188,11 +149,7 @@ export default function Twitter() {
                 {t("video_mp4")}
               </button>
 
-              <select
-                className="twitter-quality-select"
-                value={quality}
-                onChange={(e) => setQuality(e.target.value)}
-              >
+              <select className="twitter-quality-select" value={quality} onChange={(e) => setQuality(e.target.value)}>
                 <option>4K Ultra HD</option>
                 <option>1080p HD</option>
                 <option>720p</option>
@@ -201,9 +158,8 @@ export default function Twitter() {
             </div>
           </div>
 
-          {/* Preview Section */}
           {preview && (
-            <div className="twitter-preview">
+            <div className="twitter-preview" style={mountStyle(0)}>
               <div className="preview-header">
                 <img src={preview.thumbnail} alt="Preview" className="preview-thumbnail" />
                 <div className="preview-info">
@@ -230,11 +186,7 @@ export default function Twitter() {
                     </button>
                   ))}
                 </div>
-                <button 
-                  className="twitter-download-btn"
-                  onClick={handleDownload}
-                  disabled={downloading}
-                >
+                <button className="twitter-download-btn" onClick={handleDownload} disabled={downloading}>
                   {downloading ? <Loader size={18} className="spinner" /> : <Download size={18} />}
                   {downloading ? "Downloading..." : "Download Now"}
                 </button>
@@ -243,10 +195,11 @@ export default function Twitter() {
           )}
 
           {error && (
-            <div className="twitter-error">
+            <div className="twitter-error" style={mountStyle(0)}>
               <span>❌ {error}</span>
             </div>
           )}
+
         </div>
       </section>
 

@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
@@ -31,6 +30,8 @@ import Copyright from "./pages/Copyright";
 import Contact from "./pages/Contact";
 
 import { isAuthenticated } from "./utils/auth";
+import { useEffect, useState } from "react";
+import GlideIn from "./components/GlideIn";
 
 function ProtectedAdmin({ children }) {
   return isAuthenticated() ? children : <Navigate to="/login" replace />;
@@ -39,13 +40,13 @@ function ProtectedAdmin({ children }) {
 function Home() {
   return (
     <>
-      <Hero />
+      <GlideIn><Hero /></GlideIn>
       <AdSlot slot="home-top" format="leaderboard" />
-      <WhyChoose />
+      <GlideIn><WhyChoose /></GlideIn>
       <AdSlot slot="home-bottom" format="leaderboard" />
-      <HowItWorks />
+      <GlideIn><HowItWorks /></GlideIn>
       <AdSlot slot="home-bottom" format="leaderboard" />
-      <FAQ />
+      <GlideIn><FAQ /></GlideIn>
     </>
   );
 }
@@ -126,7 +127,6 @@ function App() {
     },
   };
 
-  // Scroll to top + skeleton loader on every route change
   useEffect(() => {
     if ("scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
@@ -146,6 +146,7 @@ function App() {
 
   return (
     <>
+      <TopProgressBar />
       <TopProgressBar />
       {!isAdmin && <Navbar />}
 
@@ -326,7 +327,6 @@ function App() {
           />
         </Routes>
       )}
-
       {!isAdmin && <Footer />}
     </>
   );

@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "../styles/Footer.css";
 import logo from "../assets/logo.png";
+import GlideIn from "./GlideIn";
 
-
-const WHATSAPP_NUMBER = "1234567890"; // <-- replace with your number, no "+" or spaces
+const WHATSAPP_NUMBER = "1234567890";
 
 export default function Footer() {
   const { t } = useTranslation();
@@ -48,52 +48,60 @@ export default function Footer() {
     <footer className="footer">
       <div className="footer-container">
         <div className="footer-top">
-          <div className="footer-brand">
-            <div className="footer-logo">
-             <Link to="/">
-          <img src={logo} alt="SaveFlux" className="navbar-logo-img" />
-        </Link>
-              <span className="footer-logo-text">
-                Save<span>Flox</span>
-              </span>
-            </div>
-            <p className="footer-tagline">{t("footer_tagline")}</p>
-            <div className="footer-socials">
-              <a href="#" aria-label="Twitter" className="footer-social"><FaTwitter size={14} /></a>
-              <a href="#" aria-label="Instagram" className="footer-social"><FaInstagram size={14} /></a>
-              <a href="#" aria-label="Facebook" className="footer-social"><FaFacebookF size={14} /></a>
-              <a href="#" aria-label="TikTok" className="footer-social"><FaTiktok size={14} /></a>
-            </div>
-          </div>
 
+          {/* Brand glides in first */}
+          <GlideIn delay={0}>
+            <div className="footer-brand">
+              <div className="footer-logo">
+                <Link to="/">
+                  <img src={logo} alt="SaveFlux" className="navbar-logo-img" />
+                </Link>
+                <span className="footer-logo-text">
+                  Save<span>Flox</span>
+                </span>
+              </div>
+              <p className="footer-tagline">{t("footer_tagline")}</p>
+              <div className="footer-socials">
+                <a href="#" aria-label="Twitter" className="footer-social"><FaTwitter size={14} /></a>
+                <a href="#" aria-label="Instagram" className="footer-social"><FaInstagram size={14} /></a>
+                <a href="#" aria-label="Facebook" className="footer-social"><FaFacebookF size={14} /></a>
+                <a href="#" aria-label="TikTok" className="footer-social"><FaTiktok size={14} /></a>
+              </div>
+            </div>
+          </GlideIn>
+
+          {/* Each column glides in with staggered delay */}
           {sections.map((section, idx) => (
-            <div className="footer-column" key={idx}>
-              <h4 className="footer-column-title">{section.title}</h4>
-              <ul className="footer-links">
-                {section.links.map((link, i) => (
-                  <li key={i}>
-                    {link.external ? (
-                      <a
-                        href={link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {link.label}
-                      </a>
-                    ) : (
-                      <Link to={link.to}>{link.label}</Link>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <GlideIn key={idx} delay={(idx + 1) * 120}>
+              <div className="footer-column">
+                <h4 className="footer-column-title">{section.title}</h4>
+                <ul className="footer-links">
+                  {section.links.map((link, i) => (
+                    <li key={i}>
+                      {link.external ? (
+                        <a href={link.href} target="_blank" rel="noopener noreferrer">
+                          {link.label}
+                        </a>
+                      ) : (
+                        <Link to={link.to}>{link.label}</Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </GlideIn>
           ))}
+
         </div>
 
-        <div className="footer-bottom">
-          <p>{t("footer_copyright")}</p>
-          <p>{t("footer_disclaimer")}</p>
-        </div>
+        {/* Bottom bar glides in last */}
+        <GlideIn delay={400}>
+          <div className="footer-bottom">
+            <p>{t("footer_copyright")}</p>
+            <p>{t("footer_disclaimer")}</p>
+          </div>
+        </GlideIn>
+
       </div>
     </footer>
   );

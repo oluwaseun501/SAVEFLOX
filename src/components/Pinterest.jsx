@@ -9,6 +9,10 @@ import AdSlot from "./AdSlot";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 
+const mountStyle = (delayMs) => ({
+  animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both`,
+});
+
 export default function Pinterest() {
   const { t } = useTranslation();
   const [url, setUrl] = useState("");
@@ -30,83 +34,52 @@ export default function Pinterest() {
   };
 
   const handlePreview = async () => {
-  if (!url) {
-    setError("Please enter a URL");
-    return;
-  }
-
-  const platform = detectPlatformFromUrl(url);
-  if (!platform) {
-    setError("Unsupported platform. Please use TikTok, Instagram, Facebook, Pinterest, Snapchat, or Twitter");
-    return;
-  }
-
-  setLoading(true);
-  setError(null);
-  setPreview(null);
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/preview`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        url: url,
-        platform: platform
-      }),
-    });
-
-    const data = await response.json();
-
-    // ALWAYS stop loading here, even on error
-    setLoading(false);
-
-    if (data.success) {
-      setPreview(data);
-      if (data.formats && data.formats.length > 0) {
-        setQuality(data.formats[0].quality);
-      }
-    } else {
-      // Show the actual error from backend
-      setError(data.error || "Failed to fetch video info");
-      console.error("Preview error:", data.error);
+    if (!url) { setError("Please enter a URL"); return; }
+    const platform = detectPlatformFromUrl(url);
+    if (!platform) {
+      setError("Unsupported platform. Please use TikTok, Instagram, Facebook, Pinterest, Snapchat, or Twitter");
+      return;
     }
-  } catch (err) {
-    setLoading(false);
-    setError("Network error. Please try again.");
-    console.error("Fetch error:", err);
-  }
-};
+    setLoading(true); setError(null); setPreview(null);
+    try {
+      const response = await fetch(`${API_BASE_URL}/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url, platform: platform }),
+      });
+      const data = await response.json();
+      setLoading(false);
+      if (data.success) {
+        setPreview(data);
+        if (data.formats && data.formats.length > 0) setQuality(data.formats[0].quality);
+      } else {
+        setError(data.error || "Failed to fetch video info");
+        console.error("Preview error:", data.error);
+      }
+    } catch (err) {
+      setLoading(false);
+      setError("Network error. Please try again.");
+      console.error("Fetch error:", err);
+    }
+  };
 
   const handleDownload = async () => {
     if (!url || !preview) return;
-
     setDownloading(true);
-
     try {
       const response = await fetch(`${API_BASE_URL}/download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: url,
-          platform: "pinterest",
-          quality: quality,
-          format_type: "video"
-        }),
+        body: JSON.stringify({ url: url, platform: "pinterest", quality: quality, format_type: "video" }),
       });
-
-      if (!response.ok) {
-        throw new Error("Download failed");
-      }
-
+      if (!response.ok) throw new Error("Download failed");
       const blob = await response.blob();
       const contentDisposition = response.headers.get("Content-Disposition");
       let filename = "pinterest_video.mp4";
-      
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="?([^"]+)"?/);
         if (match) filename = match[1];
       }
-
       const downloadUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = downloadUrl;
@@ -115,7 +88,6 @@ export default function Pinterest() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(downloadUrl);
-      
     } catch (err) {
       setError("Download failed. Please try again.");
     } finally {
@@ -129,23 +101,24 @@ export default function Pinterest() {
     <>
       <section className="pinterest">
         <div className="pinterest-content">
-          <div className="pinterest-icon">
+
+          <div className="pinterest-icon" style={mountStyle(0)}>
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0C5.373 0 0 5.372 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/>
+              <path d="M12 0C5.373 0 0 5.372 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.632-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/>
             </svg>
           </div>
 
-          <h1 className="pinterest-heading">
+          <h1 className="pinterest-heading" style={mountStyle(150)}>
             {headingParts[0]}
             <span>Pinterest</span>
             {headingParts[1]}
           </h1>
 
-          <p className="pinterest-subtext">
+          <p className="pinterest-subtext" style={mountStyle(300)}>
             {t("pinterest_subtext")}
           </p>
 
-          <div className="pinterest-card">
+          <div className="pinterest-card" style={mountStyle(450)}>
             <div className="pinterest-input-group">
               <div className="pinterest-input-wrapper">
                 <Link size={18} className="pinterest-input-icon" />
@@ -157,11 +130,7 @@ export default function Pinterest() {
                   className="pinterest-input"
                 />
               </div>
-              <button 
-                className="pinterest-btn" 
-                onClick={handlePreview}
-                disabled={loading}
-              >
+              <button className="pinterest-btn" onClick={handlePreview} disabled={loading}>
                 {loading ? <Loader size={18} className="spinner" /> : <Download size={18} />}
                 {loading ? "Analyzing..." : t("download")}
               </button>
@@ -171,7 +140,7 @@ export default function Pinterest() {
               <span className="pinterest-options-label">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="3"/>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                 </svg>
                 {t("options")}:
               </span>
@@ -194,9 +163,8 @@ export default function Pinterest() {
             </div>
           </div>
 
-          {/* Preview Section */}
           {preview && (
-            <div className="pinterest-preview">
+            <div className="pinterest-preview" style={mountStyle(0)}>
               <div className="preview-header">
                 <img src={preview.thumbnail} alt="Preview" className="preview-thumbnail" />
                 <div className="preview-info">
@@ -218,7 +186,7 @@ export default function Pinterest() {
                     </button>
                   ))}
                 </div>
-                <button 
+                <button
                   className="pinterest-download-btn"
                   onClick={handleDownload}
                   disabled={downloading}
@@ -231,10 +199,11 @@ export default function Pinterest() {
           )}
 
           {error && (
-            <div className="pinterest-error">
+            <div className="pinterest-error" style={mountStyle(0)}>
               <span>❌ {error}</span>
             </div>
           )}
+
         </div>
       </section>
 

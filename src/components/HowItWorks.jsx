@@ -1,6 +1,7 @@
 import { Link2, SlidersHorizontal, Download } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import "../styles/HowItWorks.css";
+import GlideIn from "./GlideIn";
 
 export default function HowItWorks() {
   const { t } = useTranslation();
@@ -29,23 +30,29 @@ export default function HowItWorks() {
   return (
     <section className="how-it-works">
       <div className="how-container">
-        {/* Header */}
-        <div className="how-header">
-          <h2 className="how-title">{t("how_title")}</h2>
-          <p className="how-subtitle">{t("how_subtitle")}</p>
-        </div>
 
-        {/* Steps */}
+        {/* Header glides in */}
+        <GlideIn>
+          <div className="how-header">
+            <h2 className="how-title">{t("how_title")}</h2>
+            <p className="how-subtitle">{t("how_subtitle")}</p>
+          </div>
+        </GlideIn>
+
+        {/* Each step glides in with staggered delay */}
         <div className="how-steps">
           {steps.map((s, idx) => (
-            <div className="how-step" key={idx}>
-              <div className="how-step-icon">{s.icon}</div>
-              <span className="how-step-badge">{s.step}</span>
-              <h3 className="how-step-title">{s.title}</h3>
-              <p className="how-step-description">{s.description}</p>
-            </div>
+            <GlideIn key={idx} delay={idx * 150}>
+              <div className="how-step">
+                <div className="how-step-icon">{s.icon}</div>
+                <span className="how-step-badge">{s.step}</span>
+                <h3 className="how-step-title">{s.title}</h3>
+                <p className="how-step-description">{s.description}</p>
+              </div>
+            </GlideIn>
           ))}
         </div>
+
       </div>
     </section>
   );

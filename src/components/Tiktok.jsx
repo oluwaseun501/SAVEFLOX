@@ -10,6 +10,10 @@ import FAQ from "./FAQ";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 
+const mountStyle = (delayMs) => ({
+  animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both`,
+});
+
 export default function Tiktok() {
   const { t } = useTranslation();
   const [url, setUrl] = useState("");
@@ -30,96 +34,53 @@ export default function Tiktok() {
     return null;
   };
 
-  // Get video preview first
   const handlePreview = async () => {
-  if (!url) {
-    setError("Please enter a URL");
-    return;
-  }
-
-  const platform = detectPlatformFromUrl(url);
-  if (!platform) {
-    setError("Unsupported platform. Please use TikTok, Instagram, Facebook, Pinterest, Snapchat, or Twitter");
-    return;
-  }
-
-  setLoading(true);
-  setError(null);
-  setPreview(null);
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/preview`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        url: url,
-        platform: platform
-      }),
-    });
-
-    const data = await response.json();
-
-    // ALWAYS stop loading here, even on error
-    setLoading(false);
-
-    if (data.success) {
-      setPreview(data);
-      if (data.formats && data.formats.length > 0) {
-        setQuality(data.formats[0].quality);
+    if (!url) { setError("Please enter a URL"); return; }
+    const platform = detectPlatformFromUrl(url);
+    if (!platform) { setError("Unsupported platform. Please use TikTok, Instagram, Facebook, Pinterest, Snapchat, or Twitter"); return; }
+    setLoading(true); setError(null); setPreview(null);
+    try {
+      const response = await fetch(`${API_BASE_URL}/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, platform }),
+      });
+      const data = await response.json();
+      setLoading(false);
+      if (data.success) {
+        setPreview(data);
+        if (data.formats && data.formats.length > 0) setQuality(data.formats[0].quality);
+      } else {
+        setError(data.error || "Failed to fetch video info");
       }
-    } else {
-      // Show the actual error from backend
-      setError(data.error || "Failed to fetch video info");
-      console.error("Preview error:", data.error);
+    } catch (err) {
+      setLoading(false);
+      setError("Network error. Please try again.");
     }
-  } catch (err) {
-    setLoading(false);
-    setError("Network error. Please try again.");
-    console.error("Fetch error:", err);
-  }
-};
+  };
 
-  // Download after preview
   const handleDownload = async () => {
     if (!url || !preview) return;
-
     setDownloading(true);
-
     try {
       const response = await fetch(`${API_BASE_URL}/download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: url,
-          platform: "tiktok",
-          quality: quality,
-          format_type: "video"
-        }),
+        body: JSON.stringify({ url, platform: "tiktok", quality, format_type: "video" }),
       });
-
-      if (!response.ok) {
-        throw new Error("Download failed");
-      }
-
-      // Get the blob and trigger download
+      if (!response.ok) throw new Error("Download failed");
       const blob = await response.blob();
       const contentDisposition = response.headers.get("Content-Disposition");
       let filename = "tiktok_video.mp4";
-      
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="?([^"]+)"?/);
         if (match) filename = match[1];
       }
-
       const downloadUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(downloadUrl);
-      
+      a.href = downloadUrl; a.download = filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(downloadUrl);
     } catch (err) {
       setError("Download failed. Please try again.");
     } finally {
@@ -133,19 +94,22 @@ export default function Tiktok() {
     <>
       <section className="tiktok">
         <div className="tiktok-content">
-          <div className="tiktok-icon">
+
+          <div className="tiktok-icon" style={mountStyle(0)}>
             <Music2 size={28} />
           </div>
 
-          <h1 className="tiktok-heading">
+          <h1 className="tiktok-heading" style={mountStyle(150)}>
             {headingParts[0]}
             <span>TikTok</span>
             {headingParts[1]}
           </h1>
 
-          <p className="tiktok-subtext">{t("tiktok_subtext")}</p>
+          <p className="tiktok-subtext" style={mountStyle(300)}>
+            {t("tiktok_subtext")}
+          </p>
 
-          <div className="tiktok-card">
+          <div className="tiktok-card" style={mountStyle(450)}>
             <div className="tiktok-input-group">
               <div className="tiktok-input-wrapper">
                 <Link size={18} className="tiktok-input-icon" />
@@ -157,11 +121,7 @@ export default function Tiktok() {
                   className="tiktok-input"
                 />
               </div>
-              <button 
-                className="tiktok-btn" 
-                onClick={handlePreview}
-                disabled={loading}
-              >
+              <button className="tiktok-btn" onClick={handlePreview} disabled={loading}>
                 {loading ? <Loader size={18} className="spinner" /> : <Download size={18} />}
                 {loading ? "Analyzing..." : t("download")}
               </button>
@@ -171,7 +131,7 @@ export default function Tiktok() {
               <span className="tiktok-options-label">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="3"/>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                 </svg>
                 {t("options")}:
               </span>
@@ -181,11 +141,7 @@ export default function Tiktok() {
                 {t("video_mp4")}
               </button>
 
-              <select
-                className="tiktok-quality-select"
-                value={quality}
-                onChange={(e) => setQuality(e.target.value)}
-              >
+              <select className="tiktok-quality-select" value={quality} onChange={(e) => setQuality(e.target.value)}>
                 <option>4K Ultra HD</option>
                 <option>1080p HD</option>
                 <option>720p</option>
@@ -194,9 +150,8 @@ export default function Tiktok() {
             </div>
           </div>
 
-          {/* Preview Section - Shows after analysis */}
           {preview && (
-            <div className="tiktok-preview">
+            <div className="tiktok-preview" style={mountStyle(0)}>
               <div className="preview-header">
                 <img src={preview.thumbnail} alt="Preview" className="preview-thumbnail" />
                 <div className="preview-info">
@@ -219,11 +174,7 @@ export default function Tiktok() {
                     </button>
                   ))}
                 </div>
-                <button 
-                  className="tiktok-download-btn"
-                  onClick={handleDownload}
-                  disabled={downloading}
-                >
+                <button className="tiktok-download-btn" onClick={handleDownload} disabled={downloading}>
                   {downloading ? <Loader size={18} className="spinner" /> : <Download size={18} />}
                   {downloading ? "Downloading..." : "Download Now"}
                 </button>
@@ -231,12 +182,12 @@ export default function Tiktok() {
             </div>
           )}
 
-          {/* Error Message */}
           {error && (
-            <div className="tiktok-error">
+            <div className="tiktok-error" style={mountStyle(0)}>
               <span>❌ {error}</span>
             </div>
           )}
+
         </div>
       </section>
 
