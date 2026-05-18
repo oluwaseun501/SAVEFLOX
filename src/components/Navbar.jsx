@@ -211,6 +211,7 @@ export default function Navbar() {
           </div>
         </div>
 
+
         <button
           className="navbar-download-btn mobile-full"
           onClick={handleInstall}
