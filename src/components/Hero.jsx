@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Download, Link, Globe, Video, Loader, Eye } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import "../styles/Hero.css";
+import DotsLoader from "./DotsLoader";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 
@@ -19,6 +20,8 @@ export default function Hero() {
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadSpeed, setDownloadSpeed] = useState(0);
+  const [pasteHint, setPasteHint] = useState("");
+  const [slowWarning, setSlowWarning] = useState(false);
 
   const abortControllerRef = useRef(null);
 
@@ -33,11 +36,33 @@ export default function Hero() {
     return null;
   };
 
+  const handlePasteOrClear = async () => {
+    if (url) {
+      setUrl("");
+      setPreview(null);
+      setError(null);
+      setPasteHint("");
+    } else {
+      try {
+        const text = await navigator.clipboard.readText();
+        setUrl(text);
+        setPasteHint("");
+      } catch {
+        setPasteHint("Use Ctrl+V to paste");
+        setTimeout(() => setPasteHint(""), 3000);
+      }
+    }
+  };
+
   const handlePreview = async () => {
     if (!url) { setError("Please enter a URL"); return; }
     const platform = detectPlatformFromUrl(url);
     if (!platform) { setError("Unsupported platform. Please use TikTok, Instagram, Facebook, Pinterest, or Snapchat"); return; }
+
+    setSlowWarning(false);
+    const slowTimer = setTimeout(() => setSlowWarning(true), 5000);
     setLoading(true); setError(null); setPreview(null);
+
     try {
       const response = await fetch(`${API_BASE_URL}/preview`, {
         method: "POST",
@@ -45,16 +70,18 @@ export default function Hero() {
         body: JSON.stringify({ url, platform }),
       });
       const data = await response.json();
-      setLoading(false);
       if (data.success) {
         setPreview(data);
         if (data.formats && data.formats.length > 0) setQuality(data.formats[0].quality);
       } else {
         setError(data.error || "Failed to fetch video info");
       }
-    } catch (err) {
-      setLoading(false);
+    } catch {
       setError("Network error. Please try again.");
+    } finally {
+      clearTimeout(slowTimer);
+      setSlowWarning(false);
+      setLoading(false);
     }
   };
 
@@ -126,7 +153,6 @@ export default function Hero() {
     <section className="hero">
       <div className="hero-content">
 
-        {/* Each element glides in with staggered delay */}
         <div className="hero-icon" style={mountStyle(0)}>
           <Globe size={28} />
         </div>
@@ -151,10 +177,12 @@ export default function Hero() {
                 placeholder={t("paste_placeholder")}
                 className="hero-input"
               />
+              <button className="hero-paste-btn" onClick={handlePasteOrClear}>
+                {url ? "Clear" : "Paste"}
+              </button>
             </div>
             <button className="hero-btn" onClick={handlePreview} disabled={loading}>
-              {loading ? <Loader size={18} className="spinner" /> : <Download size={18} />}
-              {loading ? "Analyzing..." : t("download")}
+              {loading ? "Please wait..." : <><Download size={18} /> {t("download")}</>}
             </button>
           </div>
 
@@ -162,7 +190,7 @@ export default function Hero() {
             <span className="hero-options-label">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
               </svg>
               {t("options")}:
             </span>
@@ -193,6 +221,10 @@ export default function Hero() {
             </select>
           </div>
         </div>
+
+        {pasteHint && <p className="hero-paste-hint">{pasteHint}</p>}
+        {loading && <DotsLoader />}
+        {slowWarning && <p className="hero-slow-msg">Taking longer than usual, please wait...</p>}
 
         {downloading && (
           <div className="hero-download-progress" style={mountStyle(0)}>

@@ -1035,3 +1035,118 @@
   font-weight: 500;
   font-size: 0.85rem;
 }
+
+/* Error */
+.mp3-error {
+  width: 100%;
+  max-width: 720px;
+  padding: 0.85rem 1.25rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.dark .mp3-error {
+  background-color: #1e0a0a;
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+/* Hint text under sliders */
+.mp3-hint {
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+.dark .mp3-hint {
+  color: #64748b;
+}
+
+/* Spinner */
+.mp3-spinner {
+  animation: mp3Spin 1s linear infinite;
+}
+
+@keyframes mp3Spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Bouncing dots loader */
+.mp3-dots-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.25rem 0;
+}
+
+.mp3-dots-loader span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  animation: mp3Bounce 0.6s ease-in-out infinite alternate;
+}
+
+.mp3-dots-loader span:nth-child(1) {
+  background-color: #1d4ed8;
+  animation-delay: 0s;
+}
+
+.mp3-dots-loader span:nth-child(2) {
+  background-color: #10b981;
+  animation-delay: 0.15s;
+}
+
+.mp3-dots-loader span:nth-child(3) {
+  background-color: #22c55e;
+  animation-delay: 0.3s;
+}
+
+@keyframes mp3Bounce {
+  from { transform: translateY(0px); opacity: 0.6; }
+  to   { transform: translateY(-12px); opacity: 1; }
+}
+
+.mp3-paste-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 7px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.mp3-paste-btn:hover {
+  border-color: #1d4ed8;
+  color: #1d4ed8;
+}
+
+.dark .mp3-paste-btn {
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+.dark .mp3-paste-btn:hover {
+  border-color: #3b82f6;
+  color: #60a5fa;
+}
+
+.mp3-paste-hint {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 0.4rem;
+  text-align: center;
+}
+.dark .mp3-paste-hint {
+  color: #94a3b8;
+}

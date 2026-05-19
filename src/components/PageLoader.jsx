@@ -1,34 +1,27 @@
+import { useEffect, useState } from "react";
+
 export default function PageLoader() {
+  const [progress, setProgress] = useState(10);
+
+  useEffect(() => {
+    const intervals = [
+      setTimeout(() => setProgress(30), 100),
+      setTimeout(() => setProgress(60), 400),
+      setTimeout(() => setProgress(80), 800),
+      setTimeout(() => setProgress(95), 1400),
+    ];
+    return () => intervals.forEach(clearTimeout);
+  }, []);
+
   return (
-    <div className="min-h-[calc(100vh-64px)] w-full bg-white dark:bg-gray-900">
-      <div className="max-w-5xl mx-auto px-4 pt-10 pb-16 animate-pulse">
-        {/* Hero skeleton */}
-        <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-xl mb-4 w-2/3 mx-auto" />
-        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-lg mb-8 w-1/2 mx-auto" />
-
-        {/* Input bar skeleton */}
-        <div className="h-14 bg-gray-200 dark:bg-gray-700 rounded-2xl mb-10" />
-
-
-
-
-        {/* Cards row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
-          <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl" />
-          <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl" />
-          <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl" />
-        </div>
-
-
-
-        {/* Text lines */}
-        <div className="space-y-3">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
-        </div>
+    <>
+      <div className="fixed top-0 left-0 w-full z-50 h-1 bg-transparent">
+        <div
+          className="h-full bg-gradient-to-r from-blue-500 to-green-400 transition-all duration-500 ease-out rounded-r-full"
+          style={{ width: `${progress}%` }}
+        />
       </div>
-    </div>
+      <div className="min-h-[calc(100vh-64px)] w-full bg-white dark:bg-gray-900" />
+    </>
   );
 }

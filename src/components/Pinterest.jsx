@@ -6,6 +6,7 @@ import WhyChoose from "./WhyChoose";
 import HowItWorks from "./HowItWorks";
 import FAQ from "./FAQ";
 import AdSlot from "./AdSlot";
+import DotsLoader from "./DotsLoader";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 
@@ -21,6 +22,8 @@ export default function Pinterest() {
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState(null);
   const [downloading, setDownloading] = useState(false);
+  const [pasteHint, setPasteHint] = useState("");
+  const [slowWarning, setSlowWarning] = useState(false);
 
   const detectPlatformFromUrl = (url) => {
     const urlLower = url.toLowerCase();
@@ -33,6 +36,24 @@ export default function Pinterest() {
     return null;
   };
 
+  const handlePasteOrClear = async () => {
+    if (url) {
+      setUrl("");
+      setPreview(null);
+      setError(null);
+      setPasteHint("");
+    } else {
+      try {
+        const text = await navigator.clipboard.readText();
+        setUrl(text);
+        setPasteHint("");
+      } catch {
+        setPasteHint("Use Ctrl+V to paste");
+        setTimeout(() => setPasteHint(""), 3000);
+      }
+    }
+  };
+
   const handlePreview = async () => {
     if (!url) { setError("Please enter a URL"); return; }
     const platform = detectPlatformFromUrl(url);
@@ -40,7 +61,11 @@ export default function Pinterest() {
       setError("Unsupported platform. Please use TikTok, Instagram, Facebook, Pinterest, Snapchat, or Twitter");
       return;
     }
+
+    setSlowWarning(false);
+    const slowTimer = setTimeout(() => setSlowWarning(true), 5000);
     setLoading(true); setError(null); setPreview(null);
+
     try {
       const response = await fetch(`${API_BASE_URL}/preview`, {
         method: "POST",
@@ -48,18 +73,18 @@ export default function Pinterest() {
         body: JSON.stringify({ url: url, platform: platform }),
       });
       const data = await response.json();
-      setLoading(false);
       if (data.success) {
         setPreview(data);
         if (data.formats && data.formats.length > 0) setQuality(data.formats[0].quality);
       } else {
         setError(data.error || "Failed to fetch video info");
-        console.error("Preview error:", data.error);
       }
-    } catch (err) {
-      setLoading(false);
+    } catch {
       setError("Network error. Please try again.");
-      console.error("Fetch error:", err);
+    } finally {
+      clearTimeout(slowTimer);
+      setSlowWarning(false);
+      setLoading(false);
     }
   };
 
@@ -88,7 +113,7 @@ export default function Pinterest() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(downloadUrl);
-    } catch (err) {
+    } catch {
       setError("Download failed. Please try again.");
     } finally {
       setDownloading(false);
@@ -129,10 +154,12 @@ export default function Pinterest() {
                   placeholder={t("paste_link", { platform: "Pinterest" })}
                   className="pinterest-input"
                 />
+                <button className="pinterest-paste-btn" onClick={handlePasteOrClear}>
+                  {url ? "Clear" : "Paste"}
+                </button>
               </div>
               <button className="pinterest-btn" onClick={handlePreview} disabled={loading}>
-                {loading ? <Loader size={18} className="spinner" /> : <Download size={18} />}
-                {loading ? "Analyzing..." : t("download")}
+                {loading ? "Please wait..." : <><Download size={18} /> {t("download")}</>}
               </button>
             </div>
 
@@ -140,7 +167,7 @@ export default function Pinterest() {
               <span className="pinterest-options-label">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="3"/>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                 </svg>
                 {t("options")}:
               </span>
@@ -162,6 +189,10 @@ export default function Pinterest() {
               </select>
             </div>
           </div>
+
+          {pasteHint && <p className="pinterest-paste-hint">{pasteHint}</p>}
+          {loading && <DotsLoader />}
+          {slowWarning && <p className="pinterest-slow-msg">Taking longer than usual, please wait...</p>}
 
           {preview && (
             <div className="pinterest-preview" style={mountStyle(0)}>

@@ -7,6 +7,7 @@ import AdSlot from "./AdSlot";
 import WhyChoose from "./WhyChoose";
 import HowItWorks from "./HowItWorks";
 import FAQ from "./FAQ";
+import DotsLoader from "./DotsLoader";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 
@@ -90,6 +91,24 @@ export default function Tiktok() {
 
   const headingParts = t("download_videos", { platform: "###" }).split("###");
 
+  const handlePasteOrClear = async () => {
+  if (url) {
+    setUrl("");
+    setPreview(null);
+    setError(null);
+     setPasteHint("");
+  } else {
+    try {
+      const text = await navigator.clipboard.readText();
+      setUrl(text);
+       setPasteHint("");
+    } catch {
+            setPasteHint("Use Ctrl+V to paste");
+      setTimeout(() => setPasteHint(""), 3000);
+    }
+  }
+};
+
   return (
     <>
       <section className="tiktok">
@@ -120,11 +139,13 @@ export default function Tiktok() {
                   placeholder={t("paste_link", { platform: "TikTok" })}
                   className="tiktok-input"
                 />
+                  <button className="tiktok-paste-btn" onClick={handlePasteOrClear}>
+    {url ? "Clear" : "Paste"}
+  </button>
               </div>
               <button className="tiktok-btn" onClick={handlePreview} disabled={loading}>
-                {loading ? <Loader size={18} className="spinner" /> : <Download size={18} />}
-                {loading ? "Analyzing..." : t("download")}
-              </button>
+  {loading ? "Please wait..." : <><Download size={18} /> {t("download")}</>}
+</button>
             </div>
 
             <div className="tiktok-options">
@@ -149,6 +170,8 @@ export default function Tiktok() {
               </select>
             </div>
           </div>
+
+          {loading && <DotsLoader />}
 
           {preview && (
             <div className="tiktok-preview" style={mountStyle(0)}>

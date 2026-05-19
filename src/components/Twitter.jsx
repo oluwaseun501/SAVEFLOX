@@ -6,6 +6,7 @@ import AdSlot from "./AdSlot";
 import WhyChoose from "./WhyChoose";
 import HowItWorks from "./HowItWorks";
 import FAQ from "./FAQ";
+import DotsLoader from "./DotsLoader";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 
@@ -21,7 +22,8 @@ export default function Twitter() {
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState(null);
   const [downloading, setDownloading] = useState(false);
-
+  const [pasteHint, setPasteHint] = useState("");
+  const [slowWarning, setSlowWarning] = useState(false);
   const detectPlatformFromUrl = (url) => {
     const urlLower = url.toLowerCase();
     if (urlLower.includes('tiktok.com')) return 'tiktok';
@@ -34,29 +36,37 @@ export default function Twitter() {
   };
 
   const handlePreview = async () => {
-    if (!url) { setError("Please enter a URL"); return; }
-    const platform = detectPlatformFromUrl(url);
-    if (!platform) { setError("Unsupported platform. Please use TikTok, Instagram, Facebook, Pinterest, Snapchat, or Twitter"); return; }
-    setLoading(true); setError(null); setPreview(null);
-    try {
-      const response = await fetch(`${API_BASE_URL}/preview`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, platform }),
-      });
-      const data = await response.json();
-      setLoading(false);
-      if (data.success) {
-        setPreview(data);
-        if (data.formats && data.formats.length > 0) setQuality(data.formats[0].quality);
-      } else {
-        setError(data.error || "Failed to fetch video info");
-      }
-    } catch (err) {
-      setLoading(false);
-      setError("Network error. Please try again.");
+  if (!url) { setError("Please enter a URL"); return; }
+  const platform = detectPlatformFromUrl(url);
+  if (!platform) { setError("Unsupported platform. Please use TikTok, Instagram, Facebook, Pinterest, Snapchat, or Twitter"); return; }
+
+  setSlowWarning(false);
+  const slowTimer = setTimeout(() => setSlowWarning(true), 5000);
+  setLoading(true);
+  setError(null);
+  setPreview(null);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/preview`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url, platform }),
+    });
+    const data = await response.json();
+    if (data.success) {
+      setPreview(data);
+      if (data.formats && data.formats.length > 0) setQuality(data.formats[0].quality);
+    } else {
+      setError(data.error || "Failed to fetch video info");
     }
-  };
+  } catch (err) {
+    setError("Network error. Please try again.");
+  } finally {
+    clearTimeout(slowTimer);
+    setSlowWarning(false);
+    setLoading(false);
+  }
+};
 
   const handleDownload = async () => {
     if (!url || !preview) return;
@@ -96,6 +106,24 @@ export default function Twitter() {
 
   const headingParts = t("download_videos", { platform: "###" }).split("###");
 
+const handlePasteOrClear = async () => {
+  if (url) {
+    setUrl("");
+    setPreview(null);
+    setError(null);
+    setPasteHint("");
+  } else {
+    try {
+      const text = await navigator.clipboard.readText();
+      setUrl(text);
+      setPasteHint("");
+    } catch {
+      setPasteHint("Use Ctrl+V to paste");
+      setTimeout(() => setPasteHint(""), 3000);
+    }
+  }
+};
+
   return (
     <>
       <section className="twitter">
@@ -128,11 +156,13 @@ export default function Twitter() {
                   placeholder={t("paste_link", { platform: "Twitter/X" })}
                   className="twitter-input"
                 />
+                <button className="twitter-paste-btn" onClick={handlePasteOrClear}>
+  {url ? "Clear" : "Paste"}
+</button>
               </div>
-              <button className="twitter-btn" onClick={handlePreview} disabled={loading}>
-                {loading ? <Loader size={18} className="spinner" /> : <Download size={18} />}
-                {loading ? "Analyzing..." : t("download")}
-              </button>
+             <button className="twitter-btn" onClick={handlePreview} disabled={loading}>
+  {loading ? "Please wait..." : <><Download size={18} /> {t("download")}</>}
+</button>
             </div>
 
             <div className="twitter-options">
@@ -157,6 +187,10 @@ export default function Twitter() {
               </select>
             </div>
           </div>
+
+          {pasteHint && <p className="twitter-paste-hint">{pasteHint}</p>}
+{loading && <DotsLoader />}
+{slowWarning && <p className="twitter-slow-msg">Taking longer than usual, please wait...</p>}
 
           {preview && (
             <div className="twitter-preview" style={mountStyle(0)}>

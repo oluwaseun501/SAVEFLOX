@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { Sun, Moon, Download, Menu, X, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -24,13 +24,47 @@ export default function Navbar() {
   const { isDark, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
-
   const [installPrompt, setInstallPrompt] = useState(null);
+  const langRef = useRef(null);
+  const mobileLangRef = useRef(null);
+
   useEffect(() => {
     const handler = (e) => { e.preventDefault(); setInstallPrompt(e); };
     window.addEventListener("beforeinstallprompt", handler);
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        langRef.current && !langRef.current.contains(e.target) &&
+        mobileLangRef.current && !mobileLangRef.current.contains(e.target)
+      ) {
+        setLangOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Close mobile menu on resize back to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 1100) {
+        setMenuOpen(false);
+        setLangOpen(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Prevent body scroll when menu is open
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [menuOpen]);
 
   const handleInstall = async () => {
     if (!installPrompt) {
@@ -62,112 +96,121 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="navbar">
-      {/* Logo */}
-      <div className="navbar-logo">
-        <Link to="/">
-          <img src={logo} alt="SaveFlux" className="navbar-logo-img" />
-        </Link>
-      </div>
+    <>
+      <nav className="navbar">
+        {/* Logo */}
+        <div className="navbar-logo">
+          <Link to="/" onClick={() => setMenuOpen(false)}>
+            <img src={logo} alt="SaveFlux" className="navbar-logo-img" />
+          </Link>
+        </div>
 
-      {/* Desktop Nav Links */}
-      <ul className="navbar-links">
-        {navLinks.map((link) => (
-          <li key={link.key}>
-            <NavLink
-              to={link.path}
-              className={({ isActive }) => (isActive ? "active" : "")}
-              end={link.path === "/"}
+        {/* Desktop Nav Links */}
+        <ul className="navbar-links">
+          {navLinks.map((link) => (
+            <li key={link.key}>
+              <NavLink
+                to={link.path}
+                className={({ isActive }) => (isActive ? "active" : "")}
+                end={link.path === "/"}
+              >
+                {t(link.key)}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+
+        {/* Right Side - Desktop */}
+        <div className="navbar-actions">
+          <div className="navbar-lang-wrapper" ref={langRef}>
+            <button
+              className="navbar-lang-btn"
+              onClick={() => setLangOpen(!langOpen)}
+              aria-label={t("language")}
             >
-              {t(link.key)}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
+              <Globe size={16} />
+              <span>{currentLang.flag} {currentLang.code.toUpperCase()}</span>
+            </button>
+            {langOpen && (
+              <ul className="navbar-lang-dropdown">
+                {LANGUAGES.map((lang) => (
+                  <li
+                    key={lang.code}
+                    className={lang.code === i18n.language ? "active" : ""}
+                    onClick={() => changeLanguage(lang.code)}
+                  >
+                    <span className="lang-flag">{lang.flag}</span>
+                    <span>{lang.label}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
-      {/* Right Side - Desktop */}
-      <div className="navbar-actions">
-        <div className="navbar-lang-wrapper">
-          <button
-            className="navbar-lang-btn"
-            onClick={() => setLangOpen(!langOpen)}
-            aria-label={t("language")}
-          >
-            <Globe size={16} />
-            <span>{currentLang.flag} {currentLang.code.toUpperCase()}</span>
+          <button className="navbar-download-btn" onClick={handleInstall}>
+            <Download size={16} />
+            {t("installApp")}
           </button>
-          {langOpen && (
-            <ul className="navbar-lang-dropdown">
-              {LANGUAGES.map((lang) => (
-                <li
-                  key={lang.code}
-                  className={lang.code === i18n.language ? "active" : ""}
-                  onClick={() => changeLanguage(lang.code)}
-                >
-                  <span className="lang-flag">{lang.flag}</span>
-                  <span>{lang.label}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <button className="navbar-theme-toggle" onClick={toggleTheme}>
+            {isDark ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
         </div>
 
-        <button className="navbar-download-btn" onClick={handleInstall}>
-          <Download size={16} />
-          {t("installApp")}
-        </button>
-        <button className="navbar-theme-toggle" onClick={toggleTheme}>
-          {isDark ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
-      </div>
+        {/* Mobile Right Side */}
+        <div className="navbar-mobile-right">
+          <div className="navbar-lang-wrapper" ref={mobileLangRef}>
+            <button
+              className="navbar-lang-btn navbar-lang-btn-mobile"
+              onClick={() => setLangOpen(!langOpen)}
+              aria-label={t("language")}
+            >
+              <span>{currentLang.flag} {currentLang.code.toUpperCase()}</span>
+            </button>
+            {langOpen && (
+              <ul className="navbar-lang-dropdown navbar-lang-dropdown-mobile">
+                {LANGUAGES.map((lang) => (
+                  <li
+                    key={lang.code}
+                    className={lang.code === i18n.language ? "active" : ""}
+                    onClick={() => changeLanguage(lang.code)}
+                  >
+                    <span className="lang-flag">{lang.flag}</span>
+                    <span>{lang.label}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
-      {/* Mobile Right Side */}
-      <div className="navbar-mobile-right">
-        <div className="navbar-lang-wrapper">
-          <button
-            className="navbar-lang-btn navbar-lang-btn-mobile"
-            onClick={() => setLangOpen(!langOpen)}
-            aria-label={t("language")}
-          >
-            <span>{currentLang.flag} {currentLang.code.toUpperCase()}</span>
+          <button className="navbar-theme-toggle" onClick={toggleTheme}>
+            {isDark ? <Sun size={20} /> : <Moon size={20} />}
           </button>
-          {langOpen && (
-            <ul className="navbar-lang-dropdown navbar-lang-dropdown-mobile">
-              {LANGUAGES.map((lang) => (
-                <li
-                  key={lang.code}
-                  className={lang.code === i18n.language ? "active" : ""}
-                  onClick={() => changeLanguage(lang.code)}
-                >
-                  <span className="lang-flag">{lang.flag}</span>
-                  <span>{lang.label}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <button
+            className="navbar-hamburger"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Toggle menu"
+          >
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
+      </nav>
 
-        <button className="navbar-theme-toggle" onClick={toggleTheme}>
-          {isDark ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
-        <button
-          className="navbar-hamburger"
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          {menuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </div>
-
-      {/* Mobile Dropdown Menu — always mounted, animates open/close */}
+      {/* Overlay */}
       <div
-        className="navbar-mobile-menu"
+        className="navbar-overlay"
+        onClick={() => setMenuOpen(false)}
         style={{
           opacity: menuOpen ? 1 : 0,
-          transform: menuOpen ? "translateY(0)" : "translateY(-12px)",
           pointerEvents: menuOpen ? "all" : "none",
           visibility: menuOpen ? "visible" : "hidden",
-         transition: "opacity 0.55s ease, transform 0.55s ease, visibility 0.55s ease",
+          transition: "opacity 0.3s ease, visibility 0.3s ease",
         }}
+      />
+
+      {/* Mobile Dropdown Menu — outside <nav> so position: fixed works cleanly */}
+      <div
+        className={`navbar-mobile-menu${menuOpen ? " is-open" : ""}`}
+        aria-hidden={!menuOpen}
       >
         {navLinks.map((link, idx) => (
           <NavLink
@@ -177,23 +220,16 @@ export default function Navbar() {
             onClick={() => setMenuOpen(false)}
             className={({ isActive }) => (isActive ? "active" : "")}
             style={{
-              opacity: menuOpen ? 1 : 0,
-              transform: menuOpen ? "translateX(0)" : "translateX(-10px)",
-              transition: `opacity 0.45s ease ${idx * 80}ms, transform 0.8s ease ${idx * 80}ms`,
+              transitionDelay: menuOpen ? `${idx * 40}ms` : "0ms",
             }}
           >
             {t(link.key)}
           </NavLink>
         ))}
 
-        {/* Mobile language picker */}
         <div
           className="mobile-lang-section"
-          style={{
-            opacity: menuOpen ? 1 : 0,
-            transform: menuOpen ? "translateX(0)" : "translateX(-10px)",
-            transition: `opacity 0.45s ease ${navLinks.length * 80}ms, transform 0.45s ease ${navLinks.length * 80}ms`,
-          }}
+          style={{ transitionDelay: menuOpen ? `${navLinks.length * 40}ms` : "0ms" }}
         >
           <div className="mobile-lang-label">
             <Globe size={14} /> {t("language")}
@@ -211,21 +247,15 @@ export default function Navbar() {
           </div>
         </div>
 
-
-
         <button
           className="navbar-download-btn mobile-full"
-          onClick={handleInstall}
-          style={{
-            opacity: menuOpen ? 1 : 0,
-           transition: `opacity 0.45s ease ${(navLinks.length + 1) * 80}ms`,
-          }}
+          onClick={() => { handleInstall(); setMenuOpen(false); }}
+          style={{ transitionDelay: menuOpen ? `${(navLinks.length + 1) * 40}ms` : "0ms" }}
         >
           <Download size={16} />
           {t("installApp")}
         </button>
       </div>
-
-    </nav>
+    </>
   );
 }
