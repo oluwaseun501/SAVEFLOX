@@ -620,3 +620,14 @@
   margin-top: 0.4rem;
 }
 .dark .pinterest-paste-hint, .dark .pinterest-slow-msg { color: #94a3b8; }
+
+.pinterest-input-wrapper {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+.pinterest-input {
+  flex: 1;
+  min-width: 0;
+}

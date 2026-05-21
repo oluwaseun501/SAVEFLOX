@@ -628,3 +628,36 @@
   margin-top: -0.5rem;
   animation: fadeIn 0.4s ease;
 }
+
+
+.twitter-paste-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 7px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.twitter-paste-btn:hover { border-color: #1d9bf0; color: #1d9bf0; }
+.dark .twitter-paste-btn { border-color: #334155; color: #94a3b8; }
+.dark .twitter-paste-btn:hover { border-color: #3b82f6; color: #60a5fa; }
+
+.twitter-paste-hint, .twitter-slow-msg {
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-align: center;
+  margin-top: 0.4rem;
+}
+.dark .twitter-paste-hint, .dark .twitter-slow-msg { color: #94a3b8; }
+
+/* Fix: keeps paste btn inside the wrapper on mobile */
+.twitter-input {
+  flex: 1;
+  min-width: 0;
+}

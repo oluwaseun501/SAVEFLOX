@@ -525,3 +525,14 @@
   margin-top: 0.4rem;
 }
 .dark .hero-paste-hint, .dark .hero-slow-msg { color: #94a3b8; }
+
+.hero-input-wrapper {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+.hero-input {
+  flex: 1;
+  min-width: 0;
+}

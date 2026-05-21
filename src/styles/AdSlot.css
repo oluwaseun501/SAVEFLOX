@@ -4,6 +4,12 @@
   justify-content: center;
   margin: 2.5rem auto;
   padding: 0 1rem;
+  background-color: transparent;
+}
+
+.ad-slot-section {
+  width: 100%;
+  background-color: transparent;
 }
 
 .ad-placeholder {
@@ -41,10 +47,51 @@
   opacity: 0.7;
 }
 
-/* ===== Sizes ===== */
+/* ===== Placeholder sizes only ===== */
 .ad-leaderboard .ad-placeholder { max-width: 970px; height: 120px; }
 .ad-banner      .ad-placeholder { max-width: 728px;  height: 90px;  }
 .ad-rectangle   .ad-placeholder { max-width: 336px;  height: 280px; }
+
+/* ===== Image ad ===== */
+.ad-image-link {
+  display: block;
+  position: relative;
+  line-height: 0;
+  text-decoration: none;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Image links: max-width only, NO fixed height — let image ratio breathe */
+.ad-leaderboard .ad-image-link { max-width: 970px; height: auto; }
+.ad-banner      .ad-image-link { max-width: 728px;  height: auto; }
+.ad-rectangle   .ad-image-link { max-width: 336px;  height: auto; }
+
+.ad-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+  transition: opacity 0.2s;
+}
+
+.ad-image-link:hover .ad-image { opacity: 0.92; }
+
+.ad-image-badge {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  pointer-events: none;
+  font-family: 'Inter', sans-serif;
+}
 
 /* ===== Dark mode ===== */
 .dark .ad-placeholder {
@@ -62,11 +109,14 @@
 
 /* ===== Responsive ===== */
 @media (max-width: 800px) {
+  /* Placeholders only — NOT image links */
   .ad-leaderboard .ad-placeholder { height: 100px; }
-  .ad-rectangle .ad-placeholder   { height: 240px; }
+  .ad-rectangle   .ad-placeholder { height: 240px; }
 }
+
 @media (max-width: 480px) {
   .ad-slot { margin: 2rem auto; }
+  /* Placeholders only — NOT image links */
   .ad-leaderboard .ad-placeholder,
-  .ad-banner .ad-placeholder { height: 80px; }
+  .ad-banner      .ad-placeholder { height: 80px; }
 }

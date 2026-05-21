@@ -1,10 +1,36 @@
 @import "tailwindcss";
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
   font-family: 'Inter', sans-serif;
+  transition:
+    background-color 0.4s ease,
+    border-color 0.4s ease,
+    color 0.4s ease,
+    box-shadow 0.4s ease;
+}
+
+/* Exclude animation-driven elements from the global transition */
+.dots-loader span,
+.animate-fadeSlideIn,
+.spinner {
+  transition: none;
+}
+
+/* Light/dark base */
+body {
+  background-color: #ffffff;
+  color: #111827;
+}
+
+.dark body,
+.dark #root {
+  background-color: #0f172a;
+  color: #f1f5f9;
 }
 
 @keyframes fadeSlideIn {
@@ -38,6 +64,7 @@
 .dots-loader span:nth-child(1) { background-color: #1d4ed8; animation-delay: 0s; }
 .dots-loader span:nth-child(2) { background-color: #10b981; animation-delay: 0.15s; }
 .dots-loader span:nth-child(3) { background-color: #22c55e; animation-delay: 0.3s; }
+
 @keyframes dotsB {
   from { transform: translateY(0px); opacity: 0.6; }
   to   { transform: translateY(-12px); opacity: 1; }

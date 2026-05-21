@@ -1150,3 +1150,36 @@
 .dark .mp3-paste-hint {
   color: #94a3b8;
 }
+
+
+.mp3-paste-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 7px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.mp3-paste-btn:hover { border-color: #1d4ed8; color: #1d4ed8; }
+.dark .mp3-paste-btn { border-color: #334155; color: #94a3b8; }
+.dark .mp3-paste-btn:hover { border-color: #3b82f6; color: #60a5fa; }
+
+.mp3-paste-hint, .mp3-slow-msg {
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-align: center;
+  margin-top: 0.4rem;
+}
+.dark .mp3-paste-hint, .dark .mp3-slow-msg { color: #94a3b8; }
+
+/* Fix: keeps paste btn inside the wrapper on mobile */
+.mp3-input {
+  flex: 1;
+  min-width: 0;
+}

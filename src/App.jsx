@@ -32,6 +32,8 @@ import Contact from "./pages/Contact";
 import { isAuthenticated } from "./utils/auth";
 import { useEffect, useState } from "react";
 import GlideIn from "./components/GlideIn";
+import adsBanner from "./ads/ads1.jpg";
+
 
 function ProtectedAdmin({ children }) {
   return isAuthenticated() ? children : <Navigate to="/login" replace />;
@@ -41,7 +43,7 @@ function Home() {
   return (
     <>
       <GlideIn><Hero /></GlideIn>
-      <AdSlot slot="home-top" format="leaderboard" />
+      <AdSlot slot="home-top" format="leaderboard" image={adsBanner} />
       <GlideIn><WhyChoose /></GlideIn>
       <AdSlot slot="home-bottom" format="leaderboard" />
       <GlideIn><HowItWorks /></GlideIn>

@@ -8,6 +8,8 @@ import WhyChoose from "./WhyChoose";
 import HowItWorks from "./HowItWorks";
 import FAQ from "./FAQ";
 import DotsLoader from "./DotsLoader";
+import adsBanner from "../ads/ads1.jpg";
+
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 
@@ -214,7 +216,8 @@ export default function Tiktok() {
         </div>
       </section>
 
-      <AdSlot slot="tiktok-top" format="leaderboard" />
+     
+      <AdSlot slot="tiktok-top" format="leaderboard" image={adsBanner} />
       <WhyChoose />
       <AdSlot slot="tiktok-bottom" format="leaderboard" />
       <HowItWorks />
