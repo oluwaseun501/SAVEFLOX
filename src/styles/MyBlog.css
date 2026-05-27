@@ -353,8 +353,101 @@
   .ab-admin-info { display: none; }
   .ab-form-grid { grid-template-columns: 1fr; }
 }
-@media (max-width: 520px) {
-  .ab-stats { grid-template-columns: 1fr; }
-  .ab-header { flex-direction: column; align-items: flex-start; }
-  .ab-create-btn { align-self: stretch; justify-content: center; }
+/* ===================== Image Upload ===================== */
+.ab-image-upload-container {
+  display: flex; gap: 1rem; align-items: flex-start;
 }
+
+.ab-image-upload-box {
+  flex: 1; position: relative;
+  border: 2px dashed #cbd5e1; border-radius: 12px;
+  padding: 2rem 1rem; text-align: center;
+  background: #f8fafc; cursor: pointer;
+  transition: all 0.2s;
+}
+.ab-image-upload-box:hover {
+  border-color: #22c55e; background: #ecfdf5;
+}
+.dark .ab-image-upload-box {
+  background: #1e293b; border-color: #475569;
+}
+.dark .ab-image-upload-box:hover {
+  border-color: #4ade80; background: rgba(74, 222, 128, 0.08);
+}
+
+.ab-file-input-hidden {
+  display: none;
+}
+
+.ab-file-input-label {
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  cursor: pointer; user-select: none;
+}
+.ab-file-input-label svg {
+  color: #6b7280; transition: color 0.2s;
+}
+.ab-file-input-label span {
+  font-weight: 600; font-size: 0.9rem; color: #1e3a5f;
+}
+.ab-file-input-label small {
+  font-size: 0.8rem; color: #9ca3af;
+}
+.ab-image-upload-box:hover .ab-file-input-label svg { color: #22c55e; }
+.ab-image-upload-box:hover .ab-file-input-label span { color: #22c55e; }
+.dark .ab-file-input-label span { color: #f1f5f9; }
+.dark .ab-file-input-label small { color: #64748b; }
+
+.ab-image-preview-container {
+  position: relative; width: 120px; height: 120px;
+  border-radius: 12px; overflow: hidden;
+  background: #f1f5f9; border: 1px solid #e5e7eb;
+}
+.dark .ab-image-preview-container {
+  background: #1e293b; border-color: #334155;
+}
+
+.ab-image-preview-thumb {
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+.ab-image-remove-btn {
+  position: absolute; top: 4px; right: 4px;
+  width: 28px; height: 28px; border-radius: 6px;
+  background: #dc2626; color: #ffffff; border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.2s;
+  padding: 0;
+}
+.ab-image-remove-btn:hover { background: #b91c1c; }
+.ab-image-remove-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ab-btn-spinner {
+  display: inline-block; margin-right: 0.5rem;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ===================== Loading State ===================== */
+.ab-loading {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1rem; padding: 3rem 2rem; color: #6b7280;
+}
+.ab-spinner {
+  color: #22c55e; animation: spin 1s linear infinite;
+}
+.dark .ab-loading { color: #94a3b8; }
+
+/* ===================== Alert ===================== */
+.ab-alert {
+  padding: 0.85rem 1rem; border-radius: 12px;
+  display: flex; align-items: center; gap: 0.75rem;
+  font-size: 0.9rem; animation: slide-in 0.3s ease;
+}
+@keyframes slide-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+.ab-alert-error {
+  background: #fee2e2; color: #dc2626; border-left: 4px solid #dc2626;
+}
+.dark .ab-alert-error { background: rgba(220,38,38,0.15); }

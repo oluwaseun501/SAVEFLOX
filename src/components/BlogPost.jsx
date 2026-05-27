@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
 import { Calendar, Clock, User, ArrowLeft, ArrowRight, Tag } from "lucide-react";
-import { BLOG_POSTS } from "../data/blogPosts";
+import { blogAPI } from "../services/api";
 import "../styles/BlogPost.css";
 
 /* Tiny markdown -> HTML helper for our simple content (## headings, lists, paragraphs, **bold**) */
@@ -64,23 +64,65 @@ function renderContent(text) {
 
 export default function BlogPost() {
   const { slug } = useParams();
-  const post = BLOG_POSTS.find((p) => p.slug === slug);
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const viewIncrementedRef = useRef(false); // Track if we've already incremented view for this post
+
+  // Fetch post from backend API
+  useEffect(() => {
+    const fetchPost = async () => {
+      try {
+        setLoading(true);
+        viewIncrementedRef.current = false; // Reset when changing posts
+        const response = await blogAPI.getPublicPost(slug);
+        if (response?.data?.data) {
+          const postData = response.data.data;
+          setPost({
+            id: postData.id,
+            title: postData.title,
+            slug: postData.slug,
+            category: postData.category,
+            excerpt: postData.excerpt,
+            content: postData.content,
+            cover: postData.image,
+            author: postData.author || 'Admin',
+            date: new Date(postData.createdAt * 1000).toLocaleDateString(),
+            readTime: postData.read_time || 5,
+            views: postData.views || 0,
+          });
+        } else {
+          setError('Post not found');
+        }
+      } catch (err) {
+        console.error('Failed to fetch blog post:', err);
+        setError('Failed to load blog post');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPost();
+  }, [slug]);
+
+  // Increment view count only once per post visit
+  useEffect(() => {
+    if (post && !viewIncrementedRef.current) {
+      viewIncrementedRef.current = true;
+      // Call separate endpoint to increment view (fire and forget)
+      blogAPI.incrementPostView(post.id).catch(() => {
+        // Silently fail if increment doesn't work
+      });
+    }
+  }, [post?.id]);
 
   // Scroll to top on post change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [slug]);
 
-  if (!post) return <Navigate to="/blog" replace />;
-
-  const related = BLOG_POSTS
-    .filter((p) => p.slug !== post.slug && p.category === post.category)
-    .slice(0, 3);
-
-  // Fall back to most recent posts if no category match
-  const moreReads = related.length > 0
-    ? related
-    : BLOG_POSTS.filter((p) => p.slug !== post.slug).slice(0, 3);
+  if (loading) return <div className="bp-loading"><p>Loading...</p></div>;
+  if (error || !post) return <Navigate to="/blog" replace />;
 
   return (
     <article className="bp-shell">
@@ -106,39 +148,22 @@ export default function BlogPost() {
       </header>
 
       {/* Cover image */}
-      <div
-        className="bp-cover"
-        style={{ backgroundImage: `url(${post.cover})` }}
-        role="img"
-        aria-label={post.title}
-      />
+      {post.cover && (
+        <div
+          className="bp-cover"
+          style={{ backgroundImage: `url(${post.cover})` }}
+          role="img"
+          aria-label={post.title}
+        />
+      )}
 
       {/* Body */}
       <div className="bp-content">{renderContent(post.content)}</div>
 
-      {/* Related posts */}
-      {moreReads.length > 0 && (
-        <section className="bp-related">
-          <h2 className="bp-related-title">Continue reading</h2>
-          <div className="bp-related-grid">
-            {moreReads.map((p) => (
-              <Link key={p.id} to={`/blog/${p.slug}`} className="bp-related-card">
-                <div
-                  className="bp-related-image"
-                  style={{ backgroundImage: `url(${p.cover})` }}
-                />
-                <div className="bp-related-body">
-                  <span className="bp-related-cat">{p.category}</span>
-                  <h3>{p.title}</h3>
-                  <span className="bp-related-link">
-                    Read article <ArrowRight size={14} />
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Views count */}
+      {/* <div className="bp-views">
+        <p>📊 {post.views} {post.views === 1 ? 'view' : 'views'}</p>
+      </div> */}
     </article>
   );
 }

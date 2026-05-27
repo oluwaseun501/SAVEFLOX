@@ -7,7 +7,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api'
 // Create axios instance
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 60000, // Increased to 60 seconds to handle long downloads and operations
   headers: {
     'Content-Type': 'application/json',
   },
@@ -19,6 +19,10 @@ apiClient.interceptors.request.use(
     const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Don't set Content-Type for FormData - let browser set it automatically
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
     }
     return config;
   },
@@ -95,6 +99,9 @@ export const blogAPI = {
   
   getPublicPost: (id) =>
     apiClient.get(`/blog/posts/${id}`),
+  
+  incrementPostView: (id) =>
+    apiClient.post(`/blog/posts/${id}/view`),
   
   // Admin endpoints
   getAdminPosts: () =>
