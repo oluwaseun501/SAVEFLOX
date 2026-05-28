@@ -2,7 +2,8 @@ import axios from 'axios';
 import { getToken, removeToken, setToken } from '../utils/auth';
 
 // Get API base URL from environment or default (backend runs on port 5000)
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://server.saveflox.com/api';
+// const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
 
 // Create axios instance
 const apiClient = axios.create({
