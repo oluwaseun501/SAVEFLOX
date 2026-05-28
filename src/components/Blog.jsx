@@ -4,6 +4,7 @@ import { Calendar, Clock, ArrowRight, Search, Tag } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { blogAPI } from "../services/api";
 import "../styles/Blog.css";
+import DotsLoader from "./DotsLoader";
 
 const CATEGORIES = ["All", "TikTok", "Instagram", "Facebook", "MP3", "Tips", "Legal"];
 
@@ -16,38 +17,49 @@ export default function Blog() {
   const [error, setError] = useState(null);
 
   // Fetch blog posts from backend
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        setLoading(true);
-        const response = await blogAPI.getPublicPosts();
-        if (response?.data?.data?.posts) {
-          // Convert backend response to frontend format
-          const formattedPosts = response.data.data.posts.map(post => ({
-            id: post.id,
-            title: post.title,
-            slug: post.slug,
-            category: post.category,
-            excerpt: post.excerpt,
-            cover: post.image,
-            date: new Date(post.createdAt * 1000).toLocaleDateString(),
-            readTime: post.readTime || 5,
-            featured: post.featured,
-            status: post.status,
-            content: post.content,
-          }));
-          setPosts(formattedPosts.filter(p => p.status === "published"));
-        }
-      } catch (err) {
-        console.error("Failed to fetch blog posts:", err);
-        setError("Failed to load blog posts");
-      } finally {
-        setLoading(false);
-      }
-    };
+const CACHE_KEY = "blog_posts_cache";
 
-    fetchPosts();
-  }, []);
+useEffect(() => {
+  const fetchPosts = async () => {
+    // Show cached posts instantly if available
+    const cached = sessionStorage.getItem(CACHE_KEY);
+    if (cached) {
+      setPosts(JSON.parse(cached));
+      setLoading(false); // don't show spinner, load silently in background
+    } else {
+      setLoading(true);
+    }
+
+    try {
+      const response = await blogAPI.getPublicPosts();
+      if (response?.data?.data?.posts) {
+        const formattedPosts = response.data.data.posts.map(post => ({
+          id: post.id,
+          title: post.title,
+          slug: post.slug,
+          category: post.category,
+          excerpt: post.excerpt,
+          cover: post.image,
+          date: new Date(post.createdAt * 1000).toLocaleDateString(),
+          readTime: post.readTime || 5,
+          featured: post.featured,
+          status: post.status,
+          content: post.content,
+        }));
+        const published = formattedPosts.filter(p => p.status === "published");
+        setPosts(published);
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify(published)); // cache for this session
+      }
+    } catch (err) {
+      console.error("Failed to fetch blog posts:", err);
+      if (!cached) setError("Failed to load blog posts"); // only show error if nothing to display
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchPosts();
+}, []);
 
   const filtered = useMemo(() => {
     return posts.filter((p) => {
@@ -106,12 +118,11 @@ export default function Blog() {
         </div>
       )}
 
-      {loading && (
-        <div className="blog-loading">
-          <p>{t("loading")}</p>
-        </div>
-      )}
-
+     {loading && (
+  <div className="blog-loading">
+    <DotsLoader />
+  </div>
+)}
       {!loading && !error && (
         <>
           {/* Featured post */}

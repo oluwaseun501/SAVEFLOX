@@ -57,6 +57,7 @@ function App() {
   const location = useLocation();
   const { pathname } = location;
   const isAdmin = pathname.startsWith("/admin");
+const isAdminDomain = window.location.hostname === "admin.saveflox.com";
   const [loading, setLoading] = useState(false);
 
   const SITE_URL = "https://www.saveflox.com";
@@ -150,10 +151,20 @@ function App() {
     <>
       <TopProgressBar />
       <TopProgressBar />
-      {!isAdmin && <Navbar />}
+     {!isAdmin && !isAdminDomain && <Navbar />}
 
       {loading && !isAdmin ? (
         <PageLoader />
+        ) : isAdminDomain ? (
+  <Routes>
+    <Route path="/" element={<Navigate to="/login" replace />} />
+    <Route path="/login" element={<><Seo {...seo.login} /><AdminLogin /></>} />
+    <Route path="/admin" element={<ProtectedAdmin><Seo {...seo.admin} /><AdminDashboard /></ProtectedAdmin>} />
+    <Route path="/admin/analytics" element={<ProtectedAdmin><Analytics /></ProtectedAdmin>} />
+    <Route path="/admin/downloads" element={<ProtectedAdmin><DownloadLogs /></ProtectedAdmin>} />
+    <Route path="/admin/blog" element={<ProtectedAdmin><MyBlog /></ProtectedAdmin>} />
+    <Route path="*" element={<Navigate to="/login" replace />} />
+  </Routes>
       ) : (
         <Routes>
           <Route
@@ -329,7 +340,7 @@ function App() {
           />
         </Routes>
       )}
-      {!isAdmin && <Footer />}
+      {!isAdmin && !isAdminDomain && <Footer />}
     </>
   );
 }
