@@ -36,54 +36,53 @@ export default function Hero() {
     return null;
   };
 
-  const handlePasteOrClear = async () => {
-    if (url) {
-      setUrl("");
-      setPreview(null);
-      setError(null);
-      setPasteHint("");
-    } else {
-      try {
-        const text = await navigator.clipboard.readText();
-        setUrl(text);
-        setPasteHint("");
-      } catch {
-        setPasteHint("Use Ctrl+V to paste");
-        setTimeout(() => setPasteHint(""), 3000);
-      }
-    }
-  };
-
-  const handlePreview = async () => {
-    if (!url) { setError("Please enter a URL"); return; }
-    const platform = detectPlatformFromUrl(url);
-    if (!platform) { setError("Unsupported platform. Please use TikTok, Instagram, Facebook, Pinterest, or Snapchat"); return; }
-
-    setSlowWarning(false);
-    const slowTimer = setTimeout(() => setSlowWarning(true), 5000);
-    setLoading(true); setError(null); setPreview(null);
-
+const handlePasteOrClear = async () => {
+  if (url) {
+    setUrl(""); setPreview(null); setError(null); setPasteHint("");
+  } else {
     try {
-      const response = await fetch(`${API_BASE_URL}/preview`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, platform }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        setPreview(data);
-        if (data.formats && data.formats.length > 0) setQuality(data.formats[0].quality);
-      } else {
-        setError(data.error || "Failed to fetch video info");
-      }
+      const text = await navigator.clipboard.readText();
+      setUrl(text);
+      setPasteHint("");
+      if (text) handlePreview(text);
     } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      clearTimeout(slowTimer);
-      setSlowWarning(false);
-      setLoading(false);
+      setPasteHint("Use Ctrl+V to paste");
+      setTimeout(() => setPasteHint(""), 3000);
     }
-  };
+  }
+};
+
+const handlePreview = async (pastedUrl) => {
+  const targetUrl = (typeof pastedUrl === "string" ? pastedUrl : null) || url;
+  if (!targetUrl) { setError("Please enter a URL"); return; }
+  const platform = detectPlatformFromUrl(targetUrl);
+  if (!platform) { setError("Unsupported platform."); return; }
+  setSlowWarning(false);
+  const slowTimer = setTimeout(() => setSlowWarning(true), 5000);
+  setLoading(true); setError(null); setPreview(null);
+  try {
+    const response = await fetch(`${API_BASE_URL}/preview`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: targetUrl, platform }),
+    });
+    const data = await response.json();
+    if (data.success) {
+      setPreview(data);
+      if (data.formats && data.formats.length > 0) setQuality(data.formats[0].quality);
+    } else {
+      setError(data.error || "Failed to fetch video info");
+    }
+  } catch {
+    setError("Network error. Please try again.");
+  } finally {
+    clearTimeout(slowTimer);
+    setSlowWarning(false);
+    setLoading(false);
+  }
+};
+
+
 
   const handleDownload = async () => {
     if (!url || !preview) return;
@@ -200,7 +199,7 @@ export default function Hero() {
               {t("video_mp4")}
             </button>
 
-            <select
+            {/* <select
               className="hero-quality-select"
               value={quality}
               onChange={(e) => setQuality(e.target.value)}
@@ -218,7 +217,7 @@ export default function Hero() {
                   <option>480p</option>
                 </>
               )}
-            </select>
+            </select> */}
           </div>
         </div>
 

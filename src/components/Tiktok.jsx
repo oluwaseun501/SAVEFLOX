@@ -37,30 +37,31 @@ export default function Tiktok() {
     return null;
   };
 
-  const handlePreview = async () => {
-    if (!url) { setError("Please enter a URL"); return; }
-    const platform = detectPlatformFromUrl(url);
-    if (!platform) { setError("Unsupported platform. Please use TikTok, Instagram, Facebook, Pinterest, Snapchat, or Twitter"); return; }
-    setLoading(true); setError(null); setPreview(null);
-    try {
-      const response = await fetch(`${API_BASE_URL}/preview`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, platform }),
-      });
-      const data = await response.json();
-      setLoading(false);
-      if (data.success) {
-        setPreview(data);
-        if (data.formats && data.formats.length > 0) setQuality(data.formats[0].quality);
-      } else {
-        setError(data.error || "Failed to fetch video info");
-      }
-    } catch (err) {
-      setLoading(false);
-      setError("Network error. Please try again.");
+const handlePreview = async (pastedUrl) => {
+  const targetUrl = (typeof pastedUrl === "string" ? pastedUrl : null) || url;
+  if (!targetUrl) { setError("Please enter a URL"); return; }
+  const platform = detectPlatformFromUrl(targetUrl);
+  if (!platform) { setError("Unsupported platform."); return; }
+  setLoading(true); setError(null); setPreview(null);
+  try {
+    const response = await fetch(`${API_BASE_URL}/preview`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: targetUrl, platform }),
+    });
+    const data = await response.json();
+    setLoading(false);
+    if (data.success) {
+      setPreview(data);
+      if (data.formats && data.formats.length > 0) setQuality(data.formats[0].quality);
+    } else {
+      setError(data.error || "Failed to fetch video info");
     }
-  };
+  } catch (err) {
+    setLoading(false);
+    setError("Network error. Please try again.");
+  }
+};
 
   const handleDownload = async () => {
     if (!url || !preview) return;
@@ -93,24 +94,21 @@ export default function Tiktok() {
 
   const headingParts = t("download_videos", { platform: "###" }).split("###");
 
-  const handlePasteOrClear = async () => {
+
+const handlePasteOrClear = async () => {
   if (url) {
-    setUrl("");
-    setPreview(null);
-    setError(null);
-     setPasteHint("");
+    setUrl(""); setPreview(null); setError(null);
   } else {
     try {
       const text = await navigator.clipboard.readText();
       setUrl(text);
-       setPasteHint("");
+      if (text) handlePreview(text);
     } catch {
-            setPasteHint("Use Ctrl+V to paste");
+      setPasteHint("Use Ctrl+V to paste");
       setTimeout(() => setPasteHint(""), 3000);
     }
   }
 };
-
   return (
     <>
       <section className="tiktok">
@@ -164,12 +162,14 @@ export default function Tiktok() {
                 {t("video_mp4")}
               </button>
 
+              {/* {url && (
               <select className="tiktok-quality-select" value={quality} onChange={(e) => setQuality(e.target.value)}>
                 <option>4K Ultra HD</option>
                 <option>1080p HD</option>
                 <option>720p</option>
                 <option>480p</option>
               </select>
+              )} */}
             </div>
           </div>
 

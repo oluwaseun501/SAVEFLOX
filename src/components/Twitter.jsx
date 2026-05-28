@@ -35,22 +35,19 @@ export default function Twitter() {
     return null;
   };
 
-  const handlePreview = async () => {
-  if (!url) { setError("Please enter a URL"); return; }
-  const platform = detectPlatformFromUrl(url);
-  if (!platform) { setError("Unsupported platform. Please use TikTok, Instagram, Facebook, Pinterest, Snapchat, or Twitter"); return; }
-
+const handlePreview = async (pastedUrl) => {
+  const targetUrl = (typeof pastedUrl === "string" ? pastedUrl : null) || url;
+  if (!targetUrl) { setError("Please enter a URL"); return; }
+  const platform = detectPlatformFromUrl(targetUrl);
+  if (!platform) { setError("Unsupported platform."); return; }
   setSlowWarning(false);
   const slowTimer = setTimeout(() => setSlowWarning(true), 5000);
-  setLoading(true);
-  setError(null);
-  setPreview(null);
-
+  setLoading(true); setError(null); setPreview(null);
   try {
     const response = await fetch(`${API_BASE_URL}/preview`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url, platform }),
+      body: JSON.stringify({ url: targetUrl, platform }),
     });
     const data = await response.json();
     if (data.success) {
@@ -59,12 +56,28 @@ export default function Twitter() {
     } else {
       setError(data.error || "Failed to fetch video info");
     }
-  } catch (err) {
+  } catch {
     setError("Network error. Please try again.");
   } finally {
     clearTimeout(slowTimer);
     setSlowWarning(false);
     setLoading(false);
+  }
+};
+
+const handlePasteOrClear = async () => {
+  if (url) {
+    setUrl(""); setPreview(null); setError(null); setPasteHint("");
+  } else {
+    try {
+      const text = await navigator.clipboard.readText();
+      setUrl(text);
+      setPasteHint("");
+      if (text) handlePreview(text);
+    } catch {
+      setPasteHint("Use Ctrl+V to paste");
+      setTimeout(() => setPasteHint(""), 3000);
+    }
   }
 };
 
@@ -106,23 +119,6 @@ export default function Twitter() {
 
   const headingParts = t("download_videos", { platform: "###" }).split("###");
 
-const handlePasteOrClear = async () => {
-  if (url) {
-    setUrl("");
-    setPreview(null);
-    setError(null);
-    setPasteHint("");
-  } else {
-    try {
-      const text = await navigator.clipboard.readText();
-      setUrl(text);
-      setPasteHint("");
-    } catch {
-      setPasteHint("Use Ctrl+V to paste");
-      setTimeout(() => setPasteHint(""), 3000);
-    }
-  }
-};
 
   return (
     <>
@@ -179,12 +175,12 @@ const handlePasteOrClear = async () => {
                 {t("video_mp4")}
               </button>
 
-              <select className="twitter-quality-select" value={quality} onChange={(e) => setQuality(e.target.value)}>
+              {/* <select className="twitter-quality-select" value={quality} onChange={(e) => setQuality(e.target.value)}>
                 <option>4K Ultra HD</option>
                 <option>1080p HD</option>
                 <option>720p</option>
                 <option>480p</option>
-              </select>
+              </select> */}
             </div>
           </div>
 
