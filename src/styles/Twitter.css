@@ -643,6 +643,8 @@
   font-family: inherit;
   transition: all 0.2s;
   white-space: nowrap;
+
+  
 }
 .twitter-paste-btn:hover { border-color: #1d9bf0; color: #1d9bf0; }
 .dark .twitter-paste-btn { border-color: #334155; color: #94a3b8; }
