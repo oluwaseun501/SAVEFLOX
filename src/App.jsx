@@ -285,14 +285,9 @@ const isAdminDomain = window.location.hostname === "admin.saveflox.com";
             }
           />
           <Route
-            path="/login"
-            element={
-              <>
-                <Seo {...seo.login} />
-                <AdminLogin />
-              </>
-            }
-          />
+  path="/login"
+  element={<Navigate to="/" replace />}
+/>
           <Route
             path="/admin"
             element={
