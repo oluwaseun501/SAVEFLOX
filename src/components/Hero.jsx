@@ -3,6 +3,7 @@ import { Download, Link, Globe, Video, Loader, Eye } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import "../styles/Hero.css";
 import DotsLoader from "./DotsLoader";
+import { Helmet } from "react-helmet-async";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 
@@ -149,6 +150,14 @@ const handlePreview = async (pastedUrl) => {
   };
 
   return (
+  <>
+  <Helmet>
+    <title>SaveFlox — Free Online Video Downloader</title>
+    <meta name="description" content="Download videos from TikTok, Instagram, Facebook, Pinterest, Snapchat and more for free. Fast, HD quality, no watermark." />
+    <link rel="canonical" href="https://www.saveflox.com/" />
+  </Helmet>
+
+  
     <section className="hero">
       <div className="hero-content">
 
@@ -282,5 +291,6 @@ const handlePreview = async (pastedUrl) => {
         )}
       </div>
     </section>
+  </>
   );
 }

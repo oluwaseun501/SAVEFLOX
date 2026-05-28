@@ -7,6 +7,7 @@ import WhyChoose from "./WhyChoose";
 import HowItWorks from "./HowItWorks";
 import FAQ from "./FAQ";
 import DotsLoader from "./DotsLoader";
+import { Helmet } from "react-helmet-async";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 
@@ -148,6 +149,13 @@ const handlePasteOrClear = async () => {
 
   return (
     <>
+
+    <Helmet>
+  <title>Facebook Video Downloader — SaveFlox | Save FB Videos Free</title>
+  <meta name="description" content="Download Facebook videos for free in HD or SD quality. Paste any Facebook video link and download it instantly with SaveFlox." />
+  <link rel="canonical" href="https://www.saveflox.com/facebook-downloader" />
+</Helmet>
+
       <section className="facebook">
         <div className="facebook-content">
 

@@ -7,6 +7,7 @@ import WhyChoose from "./WhyChoose";
 import HowItWorks from "./HowItWorks";
 import FAQ from "./FAQ";
 import DotsLoader from "./DotsLoader";
+import { Helmet } from "react-helmet-async";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 
@@ -122,6 +123,13 @@ const handlePasteOrClear = async () => {
 
   return (
     <>
+
+    <Helmet>
+  <title>Instagram Video Downloader — SaveFlox | Download Reels & Videos</title>
+  <meta name="description" content="Download Instagram videos, reels, and stories for free without watermark. Fast and easy — just paste the Instagram link." />
+  <link rel="canonical" href="https://www.saveflox.com/instagram-downloader" />
+</Helmet>
+
       <section className="instagram">
         <div className="instagram-content">
 

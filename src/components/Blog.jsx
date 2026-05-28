@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { blogAPI } from "../services/api";
 import "../styles/Blog.css";
 import DotsLoader from "./DotsLoader";
+import { Helmet } from "react-helmet-async";
 
 const CATEGORIES = ["All", "TikTok", "Instagram", "Facebook", "MP3", "Tips", "Legal"];
 
@@ -76,7 +77,15 @@ useEffect(() => {
   const others = filtered.filter((p) => !p.featured);
 
   return (
-    <section className="blog">
+
+    <>
+<Helmet>
+  <title>Blog — SaveFlox | Video Downloading Tips & Guides</title>
+  <meta name="description" content="Learn how to download videos from TikTok, Instagram, Facebook, Pinterest and more. Tips, guides, and tutorials from the SaveFlox team." />
+  <link rel="canonical" href="https://www.saveflox.com/blog" />
+</Helmet>
+
+<section className="blog">
       {/* Header */}
       <div className="blog-header">
         <span className="blog-eyebrow">
@@ -178,5 +187,7 @@ useEffect(() => {
         </>
       )}
     </section>
+
+    </>
   );
 }

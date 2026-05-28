@@ -3,6 +3,7 @@ import { useParams, Link, Navigate } from "react-router-dom";
 import { Calendar, Clock, User, ArrowLeft, ArrowRight, Tag } from "lucide-react";
 import { blogAPI } from "../services/api";
 import "../styles/BlogPost.css";
+import { Helmet } from "react-helmet-async";
 
 /* Tiny markdown -> HTML helper for our simple content (## headings, lists, paragraphs, **bold**) */
 function renderContent(text) {
@@ -125,6 +126,18 @@ export default function BlogPost() {
   if (error || !post) return <Navigate to="/blog" replace />;
 
   return (
+<>
+    <Helmet>
+  <title>{post.title} — SaveFlox Blog</title>
+  <meta name="description" content={post.excerpt} />
+  <link rel="canonical" href={`https://www.saveflox.com/blog/${post.slug}`} />
+  <meta property="og:title" content={post.title} />
+  <meta property="og:description" content={post.excerpt} />
+  {post.cover && <meta property="og:image" content={post.cover} />}
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content={`https://www.saveflox.com/blog/${post.slug}`} />
+</Helmet>
+
     <article className="bp-shell">
       {/* Back link */}
       <div className="bp-topnav">
@@ -165,5 +178,7 @@ export default function BlogPost() {
         <p>📊 {post.views} {post.views === 1 ? 'view' : 'views'}</p>
       </div> */}
     </article>
+
+  </>
   );
 }

@@ -7,6 +7,7 @@ import HowItWorks from "./HowItWorks";
 import FAQ from "./FAQ";
 import AdSlot from "./AdSlot";
 import DotsLoader from "./DotsLoader";
+import { Helmet } from "react-helmet-async";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 
@@ -118,6 +119,13 @@ const handlePasteOrClear = async () => {
 
   return (
     <>
+
+    <Helmet>
+  <title>Pinterest Video Downloader — SaveFlox | Download Pinterest Videos</title>
+  <meta name="description" content="Download Pinterest videos and GIFs for free. Simply paste your Pinterest link and save the video instantly with SaveFlox." />
+  <link rel="canonical" href="https://www.saveflox.com/pinterest-downloader" />
+</Helmet>
+
       <section className="pinterest">
         <div className="pinterest-content">
 

@@ -7,6 +7,7 @@ import WhyChoose from "./WhyChoose";
 import HowItWorks from "./HowItWorks";
 import FAQ from "./FAQ";
 import DotsLoader from "./DotsLoader";
+import { Helmet } from "react-helmet-async";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 
@@ -122,6 +123,13 @@ const handlePasteOrClear = async () => {
 
   return (
     <>
+
+    <Helmet>
+  <title>Twitter/X Video Downloader — SaveFlox | Download Free</title>
+  <meta name="description" content="Download Twitter and X videos for free in HD. Paste any tweet link and save the video instantly with SaveFlox." />
+  <link rel="canonical" href="https://www.saveflox.com/twitter-downloader" />
+</Helmet>
+
       <section className="twitter">
         <div className="twitter-content">
 

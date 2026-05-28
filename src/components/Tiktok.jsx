@@ -9,6 +9,7 @@ import HowItWorks from "./HowItWorks";
 import FAQ from "./FAQ";
 import DotsLoader from "./DotsLoader";
 import adsBanner from "../ads/ads1.jpg";
+import { Helmet } from "react-helmet-async";
 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
@@ -25,6 +26,7 @@ export default function Tiktok() {
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState(null);
   const [downloading, setDownloading] = useState(false);
+  const [pasteHint, setPasteHint] = useState("");
 
   const detectPlatformFromUrl = (url) => {
     const urlLower = url.toLowerCase();
@@ -111,6 +113,14 @@ const handlePasteOrClear = async () => {
 };
   return (
     <>
+
+
+<Helmet>
+  <title>TikTok Video Downloader — SaveFlox | Download Free</title>
+  <meta name="description" content="Download TikTok videos without watermark for free. Fast, HD quality. No app needed — just paste your TikTok link and download instantly." />
+  <link rel="canonical" href="https://www.saveflox.com/tiktok-downloader" />
+</Helmet>
+
       <section className="tiktok">
         <div className="tiktok-content">
 

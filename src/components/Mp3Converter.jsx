@@ -11,6 +11,7 @@ import {
   Loader,
 } from "lucide-react";
 import "../styles/Mp3Converter.css";
+import { Helmet } from "react-helmet-async";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
@@ -158,23 +159,44 @@ export default function Mp3Converter() {
 
 const handlePasteOrClear = async () => {
   if (url) {
-    setUrl("");
-    setPreview(null);
-    setError(null);
-    setPasteHint("");
+    setUrl(""); setPreview(null); setError(null); setPasteHint("");
   } else {
     try {
       const text = await navigator.clipboard.readText();
       setUrl(text);
       setPasteHint("");
+      if (text) {
+        // trigger preview with the pasted text directly
+        setLoading(true); setError(null); setPreview(null);
+        try {
+          const response = await fetch(`${API_BASE_URL}/mp3/preview`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: text }),
+          });
+          const data = await response.json();
+          if (data.success) setPreview(data);
+          else setError(data.error || "Failed to fetch audio info");
+        } catch { setError("Network error. Please try again."); }
+        finally { setLoading(false); }
+      }
     } catch {
       setPasteHint("Use Ctrl+V to paste");
       setTimeout(() => setPasteHint(""), 3000);
     }
   }
 };
+
   return (
-    <section className="mp3">
+
+    <>
+<Helmet>
+  <title>Video to MP3 Converter — SaveFlox | Extract Audio Free</title>
+  <meta name="description" content="Convert TikTok, Instagram, Facebook, and Pinterest videos to MP3 audio for free. Extract audio instantly with SaveFlox MP3 converter." />
+  <link rel="canonical" href="https://www.saveflox.com/mp3-converter" />
+</Helmet>
+
+<section className="mp3">
       <div className="mp3-content">
         <div className="mp3-icon">
           <Music size={28} />
@@ -371,5 +393,6 @@ const handlePasteOrClear = async () => {
         {error && <div className="mp3-error">❌ {error}</div>}
       </div>
     </section>
+    </>
   );
 }
