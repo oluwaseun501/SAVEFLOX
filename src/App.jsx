@@ -53,6 +53,7 @@ function Home() {
   );
 }
 
+
 function App() {
   const location = useLocation();
   const { pathname } = location;
