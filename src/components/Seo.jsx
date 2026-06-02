@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 
 const DEFAULT = {
   title: "SaveFlox — Free Online Video Downloader",
@@ -11,37 +11,34 @@ const DEFAULT = {
   type: "website",
   siteName: "SaveFlox",
   locale: "en_US",
+  author: "SaveFlox Team",
+  twitterSite: "@SaveFloxApp",
 };
 
-const normalizeSelector = (selector) => {
-  if (!selector) return selector;
-  return selector.replace(/\[([^\]=]+)=([^\]"']+)\]/g, '[$1="$2"]');
-};
+const buildBreadcrumbs = (pageUrl, pageTitle) => {
+  const items = [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: DEFAULT.url,
+    },
+  ];
 
-const updateTag = ({ tag, selector, attr, value, content }) => {
-  const query = normalizeSelector(selector) || `${tag}[${attr}="${value}"]`;
-  let element = document.head.querySelector(query);
-  if (!element) {
-    element = document.createElement(tag);
-    if (attr) element.setAttribute(attr, value);
-    document.head.appendChild(element);
+  if (pageUrl !== DEFAULT.url) {
+    items.push({
+      "@type": "ListItem",
+      position: 2,
+      name: pageTitle.replace(/\s+—\s+SaveFlox$/, ""),
+      item: pageUrl,
+    });
   }
-  if (tag === "link") {
-    element.href = content;
-  } else {
-    element.content = content;
-  }
-};
 
-const updateScript = (id, json) => {
-  let script = document.head.querySelector(`script#${id}`);
-  if (!script) {
-    script = document.createElement("script");
-    script.id = id;
-    script.type = "application/ld+json";
-    document.head.appendChild(script);
-  }
-  script.textContent = JSON.stringify(json);
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items,
+  };
 };
 
 export default function Seo({
@@ -56,56 +53,92 @@ export default function Seo({
   canonical,
   noIndex = false,
 }) {
-  useEffect(() => {
-    const meta = {
-      title: title || DEFAULT.title,
-      description: description || DEFAULT.description,
-      keywords: keywords || DEFAULT.keywords,
-      url: canonical || url || DEFAULT.url,
-      image: image || DEFAULT.image,
-      type: type || DEFAULT.type,
-      siteName: siteName || DEFAULT.siteName,
-      locale: locale || DEFAULT.locale,
-    };
+  const meta = {
+    title: title || DEFAULT.title,
+    description: description || DEFAULT.description,
+    keywords: keywords || DEFAULT.keywords,
+    url: canonical || url || DEFAULT.url,
+    image: image || DEFAULT.image,
+    type: type || DEFAULT.type,
+    siteName: siteName || DEFAULT.siteName,
+    locale: locale || DEFAULT.locale,
+    author: DEFAULT.author,
+    twitterSite: DEFAULT.twitterSite,
+  };
 
-    document.title = meta.title;
-
-    updateTag({ tag: "meta", selector: "[name=description]", attr: "name", value: "description", content: meta.description });
-    updateTag({ tag: "meta", selector: "[name=keywords]", attr: "name", value: "keywords", content: keywords || DEFAULT.keywords });
-    updateTag({ tag: "meta", selector: "[property=og:title]", attr: "property", value: "og:title", content: meta.title });
-    updateTag({ tag: "meta", selector: "[property=og:description]", attr: "property", value: "og:description", content: meta.description });
-    updateTag({ tag: "meta", selector: "[property=og:type]", attr: "property", value: "og:type", content: meta.type });
-    updateTag({ tag: "meta", selector: "[property=og:url]", attr: "property", value: "og:url", content: meta.url });
-    updateTag({ tag: "meta", selector: "[property=og:site_name]", attr: "property", value: "og:site_name", content: meta.siteName });
-    updateTag({ tag: "meta", selector: "[property=og:image]", attr: "property", value: "og:image", content: meta.image });
-    updateTag({ tag: "meta", selector: "[name=twitter:card]", attr: "name", value: "twitter:card", content: "summary_large_image" });
-    updateTag({ tag: "meta", selector: "[name=twitter:title]", attr: "name", value: "twitter:title", content: meta.title });
-    updateTag({ tag: "meta", selector: "[name=twitter:description]", attr: "name", value: "twitter:description", content: meta.description });
-    updateTag({ tag: "meta", selector: "[name=twitter:image]", attr: "name", value: "twitter:image", content: meta.image });
-    updateTag({ tag: "link", selector: "[rel=canonical]", attr: "rel", value: "canonical", content: meta.url });
-    updateTag({ tag: "meta", selector: "[name=robots]", attr: "name", value: "robots", content: noIndex ? "noindex, nofollow" : "index, follow" });
-
-    updateScript("saveflox-schema", {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      name: meta.siteName,
-      url: meta.url,
-      description: meta.description,
-      publisher: {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        name: meta.siteName,
+        url: DEFAULT.url,
+        description: meta.description,
+        publisher: {
+          "@type": "Organization",
+          name: meta.siteName,
+          logo: {
+            "@type": "ImageObject",
+            url: meta.image,
+          },
+        },
+        potentialAction: {
+          "@type": "SearchAction",
+          target: `${DEFAULT.url}/?q={search_term_string}`,
+          "query-input": "required name=search_term_string",
+        },
+      },
+      {
         "@type": "Organization",
         name: meta.siteName,
+        url: DEFAULT.url,
         logo: {
           "@type": "ImageObject",
           url: meta.image,
         },
       },
-      potentialAction: {
-        "@type": "SearchAction",
-        target: `${meta.url}/?q={search_term_string}`,
-        "query-input": "required name=search_term_string",
-      },
-    });
-  }, [title, description, keywords, url, image, type, siteName, locale, canonical, noIndex]);
+      buildBreadcrumbs(meta.url, meta.title),
+    ],
+  };
 
-  return null;
+  return (
+    <Helmet>
+      <title>{meta.title}</title>
+      <link rel="canonical" href={meta.url} />
+      <meta name="description" content={meta.description} />
+      <meta name="keywords" content={meta.keywords} />
+      <meta name="author" content={meta.author} />
+      <meta name="publisher" content={meta.siteName} />
+      <meta
+        name="robots"
+        content={noIndex ? "noindex, nofollow" : "index, follow"}
+      />
+      <meta name="theme-color" content="#1d4ed8" />
+      <meta name="referrer" content="no-referrer-when-downgrade" />
+      <meta name="format-detection" content="telephone=no" />
+
+      <meta property="og:locale" content={meta.locale} />
+      <meta property="og:type" content={meta.type} />
+      <meta property="og:title" content={meta.title} />
+      <meta property="og:description" content={meta.description} />
+      <meta property="og:url" content={meta.url} />
+      <meta property="og:site_name" content={meta.siteName} />
+      <meta property="og:image" content={meta.image} />
+      <meta
+        property="og:image:alt"
+        content="SaveFlox video downloader logo and app preview"
+      />
+
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:site" content={meta.twitterSite} />
+      <meta name="twitter:title" content={meta.title} />
+      <meta name="twitter:description" content={meta.description} />
+      <meta name="twitter:image" content={meta.image} />
+
+      <link rel="alternate" href={meta.url} hrefLang="en-US" />
+      <script type="application/ld+json">
+        {JSON.stringify(structuredData)}
+      </script>
+    </Helmet>
+  );
 }

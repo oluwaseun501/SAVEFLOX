@@ -1,4 +1,36 @@
+# Robots.txt for SaveFlox - Video Downloader
+# Allow all search engines to crawl
+
 User-agent: *
 Allow: /
-Sitemap: https://www.saveflox.com/sitemap.xml
-Host: www.saveflox.com
+Disallow: /admin/
+Disallow: /api/
+Disallow: /private/
+Disallow: /temp/
+Disallow: /.git/
+Disallow: /node_modules/
+
+# Specific rules for Googlebot
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Specific rules for Bingbot
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# Block bad bots
+User-agent: MJ12bot
+User-agent: AhrefsBot
+User-agent: SemrushBot
+User-agent: DotBot
+Disallow: /
+
+# Sitemap locations
+Sitemap: https://saveflox.com/sitemap.xml
+Sitemap: https://saveflox.com/sitemap-pages.xml
+Sitemap: https://saveflox.com/sitemap-blog.xml
+
+# Host preference
+Host: saveflox.com

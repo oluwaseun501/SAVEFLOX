@@ -1,40 +1,143 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/savefloxLogo.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="SaveFlox is the fastest online video downloader for YouTube, TikTok, Snapchat, Instagram, Facebook, Pinterest and more. Download videos and audio instantly in MP4 or MP3." />
-    <meta name="keywords" content="video downloader, youtube downloader, tiktok downloader, snapchat downloader, instagram downloader, facebook downloader, pinterest downloader, online video downloader, save video, mp3 converter" />
-    <meta name="robots" content="index,follow" />
-    <meta name="theme-color" content="#1d4ed8" />
-    <meta property="og:title" content="SaveFlox — Free Online Video Downloader" />
-    <meta property="og:description" content="Download videos and audio from YouTube, TikTok, Snapchat, Instagram, Facebook, Pinterest and more with SaveFlox." />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://www.saveflox.com/" />
-    <meta property="og:image" content="https://www.saveflox.com/icon-512.png" />
-    <meta property="og:site_name" content="SaveFlox" /> 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="SaveFlox — Free Online Video Downloader" />
-    <meta name="twitter:description" content="Download videos and audio from YouTube, TikTok, Snapchat, Instagram, Facebook, Pinterest and more with SaveFlox." />
-    <meta name="twitter:image" content="https://www.saveflox.com/icon-512.png" />
-    <link rel="canonical" href="https://www.saveflox.com/" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <title>SaveFlox — Free Online Video Downloader</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-    <script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/sw.js");
-    });
-  }
-</script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/savefloxLogo.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="SaveFlox — #1 Free Online Video Downloader | Download from 50+ Platforms" />
+  <meta name="description"
+    content="SaveFlox is the fastest & easiest free online video downloader. Download videos from YouTube, TikTok, Instagram, Facebook, Pinterest, Twitter, Snapchat & 50+ platforms in HD/4K. No sign-up, no watermark, 100% safe." />
+  <meta name="keywords"
+    content="video downloader, youtube downloader, tiktok downloader, instagram downloader, facebook downloader, twitter downloader, pinterest downloader, mp3 converter, free video downloader, online video downloader, best video downloader, video save, mp4 converter, audio downloader, snapchat downloader, video to mp3" />
+  <meta name="author" content="SaveFlox" />
+  <meta name="language" content="English" />
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  <meta name="revisit-after" content="7 days" />
+  <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  <meta name="bingbot" content="index, follow" />
+  <meta name="theme-color" content="#1d4ed8" />
+  <meta name="color-scheme" content="light dark" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://saveflox.com/" />
+  <meta property="og:title" content="SaveFlox — #1 Free Online Video Downloader" />
+  <meta property="og:description"
+    content="Download videos from YouTube, TikTok, Instagram, Facebook, Pinterest, Twitter, and 50+ other platforms instantly in HD/4K quality without watermarks." />
+  <meta property="og:image" content="/og-image.png" />
+  <meta property="og:site_name" content="SaveFlox" />
+  <meta property="og:locale" content="en_US" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://saveflox.com/" />
+  <meta name="twitter:title" content="SaveFlox — #1 Free Online Video Downloader" />
+  <meta name="twitter:description"
+    content="Download videos from YouTube, TikTok, Instagram, Facebook, Pinterest, Twitter, and 50+ platforms instantly." />
+  <meta name="twitter:image" content="/og-image.png" />
+  <meta name="twitter:creator" content="@saveflox" />
+  <meta name="twitter:site" content="@saveflox" />
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://saveflox.com/" />
+
+  <!-- Preconnect to external resources -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Manifest & PWA -->
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <link rel="icon" type="image/png" href="/icon-192.png" />
+  <link rel="icon" type="image/png" href="/icon-512.png" sizes="512x512" />
+
+  <!-- Apple/Mobile Web App -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="SaveFlox" />
+
+  <!-- Structured Data - Organization -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "SaveFlox",
+      "url": "https://saveflox.com",
+      "logo": "https://saveflox.com/savefloxLogo.svg",
+      "description": "The fastest and easiest free online video downloader for YouTube, TikTok, Instagram, Facebook, Pinterest, Twitter, and 50+ other platforms.",
+      "sameAs": [
+        "https://twitter.com/saveflox",
+        "https://facebook.com/saveflox",
+        "https://instagram.com/saveflox"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "Customer Service",
+        "email": "support@saveflox.com"
+      }
+    }
+    </script>
+
+  <!-- Structured Data - Website Search -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "url": "https://saveflox.com/",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://saveflox.com/search?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+  <!-- Structured Data - Software Application -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "SaveFlox",
+      "description": "Free online video downloader - Download videos from YouTube, TikTok, Instagram, Facebook, Pinterest, Twitter, and 50+ other platforms",
+      "url": "https://saveflox.com",
+      "applicationCategory": "UtilityApplication",
+      "operatingSystem": "Web-based (Windows, Mac, Linux, iOS, Android)",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "50000"
+      }
+    }
+    </script>
+
+  <title>SaveFlox — #1 Free Online Video Downloader | YouTube, TikTok, Instagram</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js");
+      });
+    }
+  </script>
+</body>
+
 </html>

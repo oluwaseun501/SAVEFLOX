@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { Download, Link, Video, Loader, Eye, Heart, Repeat } from "lucide-react";
+import {
+  Download,
+  Link,
+  Video,
+  Loader,
+  Eye,
+  Heart,
+  Repeat,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import "../styles/Twitter.css";
 import AdSlot from "./AdSlot";
@@ -8,8 +16,11 @@ import HowItWorks from "./HowItWorks";
 import FAQ from "./FAQ";
 import DotsLoader from "./DotsLoader";
 import { Helmet } from "react-helmet-async";
+import { TwitterDownloaderSEO } from "./SEOComponents";
+import { Breadcrumbs, RelatedServices } from "./BreadcrumbsAndLinks";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 
 const mountStyle = (delayMs) => ({
   animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both`,
@@ -27,60 +38,75 @@ export default function Twitter() {
   const [slowWarning, setSlowWarning] = useState(false);
   const detectPlatformFromUrl = (url) => {
     const urlLower = url.toLowerCase();
-    if (urlLower.includes('tiktok.com')) return 'tiktok';
-    if (urlLower.includes('instagram.com')) return 'instagram';
-    if (urlLower.includes('facebook.com') || urlLower.includes('fb.com')) return 'facebook';
-    if (urlLower.includes('pinterest.com') || urlLower.includes('pin.it')) return 'pinterest';
-    if (urlLower.includes('snapchat.com')) return 'snapchat';
-    if (urlLower.includes('twitter.com') || urlLower.includes('x.com')) return 'twitter';
+    if (urlLower.includes("tiktok.com")) return "tiktok";
+    if (urlLower.includes("instagram.com")) return "instagram";
+    if (urlLower.includes("facebook.com") || urlLower.includes("fb.com"))
+      return "facebook";
+    if (urlLower.includes("pinterest.com") || urlLower.includes("pin.it"))
+      return "pinterest";
+    if (urlLower.includes("snapchat.com")) return "snapchat";
+    if (urlLower.includes("twitter.com") || urlLower.includes("x.com"))
+      return "twitter";
     return null;
   };
 
-const handlePreview = async (pastedUrl) => {
-  const targetUrl = (typeof pastedUrl === "string" ? pastedUrl : null) || url;
-  if (!targetUrl) { setError("Please enter a URL"); return; }
-  const platform = detectPlatformFromUrl(targetUrl);
-  if (!platform) { setError("Unsupported platform."); return; }
-  setSlowWarning(false);
-  const slowTimer = setTimeout(() => setSlowWarning(true), 5000);
-  setLoading(true); setError(null); setPreview(null);
-  try {
-    const response = await fetch(`${API_BASE_URL}/preview`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: targetUrl, platform }),
-    });
-    const data = await response.json();
-    if (data.success) {
-      setPreview(data);
-      if (data.formats && data.formats.length > 0) setQuality(data.formats[0].quality);
-    } else {
-      setError(data.error || "Failed to fetch video info");
+  const handlePreview = async (pastedUrl) => {
+    const targetUrl = (typeof pastedUrl === "string" ? pastedUrl : null) || url;
+    if (!targetUrl) {
+      setError("Please enter a URL");
+      return;
     }
-  } catch {
-    setError("Network error. Please try again.");
-  } finally {
-    clearTimeout(slowTimer);
+    const platform = detectPlatformFromUrl(targetUrl);
+    if (!platform) {
+      setError("Unsupported platform.");
+      return;
+    }
     setSlowWarning(false);
-    setLoading(false);
-  }
-};
-
-const handlePasteOrClear = async () => {
-  if (url) {
-    setUrl(""); setPreview(null); setError(null); setPasteHint("");
-  } else {
+    const slowTimer = setTimeout(() => setSlowWarning(true), 5000);
+    setLoading(true);
+    setError(null);
+    setPreview(null);
     try {
-      const text = await navigator.clipboard.readText();
-      setUrl(text);
-      setPasteHint("");
-      if (text) handlePreview(text);
+      const response = await fetch(`${API_BASE_URL}/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: targetUrl, platform }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setPreview(data);
+        if (data.formats && data.formats.length > 0)
+          setQuality(data.formats[0].quality);
+      } else {
+        setError(data.error || "Failed to fetch video info");
+      }
     } catch {
-      setPasteHint("Use Ctrl+V to paste");
-      setTimeout(() => setPasteHint(""), 3000);
+      setError("Network error. Please try again.");
+    } finally {
+      clearTimeout(slowTimer);
+      setSlowWarning(false);
+      setLoading(false);
     }
-  }
-};
+  };
+
+  const handlePasteOrClear = async () => {
+    if (url) {
+      setUrl("");
+      setPreview(null);
+      setError(null);
+      setPasteHint("");
+    } else {
+      try {
+        const text = await navigator.clipboard.readText();
+        setUrl(text);
+        setPasteHint("");
+        if (text) handlePreview(text);
+      } catch {
+        setPasteHint("Use Ctrl+V to paste");
+        setTimeout(() => setPasteHint(""), 3000);
+      }
+    }
+  };
 
   const handleDownload = async () => {
     if (!url || !preview) return;
@@ -89,7 +115,12 @@ const handlePasteOrClear = async () => {
       const response = await fetch(`${API_BASE_URL}/download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, platform: "twitter", quality, format_type: "video" }),
+        body: JSON.stringify({
+          url,
+          platform: "twitter",
+          quality,
+          format_type: "video",
+        }),
       });
       if (!response.ok) throw new Error("Download failed");
       const blob = await response.blob();
@@ -101,9 +132,12 @@ const handlePasteOrClear = async () => {
       }
       const downloadUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = downloadUrl; a.download = filename;
-      document.body.appendChild(a); a.click();
-      document.body.removeChild(a); URL.revokeObjectURL(downloadUrl);
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
     } catch (err) {
       setError("Download failed. Please try again.");
     } finally {
@@ -120,22 +154,37 @@ const handlePasteOrClear = async () => {
 
   const headingParts = t("download_videos", { platform: "###" }).split("###");
 
-
   return (
     <>
+      {TwitterDownloaderSEO()}
 
-    <Helmet>
-  <title>Twitter/X Video Downloader — SaveFlox | Download Free</title>
-  <meta name="description" content="Download Twitter and X videos for free in HD. Paste any tweet link and save the video instantly with SaveFlox." />
-  <link rel="canonical" href="https://www.saveflox.com/twitter-downloader" />
-</Helmet>
+      <Breadcrumbs
+        items={[{ label: "Twitter/X Downloader", path: "/twitter" }]}
+      />
+
+      <Helmet>
+        <title>Twitter/X Video Downloader — SaveFlox | Download Free</title>
+        <meta
+          name="description"
+          content="Download Twitter and X videos for free in HD. Paste any tweet link and save the video instantly with SaveFlox."
+        />
+        <link
+          rel="canonical"
+          href="https://www.saveflox.com/twitter-downloader"
+        />
+      </Helmet>
 
       <section className="twitter">
         <div className="twitter-content">
-
           <div className="twitter-icon" style={mountStyle(0)}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.868-.4.69-.63 1.49-.63 2.342 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.392.106-.803.162-1.227.162-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z"/>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.868-.4.69-.63 1.49-.63 2.342 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.392.106-.803.162-1.227.162-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z" />
             </svg>
           </div>
 
@@ -160,20 +209,43 @@ const handlePasteOrClear = async () => {
                   placeholder={t("paste_link", { platform: "Twitter/X" })}
                   className="twitter-input"
                 />
-                <button className="twitter-paste-btn" onClick={handlePasteOrClear}>
-  {url ? "Clear" : "Paste"}
-</button>
+                <button
+                  className="twitter-paste-btn"
+                  onClick={handlePasteOrClear}
+                >
+                  {url ? "Clear" : "Paste"}
+                </button>
               </div>
-             <button className="twitter-btn" onClick={handlePreview} disabled={loading}>
-  {loading ? "Please wait..." : <><Download size={18} /> {t("download")}</>}
-</button>
+              <button
+                className="twitter-btn"
+                onClick={handlePreview}
+                disabled={loading}
+              >
+                {loading ? (
+                  "Please wait..."
+                ) : (
+                  <>
+                    <Download size={18} /> {t("download")}
+                  </>
+                )}
+              </button>
             </div>
 
             <div className="twitter-options">
               <span className="twitter-options-label">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3"/>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
                 </svg>
                 {t("options")}:
               </span>
@@ -193,21 +265,35 @@ const handlePasteOrClear = async () => {
           </div>
 
           {pasteHint && <p className="twitter-paste-hint">{pasteHint}</p>}
-{loading && <DotsLoader />}
-{slowWarning && <p className="twitter-slow-msg">Taking longer than usual, please wait...</p>}
+          {loading && <DotsLoader />}
+          {slowWarning && (
+            <p className="twitter-slow-msg">
+              Taking longer than usual, please wait...
+            </p>
+          )}
 
           {preview && (
             <div className="twitter-preview" style={mountStyle(0)}>
               <div className="preview-header">
-                <img src={preview.thumbnail} alt="Preview" className="preview-thumbnail" />
+                <img
+                  src={preview.thumbnail}
+                  alt="Preview"
+                  className="preview-thumbnail"
+                />
                 <div className="preview-info">
                   <h3>{preview.title}</h3>
                   <p>👤 {preview.uploader}</p>
                   <p>⏱️ {preview.duration}</p>
                   <div className="preview-stats">
-                    <span><Eye size={14} /> {formatNumber(preview.views)}</span>
-                    <span><Heart size={14} /> {formatNumber(preview.likes)}</span>
-                    <span><Repeat size={14} /> {formatNumber(preview.retweets)}</span>
+                    <span>
+                      <Eye size={14} /> {formatNumber(preview.views)}
+                    </span>
+                    <span>
+                      <Heart size={14} /> {formatNumber(preview.likes)}
+                    </span>
+                    <span>
+                      <Repeat size={14} /> {formatNumber(preview.retweets)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -217,15 +303,23 @@ const handlePasteOrClear = async () => {
                   {preview.formats?.map((format) => (
                     <button
                       key={format.quality}
-                      className={`format-btn ${quality === format.quality ? 'active' : ''}`}
+                      className={`format-btn ${quality === format.quality ? "active" : ""}`}
                       onClick={() => setQuality(format.quality)}
                     >
                       {format.quality}
                     </button>
                   ))}
                 </div>
-                <button className="twitter-download-btn" onClick={handleDownload} disabled={downloading}>
-                  {downloading ? <Loader size={18} className="spinner" /> : <Download size={18} />}
+                <button
+                  className="twitter-download-btn"
+                  onClick={handleDownload}
+                  disabled={downloading}
+                >
+                  {downloading ? (
+                    <Loader size={18} className="spinner" />
+                  ) : (
+                    <Download size={18} />
+                  )}
                   {downloading ? "Downloading..." : "Download Now"}
                 </button>
               </div>
@@ -237,7 +331,6 @@ const handlePasteOrClear = async () => {
               <span>❌ {error}</span>
             </div>
           )}
-
         </div>
       </section>
 
@@ -247,6 +340,8 @@ const handlePasteOrClear = async () => {
       <HowItWorks />
       <AdSlot slot="twitter-bottom" format="leaderboard" />
       <FAQ />
+
+      <RelatedServices currentPage="/twitter" />
     </>
   );
 }

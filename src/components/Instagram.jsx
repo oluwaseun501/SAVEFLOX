@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { Download, Link, Video, Loader, Eye, Heart, MessageCircle, Images } from "lucide-react";
+import {
+  Download,
+  Link,
+  Video,
+  Loader,
+  Eye,
+  Heart,
+  MessageCircle,
+  Images,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import "../styles/Instagram.css";
 import AdSlot from "./AdSlot";
@@ -8,8 +17,11 @@ import HowItWorks from "./HowItWorks";
 import FAQ from "./FAQ";
 import DotsLoader from "./DotsLoader";
 import { Helmet } from "react-helmet-async";
+import { InstagramDownloaderSEO } from "./SEOComponents";
+import { Breadcrumbs, RelatedServices } from "./BreadcrumbsAndLinks";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 
 const mountStyle = (delayMs) => ({
   animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both`,
@@ -28,60 +40,75 @@ export default function Instagram() {
 
   const detectPlatformFromUrl = (url) => {
     const urlLower = url.toLowerCase();
-    if (urlLower.includes('tiktok.com')) return 'tiktok';
-    if (urlLower.includes('instagram.com')) return 'instagram';
-    if (urlLower.includes('facebook.com') || urlLower.includes('fb.com')) return 'facebook';
-    if (urlLower.includes('pinterest.com') || urlLower.includes('pin.it')) return 'pinterest';
-    if (urlLower.includes('snapchat.com')) return 'snapchat';
-    if (urlLower.includes('twitter.com') || urlLower.includes('x.com')) return 'twitter';
+    if (urlLower.includes("tiktok.com")) return "tiktok";
+    if (urlLower.includes("instagram.com")) return "instagram";
+    if (urlLower.includes("facebook.com") || urlLower.includes("fb.com"))
+      return "facebook";
+    if (urlLower.includes("pinterest.com") || urlLower.includes("pin.it"))
+      return "pinterest";
+    if (urlLower.includes("snapchat.com")) return "snapchat";
+    if (urlLower.includes("twitter.com") || urlLower.includes("x.com"))
+      return "twitter";
     return null;
   };
 
- const handlePreview = async (pastedUrl) => {
-  const targetUrl = (typeof pastedUrl === "string" ? pastedUrl : null) || url;
-  if (!targetUrl) { setError("Please enter a URL"); return; }
-  const platform = detectPlatformFromUrl(targetUrl);
-  if (!platform) { setError("Unsupported platform."); return; }
-  setSlowWarning(false);
-  const slowTimer = setTimeout(() => setSlowWarning(true), 5000);
-  setLoading(true); setError(null); setPreview(null);
-  try {
-    const response = await fetch(`${API_BASE_URL}/preview`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: targetUrl, platform }),
-    });
-    const data = await response.json();
-    if (data.success) {
-      setPreview(data);
-      if (data.formats && data.formats.length > 0) setQuality(data.formats[0].quality);
-    } else {
-      setError(data.error || "Failed to fetch video info");
+  const handlePreview = async (pastedUrl) => {
+    const targetUrl = (typeof pastedUrl === "string" ? pastedUrl : null) || url;
+    if (!targetUrl) {
+      setError("Please enter a URL");
+      return;
     }
-  } catch {
-    setError("Network error. Please try again.");
-  } finally {
-    clearTimeout(slowTimer);
+    const platform = detectPlatformFromUrl(targetUrl);
+    if (!platform) {
+      setError("Unsupported platform.");
+      return;
+    }
     setSlowWarning(false);
-    setLoading(false);
-  }
-};
-
-const handlePasteOrClear = async () => {
-  if (url) {
-    setUrl(""); setPreview(null); setError(null); setPasteHint("");
-  } else {
+    const slowTimer = setTimeout(() => setSlowWarning(true), 5000);
+    setLoading(true);
+    setError(null);
+    setPreview(null);
     try {
-      const text = await navigator.clipboard.readText();
-      setUrl(text);
-      setPasteHint("");
-      if (text) handlePreview(text);
+      const response = await fetch(`${API_BASE_URL}/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: targetUrl, platform }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setPreview(data);
+        if (data.formats && data.formats.length > 0)
+          setQuality(data.formats[0].quality);
+      } else {
+        setError(data.error || "Failed to fetch video info");
+      }
     } catch {
-      setPasteHint("Use Ctrl+V to paste");
-      setTimeout(() => setPasteHint(""), 3000);
+      setError("Network error. Please try again.");
+    } finally {
+      clearTimeout(slowTimer);
+      setSlowWarning(false);
+      setLoading(false);
     }
-  }
-};
+  };
+
+  const handlePasteOrClear = async () => {
+    if (url) {
+      setUrl("");
+      setPreview(null);
+      setError(null);
+      setPasteHint("");
+    } else {
+      try {
+        const text = await navigator.clipboard.readText();
+        setUrl(text);
+        setPasteHint("");
+        if (text) handlePreview(text);
+      } catch {
+        setPasteHint("Use Ctrl+V to paste");
+        setTimeout(() => setPasteHint(""), 3000);
+      }
+    }
+  };
 
   const handleDownload = async () => {
     if (!url || !preview) return;
@@ -90,7 +117,12 @@ const handlePasteOrClear = async () => {
       const response = await fetch(`${API_BASE_URL}/download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, platform: "instagram", quality, format_type: "video" }),
+        body: JSON.stringify({
+          url,
+          platform: "instagram",
+          quality,
+          format_type: "video",
+        }),
       });
       if (!response.ok) throw new Error("Download failed");
       const blob = await response.blob();
@@ -102,9 +134,12 @@ const handlePasteOrClear = async () => {
       }
       const downloadUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = downloadUrl; a.download = filename;
-      document.body.appendChild(a); a.click();
-      document.body.removeChild(a); URL.revokeObjectURL(downloadUrl);
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
     } catch {
       setError("Download failed. Please try again.");
     } finally {
@@ -123,19 +158,37 @@ const handlePasteOrClear = async () => {
 
   return (
     <>
+      {InstagramDownloaderSEO()}
 
-    <Helmet>
-  <title>Instagram Video Downloader — SaveFlox | Download Reels & Videos</title>
-  <meta name="description" content="Download Instagram videos, reels, and stories for free without watermark. Fast and easy — just paste the Instagram link." />
-  <link rel="canonical" href="https://www.saveflox.com/instagram-downloader" />
-</Helmet>
+      <Breadcrumbs
+        items={[{ label: "Instagram Downloader", path: "/instagram" }]}
+      />
+
+      <Helmet>
+        <title>
+          Instagram Video Downloader — SaveFlox | Download Reels & Videos
+        </title>
+        <meta
+          name="description"
+          content="Download Instagram videos, reels, and stories for free without watermark. Fast and easy — just paste the Instagram link."
+        />
+        <link
+          rel="canonical"
+          href="https://www.saveflox.com/instagram-downloader"
+        />
+      </Helmet>
 
       <section className="instagram">
         <div className="instagram-content">
-
           <div className="instagram-icon" style={mountStyle(0)}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z" />
             </svg>
           </div>
 
@@ -160,20 +213,43 @@ const handlePasteOrClear = async () => {
                   placeholder={t("paste_link", { platform: "Instagram" })}
                   className="instagram-input"
                 />
-                <button className="instagram-paste-btn" onClick={handlePasteOrClear}>
+                <button
+                  className="instagram-paste-btn"
+                  onClick={handlePasteOrClear}
+                >
                   {url ? "Clear" : "Paste"}
                 </button>
               </div>
-              <button className="instagram-btn" onClick={handlePreview} disabled={loading}>
-                {loading ? "Please wait..." : <><Download size={18} /> {t("download")}</>}
+              <button
+                className="instagram-btn"
+                onClick={handlePreview}
+                disabled={loading}
+              >
+                {loading ? (
+                  "Please wait..."
+                ) : (
+                  <>
+                    <Download size={18} /> {t("download")}
+                  </>
+                )}
               </button>
             </div>
 
             <div className="instagram-options">
               <span className="instagram-options-label">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3"/>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
                 </svg>
                 {t("options")}:
               </span>
@@ -192,23 +268,41 @@ const handlePasteOrClear = async () => {
 
           {pasteHint && <p className="instagram-paste-hint">{pasteHint}</p>}
           {loading && <DotsLoader />}
-          {slowWarning && <p className="instagram-slow-msg">Taking longer than usual, please wait...</p>}
+          {slowWarning && (
+            <p className="instagram-slow-msg">
+              Taking longer than usual, please wait...
+            </p>
+          )}
 
           {preview && (
             <div className="instagram-preview" style={mountStyle(0)}>
               <div className="preview-header">
-                <img src={preview.thumbnail} alt="Preview" className="preview-thumbnail" />
+                <img
+                  src={preview.thumbnail}
+                  alt="Preview"
+                  className="preview-thumbnail"
+                />
                 <div className="preview-info">
                   <h3>{preview.title}</h3>
                   <p>👤 {preview.uploader}</p>
                   <p>⏱️ {preview.duration}</p>
-                  {preview.type === 'carousel' && (
-                    <p><Images size={14} /> Carousel with {preview.item_count} items</p>
+                  {preview.type === "carousel" && (
+                    <p>
+                      <Images size={14} /> Carousel with {preview.item_count}{" "}
+                      items
+                    </p>
                   )}
                   <div className="preview-stats">
-                    <span><Eye size={14} /> {formatNumber(preview.views)}</span>
-                    <span><Heart size={14} /> {formatNumber(preview.likes)}</span>
-                    <span><MessageCircle size={14} /> {formatNumber(preview.comment_count)}</span>
+                    <span>
+                      <Eye size={14} /> {formatNumber(preview.views)}
+                    </span>
+                    <span>
+                      <Heart size={14} /> {formatNumber(preview.likes)}
+                    </span>
+                    <span>
+                      <MessageCircle size={14} />{" "}
+                      {formatNumber(preview.comment_count)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -218,15 +312,23 @@ const handlePasteOrClear = async () => {
                   {preview.formats?.map((format) => (
                     <button
                       key={format.quality}
-                      className={`format-btn ${quality === format.quality ? 'active' : ''}`}
+                      className={`format-btn ${quality === format.quality ? "active" : ""}`}
                       onClick={() => setQuality(format.quality)}
                     >
                       {format.quality}
                     </button>
                   ))}
                 </div>
-                <button className="instagram-download-btn" onClick={handleDownload} disabled={downloading}>
-                  {downloading ? <Loader size={18} className="spinner" /> : <Download size={18} />}
+                <button
+                  className="instagram-download-btn"
+                  onClick={handleDownload}
+                  disabled={downloading}
+                >
+                  {downloading ? (
+                    <Loader size={18} className="spinner" />
+                  ) : (
+                    <Download size={18} />
+                  )}
                   {downloading ? "Downloading..." : "Download Now"}
                 </button>
               </div>
@@ -238,7 +340,6 @@ const handlePasteOrClear = async () => {
               <span>❌ {error}</span>
             </div>
           )}
-
         </div>
       </section>
 
@@ -248,6 +349,8 @@ const handlePasteOrClear = async () => {
       <HowItWorks />
       <AdSlot slot="instagram-bottom" format="leaderboard" />
       <FAQ />
+
+      <RelatedServices currentPage="/instagram" />
     </>
   );
 }
