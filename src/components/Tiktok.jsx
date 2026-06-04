@@ -138,7 +138,7 @@ export default function Tiktok() {
     <>
       {TikTokDownloaderSEO()}
 
-      <Breadcrumbs items={[{ label: "TikTok Downloader", path: "/tiktok" }]} />
+      {/* <Breadcrumbs items={[{ label: "TikTok Downloader", path: "/tiktok" }]} /> */}
 
       <Helmet>
         <title>TikTok Video Downloader — SaveFlox | Download Free</title>

@@ -158,9 +158,9 @@ export default function Twitter() {
     <>
       {TwitterDownloaderSEO()}
 
-      <Breadcrumbs
+      {/* <Breadcrumbs
         items={[{ label: "Twitter/X Downloader", path: "/twitter" }]}
-      />
+      /> */}
 
       <Helmet>
         <title>Twitter/X Video Downloader — SaveFlox | Download Free</title>

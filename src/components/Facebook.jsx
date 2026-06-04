@@ -190,9 +190,9 @@ export default function Facebook() {
     <>
       {FacebookDownloaderSEO()}
 
-      <Breadcrumbs
+      {/* <Breadcrumbs
         items={[{ label: "Facebook Downloader", path: "/facebook" }]}
-      />
+      /> */}
 
       <Helmet>
         <title>

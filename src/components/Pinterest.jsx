@@ -144,9 +144,9 @@ export default function Pinterest() {
     <>
       {PinterestDownloaderSEO()}
 
-      <Breadcrumbs
+      {/* <Breadcrumbs
         items={[{ label: "Pinterest Downloader", path: "/pinterest" }]}
-      />
+      /> */}
 
       <Helmet>
         <title>

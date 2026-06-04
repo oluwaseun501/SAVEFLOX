@@ -159,10 +159,10 @@ export default function Instagram() {
   return (
     <>
       {InstagramDownloaderSEO()}
-
+{/* 
       <Breadcrumbs
         items={[{ label: "Instagram Downloader", path: "/instagram" }]}
-      />
+      /> */}
 
       <Helmet>
         <title>
