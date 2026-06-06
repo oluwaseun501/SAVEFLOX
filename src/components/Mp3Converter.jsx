@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Download,
   Link,
@@ -13,11 +13,149 @@ import {
 import "../styles/Mp3Converter.css";
 import { Helmet } from "react-helmet-async";
 import { MP3ConverterSEO } from "./SEOComponents";
-import { Breadcrumbs, RelatedServices } from "./BreadcrumbsAndLinks";
+import { RelatedServices } from "./BreadcrumbsAndLinks";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 
+// ─── Time formatting ──────────────────────────────────────────────────────────
+const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+
+// ─── WAV encoder ─────────────────────────────────────────────────────────────
+function audioBufferToWav(buffer) {
+  const numCh = buffer.numberOfChannels;
+  const sr = buffer.sampleRate;
+  const len = buffer.length;
+  const ab = new ArrayBuffer(44 + len * numCh * 2);
+  const view = new DataView(ab);
+  const str = (off, s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); };
+  str(0, "RIFF"); view.setUint32(4, 36 + len * numCh * 2, true);
+  str(8, "WAVE"); str(12, "fmt ");
+  view.setUint32(16, 16, true); view.setUint16(20, 1, true);
+  view.setUint16(22, numCh, true); view.setUint32(24, sr, true);
+  view.setUint32(28, sr * numCh * 2, true); view.setUint16(32, numCh * 2, true);
+  view.setUint16(34, 16, true); str(36, "data");
+  view.setUint32(40, len * numCh * 2, true);
+  let off = 44;
+  for (let i = 0; i < len; i++) {
+    for (let ch = 0; ch < numCh; ch++) {
+      const s = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]));
+      view.setInt16(off, s * 0x7fff, true); off += 2;
+    }
+  }
+  return new Blob([ab], { type: "audio/wav" });
+}
+
+// ─── OLA Pitch Shifter ────────────────────────────────────────────────────────
+// Changes pitch (in semitones) WITHOUT changing playback speed/tempo.
+// Uses Overlap-Add (OLA) with linear resampling — no external library needed.
+function olaShift(audioBuffer, semitones) {
+  if (semitones === 0) return audioBuffer;
+  const ratio = Math.pow(2, semitones / 12);
+  const sr = audioBuffer.sampleRate;
+  const numCh = audioBuffer.numberOfChannels;
+  const origLen = audioBuffer.length;
+  const grainSamples = Math.floor(sr * 0.05); // 50 ms grains
+  const hopIn = Math.floor(grainSamples / 2);  // 50 % overlap
+
+  // Hann window for smooth grain blending
+  const hann = new Float32Array(grainSamples);
+  for (let i = 0; i < grainSamples; i++)
+    hann[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / grainSamples);
+
+  const processChannel = (src) => {
+    // Step 1 — linear-interpolation resample to shift pitch (also changes length)
+    const resLen = Math.round(origLen / ratio);
+    const res = new Float32Array(resLen);
+    for (let i = 0; i < resLen; i++) {
+      const p = i * ratio, j = Math.floor(p), f = p - j;
+      res[i] = (j < origLen ? src[j] : 0) * (1 - f) + (j + 1 < origLen ? src[j + 1] : 0) * f;
+    }
+    // Step 2 — OLA stretch back to original length (restores tempo, keeps new pitch)
+    const outHop = Math.round(hopIn * (origLen / resLen));
+    const out = new Float32Array(origLen);
+    const norm = new Float32Array(origLen);
+    let inPos = 0, outPos = 0;
+    while (inPos + grainSamples <= resLen && outPos + grainSamples <= origLen) {
+      for (let i = 0; i < grainSamples; i++) {
+        out[outPos + i] += res[inPos + i] * hann[i];
+        norm[outPos + i] += hann[i];
+      }
+      inPos += hopIn;
+      outPos += outHop;
+    }
+    for (let i = 0; i < origLen; i++) if (norm[i] > 1e-4) out[i] /= norm[i];
+    return out;
+  };
+
+  // Create output buffer (AudioContext needed just to allocate the buffer)
+  const tmp = new AudioContext();
+  const outBuf = tmp.createBuffer(numCh, origLen, sr);
+  for (let ch = 0; ch < numCh; ch++)
+    outBuf.copyToChannel(processChannel(audioBuffer.getChannelData(ch)), ch);
+  tmp.close();
+  return outBuf;
+}
+
+// ─── Voice pitch map ─────────────────────────────────────────────────────────
+const VOICE_SEMITONES = { Chipmunk: 7, Deep: -7 };
+
+// ─── Voice graph (filter effects applied after pitch shift) ───────────────────
+// Works for both AudioContext (live) and OfflineAudioContext (download).
+// Returns { gainNode, oscillators[] } — oscillators must be started by caller.
+function applyVoiceGraph(ctx, inputNode, eff) {
+  const gain = ctx.createGain();
+  gain.gain.value = eff.volume / 100;
+  const oscillators = [];
+
+  switch (eff.voice) {
+    case "Robot": {
+      const osc = ctx.createOscillator();
+      osc.type = "sine"; osc.frequency.value = 30;
+      const rg = ctx.createGain(); rg.gain.value = 0;
+      osc.connect(rg.gain); inputNode.connect(rg); rg.connect(gain);
+      const dg = ctx.createGain(); dg.gain.value = 0.15;
+      inputNode.connect(dg); dg.connect(gain);
+      oscillators.push(osc);
+      break;
+    }
+    case "Echo": {
+      const delay = ctx.createDelay(1.0); delay.delayTime.value = 0.3;
+      const fb = ctx.createGain(); fb.gain.value = 0.45;
+      const wet = ctx.createGain(); wet.gain.value = 0.5;
+      const dry = ctx.createGain(); dry.gain.value = 0.7;
+      inputNode.connect(dry); inputNode.connect(delay);
+      delay.connect(fb); fb.connect(delay); delay.connect(wet);
+      dry.connect(gain); wet.connect(gain);
+      break;
+    }
+    case "Telephone": {
+      const hi = ctx.createBiquadFilter();
+      hi.type = "highpass"; hi.frequency.value = 300; hi.Q.value = 0.7;
+      const lo = ctx.createBiquadFilter();
+      lo.type = "lowpass"; lo.frequency.value = 3400; lo.Q.value = 0.7;
+      const crunch = ctx.createGain(); crunch.gain.value = 2.5;
+      inputNode.connect(hi); hi.connect(lo); lo.connect(crunch); crunch.connect(gain);
+      break;
+    }
+    case "Underwater": {
+      const filter = ctx.createBiquadFilter();
+      filter.type = "lowpass"; filter.frequency.value = 400; filter.Q.value = 5;
+      const lfo = ctx.createOscillator(); lfo.frequency.value = 3;
+      const lfoG = ctx.createGain(); lfoG.gain.value = 60;
+      lfo.connect(lfoG); lfoG.connect(filter.frequency);
+      oscillators.push(lfo);
+      inputNode.connect(filter); filter.connect(gain);
+      break;
+    }
+    default:
+      inputNode.connect(gain);
+  }
+
+  gain.connect(ctx.destination);
+  return { gainNode: gain, oscillators };
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function Mp3Converter() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,171 +163,190 @@ export default function Mp3Converter() {
   const [error, setError] = useState(null);
   const [downloading, setDownloading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [audioElement, setAudioElement] = useState(null);
+  const [pasteHint, setPasteHint] = useState("");
+  const [debugInfo, setDebugInfo] = useState("");
+  const [audioDuration, setAudioDuration] = useState(0);
+
   const [effects, setEffects] = useState({
     volume: 100,
     pitch: 0,
     voice: "Original",
     trimStart: 0,
-    trimEnd: 100,
+    trimEnd: 0,
   });
 
-  const fetchAudioPreview = async () => {
-    if (!url) {
-      setError("Please enter a URL");
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    setPreview(null);
-    try {
-      const response = await fetch(`${API_BASE_URL}/mp3/preview`, {
+  // Audio engine refs
+  const ctxRef = useRef(null);         // active AudioContext
+  const sourceRef = useRef(null);      // AudioBufferSourceNode
+  const gainRef = useRef(null);        // GainNode (for live volume tweak)
+  const oscillatorRefs = useRef([]);   // oscillators/LFOs to stop on cleanup
+
+  // Cache refs
+  const blobCacheRef = useRef({});     // { videoUrl: blobUrl }
+  const bufferCacheRef = useRef({});   // { videoUrl: AudioBuffer } — decoded PCM
+
+  const effectsRef = useRef(effects);
+  useEffect(() => { effectsRef.current = effects; }, [effects]);
+
+  // When audio loads for the first time, initialise trimEnd to full duration
+  useEffect(() => {
+    if (audioDuration > 0 && effects.trimEnd === 0)
+      setEffects((e) => ({ ...e, trimEnd: audioDuration }));
+  }, [audioDuration]);
+
+  // Reset trim when a new video is fetched
+  useEffect(() => {
+    setAudioDuration(0);
+    setEffects((e) => ({ ...e, trimStart: 0, trimEnd: 0 }));
+  }, [preview]);
+
+  // ─── Stop ─────────────────────────────────────────────────────────────────
+
+  const stopAudio = () => {
+    oscillatorRefs.current.forEach((o) => { try { o.stop(); } catch (_) {} });
+    oscillatorRefs.current = [];
+    if (sourceRef.current) { try { sourceRef.current.stop(); } catch (_) {} sourceRef.current = null; }
+    if (ctxRef.current) { ctxRef.current.close().catch(() => {}); ctxRef.current = null; }
+    gainRef.current = null;
+    setIsPlaying(false);
+    setDebugInfo("");
+  };
+
+  // ─── Fetch + decode audio (cached) ────────────────────────────────────────
+
+  const getDecodedBuffer = async () => {
+    // Return cached decoded buffer if available
+    if (bufferCacheRef.current[url]) return bufferCacheRef.current[url];
+
+    // Fetch blob if not cached
+    if (!blobCacheRef.current[url]) {
+      const res = await fetch(`${API_BASE_URL}/mp3/download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
-      const data = await response.json();
-      if (data.success) setPreview(data);
-      else setError(data.error || "Failed to fetch audio info");
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e.error || `Server error ${res.status}`);
+      }
+      const blob = await res.blob();
+      blobCacheRef.current[url] = URL.createObjectURL(blob);
     }
+
+    // Decode to AudioBuffer
+    const resp = await fetch(blobCacheRef.current[url]);
+    const arrayBuf = await resp.arrayBuffer();
+    const tmpCtx = new AudioContext();
+    const decoded = await tmpCtx.decodeAudioData(arrayBuf);
+    await tmpCtx.close();
+
+    bufferCacheRef.current[url] = decoded;
+    return decoded;
   };
 
-  const getAudioVolume = (v) => Math.min(1, v / 100);
-  const getPlaybackRate = () => {
-    if (effects.voice === "Chipmunk") return 1.5;
-    if (effects.voice === "Deep") return 0.7;
-    return Math.min(4, Math.max(0.25, Math.pow(2, effects.pitch / 12)));
-  };
+  // ─── Play ─────────────────────────────────────────────────────────────────
 
-  const playAudio = () => {
-    if (!preview?.audio_url) return;
-    if (audioElement) {
-      audioElement.pause();
-      audioElement.currentTime = 0;
+  const playAudio = async () => {
+    if (!url) return;
+    stopAudio();
+    setError(null);
+
+    const eff = effectsRef.current;
+    const cached = !!bufferCacheRef.current[url];
+    if (!cached) setDebugInfo("loading");
+
+    let rawBuffer;
+    try {
+      rawBuffer = await getDecodedBuffer();
+    } catch (e) {
+      setError(`Could not load audio: ${e.message}`);
+      setDebugInfo("");
+      return;
     }
-    const audio = new Audio(preview.audio_url);
-    audio.volume = getAudioVolume(effects.volume);
-    audio.playbackRate = getPlaybackRate();
-    audio.onended = () => setIsPlaying(false);
-    audio.onerror = () => {
-      setError("Failed to play audio preview");
-      setIsPlaying(false);
-    };
-    audio.play().catch(() => {
-      setError("Cannot play audio. Your browser may block autoplay.");
-      setIsPlaying(false);
-    });
-    setAudioElement(audio);
-    setIsPlaying(true);
-  };
 
-  const stopAudio = () => {
-    if (audioElement) {
-      audioElement.pause();
-      audioElement.currentTime = 0;
+    // Set duration on first load
+    if (audioDuration === 0) setAudioDuration(rawBuffer.duration);
+
+    // Apply OLA pitch shift for Chipmunk / Deep (tempo stays the same)
+    const semitones = VOICE_SEMITONES[eff.voice] ?? 0;
+    const pitchedBuffer = semitones !== 0 ? olaShift(rawBuffer, semitones) : rawBuffer;
+
+    setDebugInfo("Playing...");
+
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      ctxRef.current = ctx;
+
+      const source = ctx.createBufferSource();
+      source.buffer = pitchedBuffer;
+      sourceRef.current = source;
+
+      // Build effect graph
+      const { gainNode, oscillators } = applyVoiceGraph(ctx, source, eff);
+      gainRef.current = gainNode;
+      oscillatorRefs.current = oscillators;
+      oscillators.forEach((o) => o.start(0));
+
+      // Trim: start(when, offsetInBuffer, durationToPlay)
+      const dur = rawBuffer.duration;
+      const trimStart = Math.max(0, Math.min(eff.trimStart, dur));
+      const trimEnd = eff.trimEnd > 0 ? Math.min(eff.trimEnd, dur) : dur;
+      const trimDuration = Math.max(0.05, trimEnd - trimStart);
+
+      source.onended = () => { setIsPlaying(false); setDebugInfo(""); };
+
+      if (ctx.state === "suspended") await ctx.resume();
+      source.start(0, trimStart, trimDuration);
+      setIsPlaying(true);
+    } catch (e) {
+      setError(`Playback failed: ${e.message}`);
+      setDebugInfo("");
       setIsPlaying(false);
     }
   };
 
   const togglePlay = () => (isPlaying ? stopAudio() : playAudio());
 
+  // Live volume update (doesn't need restart)
   useEffect(() => {
-    if (audioElement && isPlaying) {
-      audioElement.volume = Math.min(
-        1,
-        Math.max(0, getAudioVolume(effects.volume)),
-      );
-      audioElement.playbackRate = getPlaybackRate();
-    }
-  }, [effects.volume, effects.pitch, effects.voice]);
+    if (!isPlaying || !gainRef.current) return;
+    gainRef.current.gain.value = effects.volume / 100;
+  }, [effects.volume, isPlaying]);
 
-  const [pasteHint, setPasteHint] = useState("");
+  // ─── Cleanup ──────────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    return () => {
-      if (audioElement) {
-        audioElement.pause();
-        audioElement.src = "";
-      }
-    };
-  }, [audioElement]);
+  useEffect(() => () => {
+    stopAudio();
+    Object.values(blobCacheRef.current).forEach(URL.revokeObjectURL);
+  }, []);
 
-  const handleDownload = async () => {
-    if (!url) return;
-    setDownloading(true);
-    setError(null);
+  // ─── API: fetch metadata ───────────────────────────────────────────────────
+
+  const fetchAudioPreview = async (overrideUrl) => {
+    const targetUrl = overrideUrl ?? url;
+    if (!targetUrl) { setError("Please enter a URL"); return; }
+    setLoading(true); setError(null); setPreview(null); setDebugInfo(""); stopAudio();
     try {
-      const response = await fetch(`${API_BASE_URL}/mp3/download`, {
+      const res = await fetch(`${API_BASE_URL}/mp3/preview`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url: targetUrl }),
       });
-      if (!response.ok)
-        throw new Error(
-          (await response.json().catch(() => ({}))).error || "Download failed",
-        );
-      const blob = await response.blob();
-      const contentDisposition = response.headers.get("Content-Disposition");
-      let filename = "audio.m4a";
-      if (contentDisposition) {
-        const match = contentDisposition.match(/filename="?([^"]+)"?/);
-        if (match) filename = match[1];
-      }
-      const downloadUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(downloadUrl);
-    } catch (err) {
-      setError(err.message || "Download failed. Please try again.");
-    } finally {
-      setDownloading(false);
-    }
+      const data = await res.json();
+      if (data.success) setPreview(data);
+      else setError(data.error || "Failed to fetch audio info");
+    } catch { setError("Network error. Please try again."); }
+    finally { setLoading(false); }
   };
-
-  const getVolumeDisplay = () =>
-    effects.volume > 100
-      ? `${effects.volume}% (Boosted - may distort)`
-      : `${effects.volume}%`;
 
   const handlePasteOrClear = async () => {
     if (url) {
-      setUrl("");
-      setPreview(null);
-      setError(null);
-      setPasteHint("");
+      setUrl(""); setPreview(null); setError(null); setPasteHint(""); setDebugInfo(""); stopAudio();
     } else {
       try {
         const text = await navigator.clipboard.readText();
-        setUrl(text);
-        setPasteHint("");
-        if (text) {
-          // trigger preview with the pasted text directly
-          setLoading(true);
-          setError(null);
-          setPreview(null);
-          try {
-            const response = await fetch(`${API_BASE_URL}/mp3/preview`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ url: text }),
-            });
-            const data = await response.json();
-            if (data.success) setPreview(data);
-            else setError(data.error || "Failed to fetch audio info");
-          } catch {
-            setError("Network error. Please try again.");
-          } finally {
-            setLoading(false);
-          }
-        }
+        setUrl(text); setPasteHint("");
+        if (text) fetchAudioPreview(text);
       } catch {
         setPasteHint("Use Ctrl+V to paste");
         setTimeout(() => setPasteHint(""), 3000);
@@ -197,84 +354,108 @@ export default function Mp3Converter() {
     }
   };
 
+  // ─── Download with all effects baked in ───────────────────────────────────
+
+  const handleDownload = async () => {
+    if (!url) return;
+    setDownloading(true); setError(null);
+
+    try {
+      const rawBuffer = await getDecodedBuffer();
+      const eff = effects;
+
+      // Apply OLA pitch shift for Chipmunk / Deep
+      const semitones = VOICE_SEMITONES[eff.voice] ?? 0;
+      const pitchedBuffer = semitones !== 0 ? olaShift(rawBuffer, semitones) : rawBuffer;
+
+      const dur = rawBuffer.duration;
+      const startSec = Math.max(0, Math.min(eff.trimStart, dur));
+      const endSec = eff.trimEnd > 0 ? Math.min(eff.trimEnd, dur) : dur;
+      const trimDuration = Math.max(0.05, endSec - startSec);
+
+      const sr = pitchedBuffer.sampleRate;
+      const numCh = pitchedBuffer.numberOfChannels;
+      const echoTail = eff.voice === "Echo" ? 1.5 : 0;
+      const outLen = Math.ceil((trimDuration + echoTail) * sr);
+
+      const offCtx = new OfflineAudioContext(numCh, outLen, sr);
+      const source = offCtx.createBufferSource();
+      source.buffer = pitchedBuffer;
+
+      const { oscillators } = applyVoiceGraph(offCtx, source, eff);
+      oscillators.forEach((o) => o.start(0));
+
+      source.start(0, startSec, trimDuration);
+      const rendered = await offCtx.startRendering();
+
+      const wavBlob = audioBufferToWav(rendered);
+      const dlUrl = URL.createObjectURL(wavBlob);
+      const a = document.createElement("a");
+      a.href = dlUrl;
+      const title = (preview?.title || "audio").replace(/[^a-z0-9]/gi, "_").slice(0, 40);
+      a.download = `${title}_modified.wav`;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(dlUrl);
+    } catch (err) {
+      console.error("Download error:", err);
+      setError(`Download failed: ${err.message}`);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  // ─── Render ───────────────────────────────────────────────────────────────
+
+  const maxTrim = audioDuration || (preview?.duration_seconds || 300);
+  const activeVoiceSemitones = VOICE_SEMITONES[effects.voice];
+
   return (
     <>
       {MP3ConverterSEO()}
-{/* 
-      <Breadcrumbs items={[{ label: "MP3 Converter", path: "/mp3" }]} /> */}
-
       <Helmet>
         <title>Video to MP3 Converter — SaveFlox | Extract Audio Free</title>
-        <meta
-          name="description"
-          content="Convert TikTok, Instagram, Facebook, and Pinterest videos to MP3 audio for free. Extract audio instantly with SaveFlox MP3 converter."
-        />
+        <meta name="description" content="Convert TikTok, Instagram, Facebook, and Pinterest videos to MP3 audio for free." />
         <link rel="canonical" href="https://www.saveflox.com/mp3-converter" />
       </Helmet>
 
       <section className="mp3">
         <div className="mp3-content">
-          <div className="mp3-icon">
-            <Music size={28} />
-          </div>
-
-          <h1 className="mp3-heading">
-            Video to <span>MP3 Converter</span>
-          </h1>
+          <div className="mp3-icon"><Music size={28} /></div>
+          <h1 className="mp3-heading">Video to <span>MP3 Converter</span></h1>
           <p className="mp3-subtext">
-            Extract audio from TikTok, Instagram, Facebook, Pinterest, and
-            Snapchat videos
+            Extract audio from TikTok, Instagram, Facebook, Pinterest, and Snapchat videos
           </p>
 
           <div className="mp3-card">
             <div className="mp3-input-group">
               <div className="mp3-input-wrapper">
                 <Link size={18} className="mp3-input-icon" />
-                <input
-                  type="text"
-                  className="mp3-input"
-                  value={url}
+                <input type="text" className="mp3-input" value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="Paste video URL here..."
-                  onKeyPress={(e) => e.key === "Enter" && fetchAudioPreview()}
-                />
+                  onKeyPress={(e) => e.key === "Enter" && fetchAudioPreview()} />
                 <button className="mp3-paste-btn" onClick={handlePasteOrClear}>
                   {url ? "Clear" : "Paste"}
                 </button>
               </div>
-              <button
-                className="mp3-btn"
-                onClick={fetchAudioPreview}
-                disabled={loading}
-              >
+              <button className="mp3-btn" onClick={() => fetchAudioPreview()} disabled={loading}>
                 {loading ? "Please wait..." : "Preview"}
               </button>
             </div>
           </div>
 
           {pasteHint && <p className="mp3-paste-hint">{pasteHint}</p>}
-
-          {loading && (
-            <div className="mp3-dots-loader">
-              <span />
-              <span />
-              <span />
-            </div>
-          )}
+          {loading && <div className="mp3-dots-loader"><span /><span /><span /></div>}
 
           {preview && (
             <div className="mp3-editor">
+              {/* Thumbnail + info */}
               <div className="preview-header">
-                <img
-                  src={preview.thumbnail}
-                  alt="Preview"
-                  className="preview-thumbnail"
-                />
+                <img src={preview.thumbnail} alt="Preview" className="preview-thumbnail" />
                 <div className="preview-info">
                   <h3>{preview.title}</h3>
-                  <p>
-                    {preview.uploader} • {preview.duration}
-                  </p>
+                  <p>{preview.uploader} • {preview.duration}</p>
                   <button className="mp3-preview-btn" onClick={togglePlay}>
                     {isPlaying ? <Pause size={18} /> : <Play size={18} />}
                     {isPlaying ? "Pause Preview" : "Play Preview"}
@@ -282,135 +463,120 @@ export default function Mp3Converter() {
                 </div>
               </div>
 
+              {/* Loading / status indicator */}
+              {debugInfo === "loading" && (
+                <div className="mp3-loading-bar">
+                  <svg className="mp3-loading-spinner" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="mp3-loading-track"/>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="mp3-loading-arc"/>
+                  </svg>
+                  <div>
+                    <div className="mp3-loading-title">Preparing audio…</div>
+                    <div className="mp3-loading-sub">First play only — replays are instant</div>
+                  </div>
+                </div>
+              )}
+              {debugInfo && debugInfo !== "loading" && (
+                <p className="mp3-status-text">✓ {debugInfo}</p>
+              )}
+
               <h2 className="mp3-editor-title">Audio Effects (Live Preview)</h2>
 
+              {/* Volume */}
               <div className="mp3-control">
                 <label className="mp3-control-label">
-                  <Volume2 size={16} /> Volume: {getVolumeDisplay()}
+                  <Volume2 size={16} /> Volume: {effects.volume > 100 ? `${effects.volume}% (Boosted)` : `${effects.volume}%`}
                 </label>
                 <div className="mp3-slider-row">
-                  <input
-                    type="range"
-                    className="mp3-slider"
-                    min="0"
-                    max="200"
-                    value={effects.volume}
-                    onChange={(e) =>
-                      setEffects({
-                        ...effects,
-                        volume: parseInt(e.target.value),
-                      })
-                    }
-                  />
-                  <small className="mp3-hint">
-                    100% = normal, 200% = double volume (may cause distortion)
-                  </small>
+                  <input type="range" className="mp3-slider" min="0" max="200" value={effects.volume}
+                    onChange={(e) => setEffects({ ...effects, volume: parseInt(e.target.value) })} />
+                  <small className="mp3-hint">100% = normal · 200% = double volume (may distort)</small>
                 </div>
               </div>
 
+              {/* Voice Effect */}
               <div className="mp3-control">
-                <label className="mp3-control-label">
-                  <Mic size={16} /> Pitch: {effects.pitch} semitones
-                </label>
-                <div className="mp3-slider-row">
-                  <input
-                    type="range"
-                    className="mp3-slider"
-                    min="-12"
-                    max="12"
-                    step="1"
-                    value={effects.pitch}
-                    onChange={(e) =>
-                      setEffects({
-                        ...effects,
-                        pitch: parseInt(e.target.value),
-                      })
-                    }
-                  />
-                  <small className="mp3-hint">
-                    -12 = lower, +12 = higher pitch
-                  </small>
-                </div>
-              </div>
-
-              <div className="mp3-control">
-                <label className="mp3-control-label">
-                  <Mic size={16} /> Voice Effect
-                </label>
+                <label className="mp3-control-label"><Mic size={16} /> Voice Effect</label>
                 <div className="mp3-voice-row">
-                  {["Original", "Chipmunk", "Deep", "Robot"].map((v) => (
-                    <button
-                      key={v}
-                      className={`mp3-voice-pill ${
-                        effects.voice === v ? "active" : ""
-                      }`}
-                      onClick={() => setEffects({ ...effects, voice: v })}
-                    >
-                      {v}
+                  {[
+                    { id: "Original",   label: "Original",   hint: "No effect" },
+                    { id: "Chipmunk",   label: "Chipmunk",   hint: "Higher pitch, same speed" },
+                    { id: "Deep",       label: "Deep",       hint: "Lower pitch, same speed" },
+                    { id: "Robot",      label: "Robot",      hint: "Ring modulator" },
+                    { id: "Echo",       label: "Echo",       hint: "Delay + feedback" },
+                    { id: "Telephone",  label: "Telephone",  hint: "Bandpass filter" },
+                    { id: "Underwater", label: "Underwater", hint: "Lowpass + wobble" },
+                  ].map(({ id, label, hint }) => (
+                    <button key={id} title={hint}
+                      className={`mp3-voice-pill ${effects.voice === id ? "active" : ""}`}
+                      onClick={() => { setEffects({ ...effects, voice: id }); if (isPlaying) stopAudio(); }}>
+                      {label}
                     </button>
                   ))}
                 </div>
+                {activeVoiceSemitones !== undefined && (
+                  <small className="mp3-hint mp3-voice-confirm">
+                    Pitch only changes — tempo/speed stays the same ✓
+                  </small>
+                )}
+                {isPlaying && (
+                  <small className="mp3-hint mp3-voice-warn">
+                    Voice changed — press Play again to hear the new effect
+                  </small>
+                )}
               </div>
 
+              {/* Trim */}
               <div className="mp3-control">
                 <label className="mp3-control-label">
-                  <Scissors size={16} /> Trim (Preview only)
+                  <Scissors size={16} /> Trim
+                  {audioDuration > 0 && (
+                    <span className="mp3-trim-range">
+                      {fmt(effects.trimStart)} → {fmt(effects.trimEnd || audioDuration)}
+                      {" "}<span className="mp3-trim-clip">
+                        (clip: {fmt((effects.trimEnd || audioDuration) - effects.trimStart)})
+                      </span>
+                    </span>
+                  )}
                 </label>
                 <div className="mp3-slider-row">
-                  <small className="mp3-hint">
-                    Start: {effects.trimStart}%
-                  </small>
-                  <input
-                    type="range"
-                    className="mp3-slider"
-                    min="0"
-                    max={Math.max(1, effects.trimEnd - 1)}
-                    value={effects.trimStart}
-                    onChange={(e) =>
-                      setEffects({
-                        ...effects,
-                        trimStart: parseInt(e.target.value),
-                      })
-                    }
-                  />
-                  <small className="mp3-hint">End: {effects.trimEnd}%</small>
-                  <input
-                    type="range"
-                    className="mp3-slider"
-                    min={Math.min(99, effects.trimStart + 1)}
-                    max="100"
-                    value={effects.trimEnd}
-                    onChange={(e) =>
-                      setEffects({
-                        ...effects,
-                        trimEnd: parseInt(e.target.value),
-                      })
-                    }
-                  />
-                  <small className="mp3-hint">
-                    Trim only affects preview playback, not the downloaded file
-                  </small>
+                  <div className="mp3-trim-times">
+                    <span>Start: {fmt(effects.trimStart)}</span>
+                    <span>End: {fmt(effects.trimEnd || maxTrim)}</span>
+                  </div>
+                  <input type="range" className="mp3-slider"
+                    min="0" max={maxTrim} step="1" value={effects.trimStart}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value);
+                      setEffects({ ...effects, trimStart: Math.min(v, (effects.trimEnd || maxTrim) - 1) });
+                    }} />
+                  <input type="range" className="mp3-slider"
+                    min="0" max={maxTrim} step="1" value={effects.trimEnd || maxTrim}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value);
+                      setEffects({ ...effects, trimEnd: Math.max(v, effects.trimStart + 1) });
+                    }} />
+                  <small className="mp3-hint">Applies to both preview and downloaded file</small>
                 </div>
               </div>
 
+              {/* Actions */}
               <div className="mp3-actions">
                 <button className="mp3-preview-btn" onClick={togglePlay}>
                   {isPlaying ? <Pause size={18} /> : <Play size={18} />}
                   {isPlaying ? "Pause" : "Play Preview"}
                 </button>
-                <button
-                  className="mp3-download-btn"
-                  onClick={handleDownload}
-                  disabled={downloading}
-                >
-                  {downloading ? (
-                    <Loader size={18} className="mp3-spinner" />
-                  ) : (
-                    <Download size={18} />
-                  )}
-                  {downloading ? "Downloading..." : "Download Audio"}
+                <button className="mp3-download-btn" onClick={handleDownload} disabled={downloading}>
+                  {downloading ? <Loader size={18} className="mp3-spinner" /> : <Download size={18} />}
+                  {downloading ? "Processing…" : "Download Audio"}
                 </button>
               </div>
+
+              {downloading && (
+                <p className="mp3-downloading-msg">
+                  Rendering audio with effects — this may take a few seconds…
+                </p>
+              )}
             </div>
           )}
 

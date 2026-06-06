@@ -1183,3 +1183,268 @@
   flex: 1;
   min-width: 0;
 }
+
+
+/* ============================================================
+   PASTE THIS BLOCK AT THE BOTTOM OF Mp3Converter.css
+   Covers: dark mode for new elements + full responsive layout
+   ============================================================ */
+
+/* ── preview-info dark mode (was missing) ─────────────────── */
+.preview-info h3 {
+  color: #1e3a5f;
+}
+.dark .preview-info h3 {
+  color: #f1f5f9;
+}
+.preview-info p {
+  color: #6b7280;
+}
+.dark .preview-info p {
+  color: #94a3b8;
+}
+
+/* ── Loading bar ──────────────────────────────────────────── */
+.mp3-loading-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 4px;
+  padding: 10px 14px;
+  background: linear-gradient(90deg, #f0f4ff, #e8f0ff);
+  border: 1px solid #d0dcff;
+  border-radius: 8px;
+}
+.dark .mp3-loading-bar {
+  background: linear-gradient(90deg, #1e2a4a, #1a2e3a);
+  border-color: #2d3f6e;
+}
+
+.mp3-loading-spinner {
+  flex-shrink: 0;
+  animation: mp3spin 0.9s linear infinite;
+  color: #4a6cf7;
+}
+.dark .mp3-loading-spinner {
+  color: #60a5fa;
+}
+
+.mp3-loading-track {
+  opacity: 0.3;
+}
+
+.mp3-loading-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3a5be0;
+}
+.dark .mp3-loading-title {
+  color: #93bbfd;
+}
+
+.mp3-loading-sub {
+  font-size: 11px;
+  color: #7a8ec0;
+  margin-top: 2px;
+}
+.dark .mp3-loading-sub {
+  color: #4e6394;
+}
+
+@keyframes mp3spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Status text (✓ Playing…) ────────────────────────────── */
+.mp3-status-text {
+  font-size: 12px;
+  color: #6b7eb5;
+  margin: 6px 0 0;
+}
+.dark .mp3-status-text {
+  color: #4e6394;
+}
+
+/* ── Trim time display ───────────────────────────────────── */
+.mp3-trim-range {
+  font-weight: 400;
+  margin-left: 8px;
+  color: #6b7280;
+}
+.dark .mp3-trim-range {
+  color: #64748b;
+}
+
+.mp3-trim-clip {
+  font-size: 11px;
+}
+
+.mp3-trim-times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #6b7280;
+}
+.dark .mp3-trim-times {
+  color: #64748b;
+}
+
+/* ── Voice effect hint texts ─────────────────────────────── */
+.mp3-voice-confirm {
+  display: block;
+  margin-top: 6px;
+  color: #16a34a;
+}
+.dark .mp3-voice-confirm {
+  color: #4ade80;
+}
+
+.mp3-voice-warn {
+  display: block;
+  margin-top: 4px;
+  color: #c2410c;
+}
+.dark .mp3-voice-warn {
+  color: #fb923c;
+}
+
+/* ── Download processing message ─────────────────────────── */
+.mp3-downloading-msg {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 6px;
+  text-align: center;
+}
+.dark .mp3-downloading-msg {
+  color: #64748b;
+}
+
+/* ============================================================
+   RESPONSIVE — Mobile, Tablet, Desktop
+   ============================================================ */
+
+/* ── Tablet (≤ 768px) ────────────────────────────────────── */
+@media (max-width: 768px) {
+  .mp3 {
+    padding: 2rem 1.25rem;
+  }
+
+  .mp3-heading {
+    font-size: 2.5rem;
+  }
+
+  .mp3-card,
+  .mp3-editor {
+    padding: 1.25rem;
+  }
+
+  .preview-header {
+    flex-direction: column;
+  }
+
+  .preview-thumbnail {
+    width: 100%;
+    height: auto;
+    max-height: 220px;
+  }
+
+  .mp3-voice-row {
+    gap: 0.4rem;
+  }
+
+  .mp3-voice-pill {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.82rem;
+  }
+
+  .mp3-actions {
+    flex-direction: column;
+  }
+
+  .mp3-download-btn {
+    flex: unset;
+    width: 100%;
+  }
+}
+
+/* ── Mobile (≤ 480px) ────────────────────────────────────── */
+@media (max-width: 480px) {
+  .mp3 {
+    padding: 1.5rem 1rem;
+    align-items: flex-start;
+  }
+
+  .mp3-heading {
+    font-size: 1.9rem;
+    letter-spacing: -0.5px;
+  }
+
+  .mp3-subtext {
+    font-size: 0.9rem;
+  }
+
+  .mp3-card,
+  .mp3-editor {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .mp3-input-group {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .mp3-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.85rem 1rem;
+  }
+
+  /* 7 voice pills → 2 per row on small phones */
+  .mp3-voice-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.4rem;
+  }
+
+  /* "Original" spans full width as it's the default */
+  .mp3-voice-row button:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .mp3-voice-pill {
+    justify-content: center;
+    font-size: 0.8rem;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .mp3-preview-btn,
+  .mp3-download-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .mp3-editor-title {
+    font-size: 1.1rem;
+  }
+
+  .mp3-loading-bar {
+    flex-wrap: wrap;
+  }
+}
+
+/* ── Very small phones (≤ 360px) ─────────────────────────── */
+@media (max-width: 360px) {
+  .mp3-heading {
+    font-size: 1.6rem;
+  }
+
+  .mp3-icon {
+    width: 46px;
+    height: 46px;
+  }
+
+  .mp3-voice-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
