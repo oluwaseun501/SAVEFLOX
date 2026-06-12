@@ -32,7 +32,9 @@ import Contact from "./pages/Contact";
 import { isAuthenticated } from "./utils/auth";
 import { useEffect, useState } from "react";
 import GlideIn from "./components/GlideIn";
+
 import adsBanner from "./ads/ads1.jpg";
+import adsBanner2 from "./ads/ads2.jpg";
 
 
 function ProtectedAdmin({ children }) {
@@ -43,11 +45,11 @@ function Home() {
   return (
     <>
       <GlideIn><Hero /></GlideIn>
-      <AdSlot slot="home-top" format="leaderboard" image={adsBanner} />
+      <AdSlot slot="tiktok-bottom" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
       <GlideIn><WhyChoose /></GlideIn>
-      <AdSlot slot="home-bottom" format="leaderboard" />
+      <AdSlot slot="tiktok-bottom" format="leaderboard" image={adsBanner} link="https://www.saveflox.com" />
       <GlideIn><HowItWorks /></GlideIn>
-      <AdSlot slot="home-bottom" format="leaderboard" />
+      <AdSlot slot="tiktok-bottom" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
       <GlideIn><FAQ /></GlideIn>
     </>
   );

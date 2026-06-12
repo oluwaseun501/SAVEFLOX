@@ -1,0 +1,287 @@
+.adm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: adm-fade-in 0.2s ease;
+}
+@keyframes adm-fade-in {
+  from { opacity: 0; } to { opacity: 1; }
+}
+.adm-box {
+  background: #fff;
+  border-radius: 12px;
+  width: min(520px, 94vw);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  animation: adm-slide-up 0.25s ease;
+}
+@keyframes adm-slide-up {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.dark .adm-box { background: #1e293b; color: #f1f5f9; }
+
+.adm-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+.dark .adm-top-bar { background: #0f172a; border-color: #334155; }
+
+.adm-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #9ca3af;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: #e5e7eb;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.dark .adm-label { background: #334155; color: #64748b; }
+
+.adm-close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.adm-close-locked { background: #d1d5db; color: #6b7280; cursor: not-allowed; }
+.adm-close-active { background: #1d4ed8; color: white; cursor: pointer; }
+.adm-close-active:hover { background: #1e40af; transform: scale(1.1); }
+.adm-countdown { font-size: 0.8rem; font-weight: 700; }
+
+.adm-content { position: relative; }
+
+.adm-image {
+  width: 100%;
+  display: block;
+  max-height: 280px;
+  object-fit: cover;
+}
+.adm-placeholder {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(135deg, #1d4ed8, #22c55e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+.adm-placeholder--video { height: 260px; background: #0f172a; }
+.adm-fake-video { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; color: #94a3b8; }
+.adm-fake-play { font-size: 2.5rem; color: #3b82f6; }
+
+.adm-skip-pill {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(0,0,0,0.75);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  backdrop-filter: blur(4px);
+  transition: background 0.2s;
+}
+.adm-skip-pill:hover { background: rgba(0,0,0,0.9); }
+
+.adm-wait-msg {
+  padding: 0.6rem 1rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-align: center;
+  border-top: 1px solid #f3f4f6;
+}
+.adm-wait-msg span { color: #9ca3af; }
+
+.adm-video { width: 100%; display: block; max-height: 280px; background: #000; }
+
+.adm-video-footer {
+  padding: 0.65rem 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #6b7280;
+  border-top: 1px solid #f3f4f6;
+}
+.dark .adm-video-footer { border-color: #334155; color: #94a3b8; }
+.adm-ready {
+  color: #6366f1;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.01em;
+}
+
+.adm-unlocks {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.adm-unlocks strong {
+  color: #1e293b;
+  font-weight: 700;
+}
+/* Download buttons — add to your global CSS (index.css or App.css) */
+/* ── Download action buttons ─────────────────────────── */
+.download-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.dl-btn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.65rem 1rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.dl-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Normal download — clean outlined style */
+.dl-btn--normal {
+  background: #ffffff;
+  color: #334155;
+  border: 1.5px solid #cbd5e1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.dl-btn--normal:not(:disabled):hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+/* HD download — indigo/violet gradient */
+.dl-btn--hd {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #ffffff;
+  border: 1.5px solid transparent;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+}
+.dl-btn--hd:not(:disabled):hover {
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+  transform: translateY(-2px);
+}
+
+.dl-hd-badge {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  background: rgba(255, 255, 255, 0.22);
+  padding: 2px 5px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  margin-left: 1px;
+  flex-shrink: 0;
+}
+
+/* Dark mode */
+.dark .dl-btn--normal {
+  background: #1e293b;
+  color: #cbd5e1;
+  border-color: #334155;
+}
+.dark .dl-btn--normal:not(:disabled):hover {
+  background: #0f172a;
+  border-color: #475569;
+}
+
+/* Spinner */
+.spinner {
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+
+/* ── Responsive ──────────────────────────────────────── */
+
+/* Large tablet / small desktop (769px – 1024px) */
+@media (max-width: 1024px) {
+  .dl-btn {
+    padding: 0.65rem 0.85rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Tablet / iPad portrait (481px – 768px) */
+@media (max-width: 768px) {
+  .download-actions {
+    gap: 0.55rem;
+  }
+  .dl-btn {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.82rem;
+    border-radius: 7px;
+  }
+  .dl-hd-badge {
+    display: none; /* hide badge to save space on tablets */
+  }
+}
+
+/* Mobile (max 480px) — stack vertically */
+@media (max-width: 480px) {
+  .download-actions {
+    flex-direction: column;
+    gap: 0.55rem;
+    margin-top: 1rem;
+  }
+  .dl-btn {
+    width: 100%;
+    flex: unset;
+    padding: 0.75rem 1rem;
+    font-size: 0.92rem;
+    border-radius: 8px;
+  }
+  .dl-hd-badge {
+    display: inline-block; /* show badge again since we have full width */
+  }
+}
+
+/* Small mobile (max 360px) */
+@media (max-width: 360px) {
+  .dl-btn {
+    font-size: 0.85rem;
+    padding: 0.7rem 0.75rem;
+  }
+}

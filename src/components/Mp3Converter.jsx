@@ -14,13 +14,15 @@ import "../styles/Mp3Converter.css";
 import { Helmet } from "react-helmet-async";
 import { MP3ConverterSEO } from "./SEOComponents";
 import { RelatedServices } from "./BreadcrumbsAndLinks";
+import adsBanner from "../ads/ads1.jpg";
+import adsBanner2 from "../ads/ads2.jpg";
+import DownloadAdModal from "./DownloadAdModal";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
+const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both` });
 
-// ─── Time formatting ──────────────────────────────────────────────────────────
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
-// ─── WAV encoder ─────────────────────────────────────────────────────────────
 function audioBufferToWav(buffer) {
   const numCh = buffer.numberOfChannels;
   const sr = buffer.sampleRate;
@@ -45,32 +47,24 @@ function audioBufferToWav(buffer) {
   return new Blob([ab], { type: "audio/wav" });
 }
 
-// ─── OLA Pitch Shifter ────────────────────────────────────────────────────────
-// Changes pitch (in semitones) WITHOUT changing playback speed/tempo.
-// Uses Overlap-Add (OLA) with linear resampling — no external library needed.
 function olaShift(audioBuffer, semitones) {
   if (semitones === 0) return audioBuffer;
   const ratio = Math.pow(2, semitones / 12);
   const sr = audioBuffer.sampleRate;
   const numCh = audioBuffer.numberOfChannels;
   const origLen = audioBuffer.length;
-  const grainSamples = Math.floor(sr * 0.05); // 50 ms grains
-  const hopIn = Math.floor(grainSamples / 2);  // 50 % overlap
-
-  // Hann window for smooth grain blending
+  const grainSamples = Math.floor(sr * 0.05);
+  const hopIn = Math.floor(grainSamples / 2);
   const hann = new Float32Array(grainSamples);
   for (let i = 0; i < grainSamples; i++)
     hann[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / grainSamples);
-
   const processChannel = (src) => {
-    // Step 1 — linear-interpolation resample to shift pitch (also changes length)
     const resLen = Math.round(origLen / ratio);
     const res = new Float32Array(resLen);
     for (let i = 0; i < resLen; i++) {
       const p = i * ratio, j = Math.floor(p), f = p - j;
       res[i] = (j < origLen ? src[j] : 0) * (1 - f) + (j + 1 < origLen ? src[j + 1] : 0) * f;
     }
-    // Step 2 — OLA stretch back to original length (restores tempo, keeps new pitch)
     const outHop = Math.round(hopIn * (origLen / resLen));
     const out = new Float32Array(origLen);
     const norm = new Float32Array(origLen);
@@ -86,8 +80,6 @@ function olaShift(audioBuffer, semitones) {
     for (let i = 0; i < origLen; i++) if (norm[i] > 1e-4) out[i] /= norm[i];
     return out;
   };
-
-  // Create output buffer (AudioContext needed just to allocate the buffer)
   const tmp = new AudioContext();
   const outBuf = tmp.createBuffer(numCh, origLen, sr);
   for (let ch = 0; ch < numCh; ch++)
@@ -96,17 +88,12 @@ function olaShift(audioBuffer, semitones) {
   return outBuf;
 }
 
-// ─── Voice pitch map ─────────────────────────────────────────────────────────
 const VOICE_SEMITONES = { Chipmunk: 7, Deep: -7 };
 
-// ─── Voice graph (filter effects applied after pitch shift) ───────────────────
-// Works for both AudioContext (live) and OfflineAudioContext (download).
-// Returns { gainNode, oscillators[] } — oscillators must be started by caller.
 function applyVoiceGraph(ctx, inputNode, eff) {
   const gain = ctx.createGain();
   gain.gain.value = eff.volume / 100;
   const oscillators = [];
-
   switch (eff.voice) {
     case "Robot": {
       const osc = ctx.createOscillator();
@@ -150,12 +137,10 @@ function applyVoiceGraph(ctx, inputNode, eff) {
     default:
       inputNode.connect(gain);
   }
-
   gain.connect(ctx.destination);
   return { gainNode: gain, oscillators };
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
 export default function Mp3Converter() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -166,6 +151,8 @@ export default function Mp3Converter() {
   const [pasteHint, setPasteHint] = useState("");
   const [debugInfo, setDebugInfo] = useState("");
   const [audioDuration, setAudioDuration] = useState(0);
+  const [adModal, setAdModal] = useState(null);
+  const [pendingDownload, setPendingDownload] = useState(null);
 
   const [effects, setEffects] = useState({
     volume: 100,
@@ -175,32 +162,25 @@ export default function Mp3Converter() {
     trimEnd: 0,
   });
 
-  // Audio engine refs
-  const ctxRef = useRef(null);         // active AudioContext
-  const sourceRef = useRef(null);      // AudioBufferSourceNode
-  const gainRef = useRef(null);        // GainNode (for live volume tweak)
-  const oscillatorRefs = useRef([]);   // oscillators/LFOs to stop on cleanup
-
-  // Cache refs
-  const blobCacheRef = useRef({});     // { videoUrl: blobUrl }
-  const bufferCacheRef = useRef({});   // { videoUrl: AudioBuffer } — decoded PCM
-
+  const ctxRef = useRef(null);
+  const sourceRef = useRef(null);
+  const gainRef = useRef(null);
+  const oscillatorRefs = useRef([]);
+  const blobCacheRef = useRef({});
+  const bufferCacheRef = useRef({});
   const effectsRef = useRef(effects);
+
   useEffect(() => { effectsRef.current = effects; }, [effects]);
 
-  // When audio loads for the first time, initialise trimEnd to full duration
   useEffect(() => {
     if (audioDuration > 0 && effects.trimEnd === 0)
       setEffects((e) => ({ ...e, trimEnd: audioDuration }));
   }, [audioDuration]);
 
-  // Reset trim when a new video is fetched
   useEffect(() => {
     setAudioDuration(0);
     setEffects((e) => ({ ...e, trimStart: 0, trimEnd: 0 }));
   }, [preview]);
-
-  // ─── Stop ─────────────────────────────────────────────────────────────────
 
   const stopAudio = () => {
     oscillatorRefs.current.forEach((o) => { try { o.stop(); } catch (_) {} });
@@ -212,13 +192,8 @@ export default function Mp3Converter() {
     setDebugInfo("");
   };
 
-  // ─── Fetch + decode audio (cached) ────────────────────────────────────────
-
   const getDecodedBuffer = async () => {
-    // Return cached decoded buffer if available
     if (bufferCacheRef.current[url]) return bufferCacheRef.current[url];
-
-    // Fetch blob if not cached
     if (!blobCacheRef.current[url]) {
       const res = await fetch(`${API_BASE_URL}/mp3/download`, {
         method: "POST",
@@ -232,29 +207,22 @@ export default function Mp3Converter() {
       const blob = await res.blob();
       blobCacheRef.current[url] = URL.createObjectURL(blob);
     }
-
-    // Decode to AudioBuffer
     const resp = await fetch(blobCacheRef.current[url]);
     const arrayBuf = await resp.arrayBuffer();
     const tmpCtx = new AudioContext();
     const decoded = await tmpCtx.decodeAudioData(arrayBuf);
     await tmpCtx.close();
-
     bufferCacheRef.current[url] = decoded;
     return decoded;
   };
-
-  // ─── Play ─────────────────────────────────────────────────────────────────
 
   const playAudio = async () => {
     if (!url) return;
     stopAudio();
     setError(null);
-
     const eff = effectsRef.current;
     const cached = !!bufferCacheRef.current[url];
     if (!cached) setDebugInfo("loading");
-
     let rawBuffer;
     try {
       rawBuffer = await getDecodedBuffer();
@@ -263,38 +231,25 @@ export default function Mp3Converter() {
       setDebugInfo("");
       return;
     }
-
-    // Set duration on first load
     if (audioDuration === 0) setAudioDuration(rawBuffer.duration);
-
-    // Apply OLA pitch shift for Chipmunk / Deep (tempo stays the same)
     const semitones = VOICE_SEMITONES[eff.voice] ?? 0;
     const pitchedBuffer = semitones !== 0 ? olaShift(rawBuffer, semitones) : rawBuffer;
-
     setDebugInfo("Playing...");
-
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       ctxRef.current = ctx;
-
       const source = ctx.createBufferSource();
       source.buffer = pitchedBuffer;
       sourceRef.current = source;
-
-      // Build effect graph
       const { gainNode, oscillators } = applyVoiceGraph(ctx, source, eff);
       gainRef.current = gainNode;
       oscillatorRefs.current = oscillators;
       oscillators.forEach((o) => o.start(0));
-
-      // Trim: start(when, offsetInBuffer, durationToPlay)
       const dur = rawBuffer.duration;
       const trimStart = Math.max(0, Math.min(eff.trimStart, dur));
       const trimEnd = eff.trimEnd > 0 ? Math.min(eff.trimEnd, dur) : dur;
       const trimDuration = Math.max(0.05, trimEnd - trimStart);
-
       source.onended = () => { setIsPlaying(false); setDebugInfo(""); };
-
       if (ctx.state === "suspended") await ctx.resume();
       source.start(0, trimStart, trimDuration);
       setIsPlaying(true);
@@ -307,20 +262,15 @@ export default function Mp3Converter() {
 
   const togglePlay = () => (isPlaying ? stopAudio() : playAudio());
 
-  // Live volume update (doesn't need restart)
   useEffect(() => {
     if (!isPlaying || !gainRef.current) return;
     gainRef.current.gain.value = effects.volume / 100;
   }, [effects.volume, isPlaying]);
 
-  // ─── Cleanup ──────────────────────────────────────────────────────────────
-
   useEffect(() => () => {
     stopAudio();
     Object.values(blobCacheRef.current).forEach(URL.revokeObjectURL);
   }, []);
-
-  // ─── API: fetch metadata ───────────────────────────────────────────────────
 
   const fetchAudioPreview = async (overrideUrl) => {
     const targetUrl = overrideUrl ?? url;
@@ -354,40 +304,52 @@ export default function Mp3Converter() {
     }
   };
 
-  // ─── Download with all effects baked in ───────────────────────────────────
+  // Download original — no effects, no popup
+  const downloadOriginal = async () => {
+    if (!url) return;
+    setDownloading(true); setError(null);
+    try {
+      const rawBuffer = await getDecodedBuffer();
+      const wavBlob = audioBufferToWav(rawBuffer);
+      const dlUrl = URL.createObjectURL(wavBlob);
+      const a = document.createElement("a");
+      a.href = dlUrl;
+      const title = (preview?.title || "audio").replace(/[^a-z0-9]/gi, "_").slice(0, 40);
+      a.download = `${title}.wav`;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(dlUrl);
+    } catch (err) {
+      setError(`Download failed: ${err.message}`);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
+  // Download with effects baked in
   const handleDownload = async () => {
     if (!url) return;
     setDownloading(true); setError(null);
-
     try {
       const rawBuffer = await getDecodedBuffer();
       const eff = effects;
-
-      // Apply OLA pitch shift for Chipmunk / Deep
       const semitones = VOICE_SEMITONES[eff.voice] ?? 0;
       const pitchedBuffer = semitones !== 0 ? olaShift(rawBuffer, semitones) : rawBuffer;
-
       const dur = rawBuffer.duration;
       const startSec = Math.max(0, Math.min(eff.trimStart, dur));
       const endSec = eff.trimEnd > 0 ? Math.min(eff.trimEnd, dur) : dur;
       const trimDuration = Math.max(0.05, endSec - startSec);
-
       const sr = pitchedBuffer.sampleRate;
       const numCh = pitchedBuffer.numberOfChannels;
       const echoTail = eff.voice === "Echo" ? 1.5 : 0;
       const outLen = Math.ceil((trimDuration + echoTail) * sr);
-
       const offCtx = new OfflineAudioContext(numCh, outLen, sr);
       const source = offCtx.createBufferSource();
       source.buffer = pitchedBuffer;
-
       const { oscillators } = applyVoiceGraph(offCtx, source, eff);
       oscillators.forEach((o) => o.start(0));
-
       source.start(0, startSec, trimDuration);
       const rendered = await offCtx.startRendering();
-
       const wavBlob = audioBufferToWav(rendered);
       const dlUrl = URL.createObjectURL(wavBlob);
       const a = document.createElement("a");
@@ -398,17 +360,21 @@ export default function Mp3Converter() {
       document.body.removeChild(a);
       URL.revokeObjectURL(dlUrl);
     } catch (err) {
-      console.error("Download error:", err);
       setError(`Download failed: ${err.message}`);
     } finally {
       setDownloading(false);
     }
   };
 
-  // ─── Render ───────────────────────────────────────────────────────────────
-
   const maxTrim = audioDuration || (preview?.duration_seconds || 300);
   const activeVoiceSemitones = VOICE_SEMITONES[effects.voice];
+
+  // Check if user has changed any effect from default
+  const isEdited =
+    effects.volume !== 100 ||
+    effects.voice !== "Original" ||
+    effects.trimStart !== 0 ||
+    (effects.trimEnd > 0 && effects.trimEnd !== audioDuration);
 
   return (
     <>
@@ -421,13 +387,13 @@ export default function Mp3Converter() {
 
       <section className="mp3">
         <div className="mp3-content">
-          <div className="mp3-icon"><Music size={28} /></div>
-          <h1 className="mp3-heading">Video to <span>MP3 Converter</span></h1>
-          <p className="mp3-subtext">
+          <div className="mp3-icon" style={mountStyle(0)}><Music size={28} /></div>
+          <h1 className="mp3-heading" style={mountStyle(150)}>Video to <span>MP3 Converter</span></h1>
+          <p className="mp3-subtext" style={mountStyle(300)}>
             Extract audio from TikTok, Instagram, Facebook, Pinterest, and Snapchat videos
           </p>
 
-          <div className="mp3-card">
+          <div className="mp3-card" style={mountStyle(0)}>
             <div className="mp3-input-group">
               <div className="mp3-input-wrapper">
                 <Link size={18} className="mp3-input-icon" />
@@ -449,8 +415,7 @@ export default function Mp3Converter() {
           {loading && <div className="mp3-dots-loader"><span /><span /><span /></div>}
 
           {preview && (
-            <div className="mp3-editor">
-              {/* Thumbnail + info */}
+            <div className="mp3-editor" style={mountStyle(0)}>
               <div className="preview-header">
                 <img src={preview.thumbnail} alt="Preview" className="preview-thumbnail" />
                 <div className="preview-info">
@@ -463,7 +428,6 @@ export default function Mp3Converter() {
                 </div>
               </div>
 
-              {/* Loading / status indicator */}
               {debugInfo === "loading" && (
                 <div className="mp3-loading-bar">
                   <svg className="mp3-loading-spinner" width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -566,9 +530,30 @@ export default function Mp3Converter() {
                   {isPlaying ? <Pause size={18} /> : <Play size={18} />}
                   {isPlaying ? "Pause" : "Play Preview"}
                 </button>
-                <button className="mp3-download-btn" onClick={handleDownload} disabled={downloading}>
+
+                {/* Original download — straight to download, no popup */}
+                <button className="mp3-download-btn" onClick={downloadOriginal} disabled={downloading}>
                   {downloading ? <Loader size={18} className="mp3-spinner" /> : <Download size={18} />}
-                  {downloading ? "Processing…" : "Download Audio"}
+                  {downloading ? "Processing…" : "Download Original MP3"}
+                </button>
+
+                {/* Edited download — shows image ad popup if effects were changed */}
+                <button
+                  className="mp3-download-btn"
+                  style={{ background: isEdited ? "var(--primary, #7c3aed)" : undefined }}
+                  onClick={() => {
+                    if (isEdited) {
+                      setPendingDownload(() => handleDownload);
+                      setAdModal("edited");
+                    } else {
+                      handleDownload();
+                    }
+                  }}
+                  disabled={downloading}
+                >
+                  {downloading ? <Loader size={18} className="mp3-spinner" /> : <Download size={18} />}
+                  {downloading ? "Processing…" : "Download Edited Audio"}
+                  {isEdited && <span className="dl-hd-badge">EDITED</span>}
                 </button>
               </div>
 
@@ -580,11 +565,25 @@ export default function Mp3Converter() {
             </div>
           )}
 
-          {error && <div className="mp3-error">❌ {error}</div>}
+          {error && <div className="mp3-error" style={mountStyle(0)}>❌ {error}</div>}
         </div>
       </section>
 
       <RelatedServices currentPage="/mp3" />
+
+      {adModal === "edited" && (
+        <DownloadAdModal
+          type="image"
+          adImage={adsBanner}
+          skipDelay={5}
+          backlink="https://www.saveflox.com"
+          onSkip={() => {
+            setAdModal(null);
+            if (pendingDownload) { pendingDownload(); setPendingDownload(null); }
+          }}
+          onClose={() => setAdModal(null)}
+        />
+      )}
     </>
   );
 }
