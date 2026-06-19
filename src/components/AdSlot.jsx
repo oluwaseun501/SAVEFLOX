@@ -1,9 +1,22 @@
 import "../styles/AdSlot.css";
 import { useAds } from "../context/AdsContext";
+import { supabase } from "../lib/supabase";
+
+async function trackAdClick(slot, link) {
+  try {
+    await supabase.from("ad_clicks").insert({ slot, link });
+  } catch (err) {
+    // silent fail
+  }
+}
 
 export default function AdSlot({ slot = "default", format = "leaderboard", label, image, link }) {
   const { adsEnabled } = useAds();
   if (!adsEnabled) return null;
+
+  function handleClick() {
+    trackAdClick(slot, link || "none");
+  }
 
   return (
     <div className="ad-slot-section">
@@ -14,7 +27,7 @@ export default function AdSlot({ slot = "default", format = "leaderboard", label
             href={link || "#"}
             target={link ? "_blank" : undefined}
             rel={link ? "noopener noreferrer" : undefined}
-            onClick={!link ? (e) => e.preventDefault() : undefined}
+            onClick={handleClick}
           >
             <img src={image} alt="Advertisement" className="ad-image" />
             <span className="ad-image-badge">Ad</span>

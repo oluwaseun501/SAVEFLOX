@@ -33,6 +33,8 @@ import { isAuthenticated } from "./utils/auth";
 import { useEffect, useState } from "react";
 import GlideIn from "./components/GlideIn";
 
+import { useVisitorTracking } from "./hooks/useVisitorTracking";
+
 import adsBanner from "./ads/ads1.jpg";
 import adsBanner2 from "./ads/ads2.jpg";
 
@@ -57,6 +59,7 @@ function Home() {
 
 
 function App() {
+  useVisitorTracking();
   const location = useLocation();
   const { pathname } = location;
   const isAdmin = pathname.startsWith("/admin");

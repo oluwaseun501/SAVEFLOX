@@ -21,6 +21,7 @@ import AdminSidebar from "./AdminSidebar";
 import AdminTopbar from "./AdminTopbar";
 import "../styles/AdminDashboard.css";
 import { analyticsAPI } from "../services/api";
+import { supabase } from "../lib/supabase";
 
 const DEFAULT_TRAFFIC_DATA = [
   { day: "Mon", visits: 4200, downloads: 2100 },
@@ -41,7 +42,7 @@ const DEFAULT_PLATFORM_DATA = [
 
 const DEFAULT_RECENT_DOWNLOADS = [
   { id: 1, timestamp: "2 mins ago", platform: "TikTok", format: "MP4 (1080p)", status: "Completed" },
-  { id: 2, timestamp: "5 mins ago", platform: "Snapchat", format: "MP4 (720p)", status: "Completed" },
+
   { id: 3, timestamp: "12 mins ago", platform: "Instagram", format: "MP4 (720p)", status: "Failed" },
   { id: 4, timestamp: "18 mins ago", platform: "Facebook", format: "MP4 (1080p)", status: "Completed" },
 ];
@@ -105,6 +106,33 @@ export default function AdminDashboard() {
     { label: "Downloads Today", value: "3,240", change: "+24.1%", up: true, icon: TrendingUp },
     { label: "Active Users", value: "1,432", change: "-2.4%", up: false, icon: Activity },
   ];
+
+  const [adClicks, setAdClicks] = useState([]);
+const [adLoading, setAdLoading] = useState(true);
+
+useEffect(() => {
+  async function loadAdClicks() {
+    setAdLoading(true);
+    const { data, error } = await supabase
+      .from("ad_clicks")
+      .select("slot, link, clicked_at")
+      .order("clicked_at", { ascending: false });
+
+    if (!error && data) {
+      const grouped = data.reduce((acc, row) => {
+        const key = row.slot;
+        if (!acc[key]) {
+          acc[key] = { slot: key, link: row.link, clicks: 0, lastClicked: row.clicked_at };
+        }
+        acc[key].clicks++;
+        return acc;
+      }, {});
+      setAdClicks(Object.values(grouped));
+    }
+    setAdLoading(false);
+  }
+  loadAdClicks();
+}, []);
 
   return (
     <div className="admin">
@@ -209,6 +237,44 @@ export default function AdminDashboard() {
               </table>
             </div>
           </div>
+
+          {/* Ad Performance */}
+<div className="admin-table-card">
+  <h2 className="admin-chart-title">Ad Performance</h2>
+  <div className="admin-table-wrapper">
+    {adLoading ? (
+      <div className="admin-loading-card">Loading ad data...</div>
+    ) : adClicks.length === 0 ? (
+      <p style={{ padding: "1rem", color: "#94a3b8" }}>No ad clicks recorded yet.</p>
+    ) : (
+      <table className="admin-table">
+        <thead>
+          <tr>
+            <th>Ad Slot</th>
+            <th>Destination</th>
+            <th>Total Clicks</th>
+            <th>Last Clicked</th>
+          </tr>
+        </thead>
+        <tbody>
+          {adClicks.map((row) => (
+            <tr key={row.slot}>
+              <td>{row.slot}</td>
+              <td>
+                <a href={row.link} target="_blank" rel="noopener noreferrer"
+                   style={{ color: "#1d4ed8", textDecoration: "none" }}>
+                  {row.link}
+                </a>
+              </td>
+              <td><strong>{row.clicks}</strong></td>
+              <td>{new Date(row.lastClicked).toLocaleString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
+  </div>
+</div>
         </div>
       </main>
     </div>
