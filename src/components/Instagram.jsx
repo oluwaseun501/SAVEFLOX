@@ -189,9 +189,9 @@ export default function Instagram() {
 
       <AdSlot slot="instagram-top" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
       <WhyChoose />
-      <AdSlot slot="instagram-bottom" format="leaderboard" image={adsBanner} link="https://www.saveflox.com" />
+      <AdSlot slot="instagram-middle" format="leaderboard" image={adsBanner} link="https://www.saveflox.com" />
       <HowItWorks />
-      <AdSlot slot="instagram-top" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
+      <AdSlot slot="instagram-bottom" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
       <FAQ />
       <RelatedServices currentPage="/instagram" />
 

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import "../styles/Hero.css";
 import DotsLoader from "./DotsLoader";
 import adsBanner from "../ads/ads1.jpg";
+import adsBanner3 from "../ads/ads3.jpg";
 import adsVideo from "../ads/adsVid.mp4";
 import { Helmet } from "react-helmet-async";
 import DownloadAdModal from "./DownloadAdModal";

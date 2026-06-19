@@ -188,9 +188,9 @@ export default function Tiktok() {
         </div>
       </section>
 
-            <AdSlot slot="tiktok-bottom" format="leaderboard" image={adsBanner3} link="https://www.saveflox.com" />
+            <AdSlot slot="tiktok-top" format="leaderboard" image={adsBanner3} link="https://www.saveflox.com" />
             <WhyChoose />
-      <AdSlot slot="tiktok-top" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
+      <AdSlot slot="tiktok-middle" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
             <HowItWorks />
             <AdSlot slot="tiktok-bottom" format="leaderboard" image={adsBanner} link="https://www.saveflox.com" />
             <FAQ />

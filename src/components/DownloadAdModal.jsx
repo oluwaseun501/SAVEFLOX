@@ -54,7 +54,7 @@ export default function DownloadAdModal({
   const handleAdClick = async () => {
   try {
     await supabase.from("ad_clicks").insert({
-      slot: "download-popup",
+      slot: type === "video" ? "popup-video-ad" : "popup-image-ad",
       link: backlink || "none",
     });
   } catch (err) {

@@ -48,11 +48,11 @@ function Home() {
   return (
     <>
       <GlideIn><Hero /></GlideIn>
-      <AdSlot slot="tiktok-bottom" format="leaderboard" image={adsBanner3} link="https://www.saveflox.com" />
+      <AdSlot slot="home-top" format="leaderboard" image={adsBanner3} link="https://www.saveflox.com" />
       <GlideIn><WhyChoose /></GlideIn>
-      <AdSlot slot="tiktok-bottom" format="leaderboard" image={adsBanner} link="https://www.saveflox.com" />
+      <AdSlot slot="home-middle" format="leaderboard" image={adsBanner} link="https://www.saveflox.com" />
       <GlideIn><HowItWorks /></GlideIn>
-      <AdSlot slot="tiktok-bottom" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
+      <AdSlot slot="home-bottom" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
       <GlideIn><FAQ /></GlideIn>
     </>
   );

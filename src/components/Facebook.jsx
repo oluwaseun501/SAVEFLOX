@@ -233,9 +233,9 @@ export default function Facebook() {
 
       <AdSlot slot="facebook-top" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
       <WhyChoose />
-      <AdSlot slot="facebook-bottom" format="leaderboard" image={adsBanner} link="https://www.saveflox.com" />
+      <AdSlot slot="facebook-middle" format="leaderboard" image={adsBanner} link="https://www.saveflox.com" />
       <HowItWorks />
-      <AdSlot slot="facebook-top" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
+      <AdSlot slot="facebook-bottom" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
       <FAQ />
       <RelatedServices currentPage="/facebook" />
 

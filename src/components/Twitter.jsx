@@ -189,9 +189,9 @@ export default function Twitter() {
 
      <AdSlot slot="twitter-top" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
       <WhyChoose />
-      <AdSlot slot="twitter-bottom" format="leaderboard" image={adsBanner} link="https://www.saveflox.com" />
+      <AdSlot slot="twitter-middle" format="leaderboard" image={adsBanner} link="https://www.saveflox.com" />
       <HowItWorks />
-      <AdSlot slot="twitter-top" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
+      <AdSlot slot="twitter-bottom" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
       <FAQ />
       <RelatedServices currentPage="/twitter" />
 

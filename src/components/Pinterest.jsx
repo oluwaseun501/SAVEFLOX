@@ -177,7 +177,7 @@ export default function Pinterest() {
 
       <AdSlot slot="pinterest-top" format="leaderboard" />
       <WhyChoose />
-      <AdSlot slot="pinterest-bottom" format="leaderboard" />
+      <AdSlot slot="pinterest-middle" format="leaderboard" />
       <HowItWorks />
       <AdSlot slot="pinterest-bottom" format="leaderboard" />
       <FAQ />
