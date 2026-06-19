@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import "../styles/DownloadAdModal.css";
+import { supabase } from "../lib/supabase";
 
 export default function DownloadAdModal({
   type,
@@ -50,9 +51,17 @@ export default function DownloadAdModal({
     if (onCountdownEnd) onCountdownEnd(); // starts download in background
   }, [canClose, type, onCountdownEnd, downloadStarted]);
 
-  const handleAdClick = () => {
-    if (backlink) window.open(backlink, "_blank", "noopener,noreferrer");
-  };
+  const handleAdClick = async () => {
+  try {
+    await supabase.from("ad_clicks").insert({
+      slot: "download-popup",
+      link: backlink || "none",
+    });
+  } catch (err) {
+    // silent fail
+  }
+  if (backlink) window.open(backlink, "_blank", "noopener,noreferrer");
+};
 
   return (
     <div className="adm-overlay">

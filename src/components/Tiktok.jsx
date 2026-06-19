@@ -10,6 +10,7 @@ import DotsLoader from "./DotsLoader";
 import adsBanner from "../ads/ads1.jpg";
 import adsVideo from "../ads/adsVid.mp4";
 import adsBanner2 from "../ads/ads2.jpg";
+import adsBanner3 from "../ads/ads3.jpg";
 import { Helmet } from "react-helmet-async";
 import { TikTokDownloaderSEO } from "./SEOComponents";
 import { RelatedServices } from "./BreadcrumbsAndLinks";
@@ -187,7 +188,7 @@ export default function Tiktok() {
         </div>
       </section>
 
-            <AdSlot slot="tiktok-bottom" format="leaderboard" image={adsBanner} link="https://www.saveflox.com" />
+            <AdSlot slot="tiktok-bottom" format="leaderboard" image={adsBanner3} link="https://www.saveflox.com" />
             <WhyChoose />
       <AdSlot slot="tiktok-top" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
             <HowItWorks />
@@ -198,7 +199,7 @@ export default function Tiktok() {
            {adModal === "normal" && (
         <DownloadAdModal
           type="image"
-          adImage={adsBanner}
+          adImage={adsBanner3}
           skipDelay={5}
           backlink="https://www.saveflox.com"   // ← your website URL
           onSkip={() => setAdModal(null)}

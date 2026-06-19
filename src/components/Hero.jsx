@@ -178,7 +178,7 @@ export default function Hero() {
 {adModal === "normal" && (
   <DownloadAdModal
     type="image"
-    adImage={adsBanner}
+    adImage={adsBanner3}
     skipDelay={5}
     backlink="https://www.saveflox.com"
     onSkip={() => setAdModal(null)}
