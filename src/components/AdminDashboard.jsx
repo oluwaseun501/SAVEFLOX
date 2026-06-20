@@ -119,10 +119,11 @@ useEffect(() => {
       .order("clicked_at", { ascending: false });
 
     if (!error && data) {
+      // Group by slot+link combo
       const grouped = data.reduce((acc, row) => {
-        const key = row.slot;
+        const key = `${row.slot}||${row.link}`;
         if (!acc[key]) {
-          acc[key] = { slot: key, link: row.link, clicks: 0, lastClicked: row.clicked_at };
+          acc[key] = { slot: row.slot, link: row.link, clicks: 0, lastClicked: row.clicked_at };
         }
         acc[key].clicks++;
         return acc;
@@ -239,41 +240,65 @@ useEffect(() => {
           </div>
 
           {/* Ad Performance */}
-<div className="admin-table-card">
-  <h2 className="admin-chart-title">Ad Performance</h2>
-  <div className="admin-table-wrapper">
-    {adLoading ? (
-      <div className="admin-loading-card">Loading ad data...</div>
-    ) : adClicks.length === 0 ? (
-      <p style={{ padding: "1rem", color: "#94a3b8" }}>No ad clicks recorded yet.</p>
-    ) : (
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>Ad Slot</th>
-            <th>Destination</th>
-            <th>Total Clicks</th>
-            <th>Last Clicked</th>
-          </tr>
-        </thead>
-        <tbody>
-          {adClicks.map((row) => (
-            <tr key={row.slot}>
-              <td>{row.slot}</td>
-              <td>
-                <a href={row.link} target="_blank" rel="noopener noreferrer"
-                   style={{ color: "#1d4ed8", textDecoration: "none" }}>
-                  {row.link}
-                </a>
-              </td>
-              <td><strong>{row.clicks}</strong></td>
-              <td>{new Date(row.lastClicked).toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    )}
-  </div>
+<div className="admin-section">
+  <h2 className="admin-chart-title" style={{ marginBottom: "1rem" }}>
+    Ad Performance by Page
+  </h2>
+
+  {adLoading ? (
+    <div className="admin-loading-card">Loading ad data...</div>
+  ) : adClicks.length === 0 ? (
+    <p style={{ color: "#94a3b8" }}>No ad clicks recorded yet.</p>
+  ) : (
+    <div className="ad-perf-grid">
+      {[
+        { label: "Home Page", prefixes: ["home"] },
+        { label: "TikTok Page", prefixes: ["tiktok"] },
+        { label: "Twitter Page", prefixes: ["twitter"] },
+        { label: "Facebook Page", prefixes: ["facebook"] },
+        { label: "Instagram Page", prefixes: ["instagram"] },
+        { label: "MP3 Converter", prefixes: ["mp3"] },
+        { label: "Download Popup", prefixes: ["popup", "download-popup"] },
+      ].map(({ label, prefixes }) => {
+        const rows = adClicks.filter((r) =>
+          prefixes.some((p) => r.slot.startsWith(p))
+        );
+        if (rows.length === 0) return null;
+        const totalClicks = rows.reduce((sum, r) => sum + r.clicks, 0);
+
+        return (
+          <div className="ad-perf-card" key={label}>
+            <div className="ad-perf-card-header">
+              <span className="ad-perf-page">{label}</span>
+              <span className="ad-perf-total">{totalClicks} clicks</span>
+            </div>
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Slot</th>
+                  <th>Clicks</th>
+                  <th>Last Click</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={`${row.slot}||${row.link}`}>
+                    <td>
+                      <span className="ad-slot-badge">{row.slot}</span>
+                    </td>
+                    <td><strong>{row.clicks}</strong></td>
+                    <td style={{ fontSize: "0.78rem", color: "#64748b" }}>
+                      {new Date(row.lastClicked).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      })}
+    </div>
+  )}
 </div>
         </div>
       </main>
