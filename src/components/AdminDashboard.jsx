@@ -257,8 +257,9 @@ useEffect(() => {
         { label: "Twitter Page", prefixes: ["twitter"] },
         { label: "Facebook Page", prefixes: ["facebook"] },
         { label: "Instagram Page", prefixes: ["instagram"] },
+        { label: "Pinterest Page", prefixes: ["pinterest"] },
         { label: "MP3 Converter", prefixes: ["mp3"] },
-        { label: "Download Popup", prefixes: ["popup", "download-popup"] },
+        // { label: "Download Popup", prefixes: ["popup", "download-popup"] },
       ].map(({ label, prefixes }) => {
         const rows = adClicks.filter((r) =>
           prefixes.some((p) => r.slot.startsWith(p))
