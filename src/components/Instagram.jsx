@@ -197,6 +197,7 @@ export default function Instagram() {
 
      {adModal === "normal" && (
   <DownloadAdModal
+  page="instagram"
     type="image"
     adImage={adsBanner}
     skipDelay={5}
@@ -207,6 +208,7 @@ export default function Instagram() {
 )}
             {adModal === "hd" && (
   <DownloadAdModal
+  page="instagram"
     type="video"
     adVideo={adsVideo}
     watchTime={15}

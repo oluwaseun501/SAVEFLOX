@@ -241,6 +241,7 @@ export default function Facebook() {
 
      {adModal === "normal" && (
   <DownloadAdModal
+  page="facebook"
     type="image"
     adImage={adsBanner}
     skipDelay={5}
@@ -251,6 +252,7 @@ export default function Facebook() {
 )}
             {adModal === "hd" && (
   <DownloadAdModal
+  page="facebook"
     type="video"
     adVideo={adsVideo}
     watchTime={15}

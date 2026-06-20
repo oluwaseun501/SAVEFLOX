@@ -198,6 +198,7 @@ export default function Tiktok() {
       
            {adModal === "normal" && (
         <DownloadAdModal
+        page="tiktok"
           type="image"
           adImage={adsBanner3}
           skipDelay={5}
@@ -208,6 +209,7 @@ export default function Tiktok() {
       )}
                   {adModal === "hd" && (
         <DownloadAdModal
+        page="tiktok"
           type="video"
           adVideo={adsVideo}
           watchTime={15}

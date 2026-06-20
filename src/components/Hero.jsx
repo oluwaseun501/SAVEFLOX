@@ -178,6 +178,7 @@ export default function Hero() {
       </section>
 {adModal === "normal" && (
   <DownloadAdModal
+  page="home"
     type="image"
     adImage={adsBanner3}
     skipDelay={5}
@@ -188,6 +189,7 @@ export default function Hero() {
 )}
 {adModal === "hd" && (
   <DownloadAdModal
+  page="home"
     type="video"
     adVideo={adsVideo}
     watchTime={15}

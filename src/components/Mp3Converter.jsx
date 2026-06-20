@@ -573,6 +573,7 @@ export default function Mp3Converter() {
 
       {adModal === "edited" && (
         <DownloadAdModal
+        page="mp3"
           type="image"
           adImage={adsBanner}
           skipDelay={5}

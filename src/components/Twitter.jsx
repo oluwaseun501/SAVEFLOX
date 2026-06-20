@@ -197,6 +197,7 @@ export default function Twitter() {
 
      {adModal === "normal" && (
   <DownloadAdModal
+  page="twitter"
     type="image"
     adImage={adsBanner}
     skipDelay={5}
@@ -207,6 +208,7 @@ export default function Twitter() {
 )}
             {adModal === "hd" && (
   <DownloadAdModal
+  page="twitter"
     type="video"
     adVideo={adsVideo}
     watchTime={15}

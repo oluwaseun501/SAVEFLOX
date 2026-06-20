@@ -12,7 +12,8 @@ export default function DownloadAdModal({
   onCountdownEnd,   // NEW: called when watchTime is up (triggers download in bg)
   skipDelay = 5,
   watchTime = 15,
-  backlink,         // NEW: URL to open when clicking the ad
+  backlink,  
+  page = "unknown",       // NEW: URL to open when clicking the ad
 }) {
   const [countdown, setCountdown] = useState(watchTime);
   const [canClose, setCanClose] = useState(false);
@@ -51,10 +52,10 @@ export default function DownloadAdModal({
     if (onCountdownEnd) onCountdownEnd(); // starts download in background
   }, [canClose, type, onCountdownEnd, downloadStarted]);
 
-  const handleAdClick = async () => {
+const handleAdClick = async () => {
   try {
     await supabase.from("ad_clicks").insert({
-      slot: type === "video" ? "popup-video-ad" : "popup-image-ad",
+      slot: `${page}-popup-${type}`,   // 👈 e.g. "tiktok-popup-image", "facebook-popup-video"
       link: backlink || "none",
     });
   } catch (err) {
