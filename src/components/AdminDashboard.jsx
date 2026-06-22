@@ -275,25 +275,40 @@ useEffect(() => {
             </div>
             <table className="admin-table">
               <thead>
-                <tr>
-                  <th>Slot</th>
-                  <th>Clicks</th>
-                  <th>Last Click</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={`${row.slot}||${row.link}`}>
-                    <td>
-                      <span className="ad-slot-badge">{row.slot}</span>
-                    </td>
-                    <td><strong>{row.clicks}</strong></td>
-                    <td style={{ fontSize: "0.78rem", color: "#64748b" }}>
-                      {new Date(row.lastClicked).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+  <tr>
+    <th>Slot</th>
+    <th>Clicks</th>
+    <th>Backlink</th>
+    <th>Last Click</th>
+  </tr>
+</thead>
+<tbody>
+  {rows.map((row) => (
+    <tr key={`${row.slot}||${row.link}`}>
+      <td>
+        <span className="ad-slot-badge">{row.slot}</span>
+      </td>
+      <td><strong>{row.clicks}</strong></td>
+      <td style={{ fontSize: "0.78rem" }}>
+        {row.link && row.link !== "none" ? (
+          <a
+            href={row.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "#1d4ed8", textDecoration: "underline", wordBreak: "break-all" }}
+          >
+            {row.link}
+          </a>
+        ) : (
+          <span style={{ color: "#94a3b8" }}>—</span>
+        )}
+      </td>
+      <td style={{ fontSize: "0.78rem", color: "#64748b" }}>
+        {new Date(row.lastClicked).toLocaleString()}
+      </td>
+    </tr>
+  ))}
+</tbody>
             </table>
           </div>
         );
