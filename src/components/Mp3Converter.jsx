@@ -14,9 +14,10 @@ import "../styles/Mp3Converter.css";
 import { Helmet } from "react-helmet-async";
 import { MP3ConverterSEO } from "./SEOComponents";
 import { RelatedServices } from "./BreadcrumbsAndLinks";
-import adsBanner from "../ads/ads1.jpg";
-import adsBanner2 from "../ads/ads2.jpg";
+// import adsBanner from "../ads/ads1.jpg";
+// import adsBanner2 from "../ads/ads2.jpg";
 import DownloadAdModal from "./DownloadAdModal";
+import { useAdRotation } from "../hooks/useAdRotation";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both` });
@@ -153,6 +154,8 @@ export default function Mp3Converter() {
   const [audioDuration, setAudioDuration] = useState(0);
   const [adModal, setAdModal] = useState(null);
   const [pendingDownload, setPendingDownload] = useState(null);
+    const popupImageAd = useAdRotation("popup-image");
+  const popupVideoAd = useAdRotation("popup-video");
 
   const [effects, setEffects] = useState({
     volume: 100,
@@ -575,9 +578,10 @@ export default function Mp3Converter() {
         <DownloadAdModal
         page="mp3"
           type="image"
-          adImage={adsBanner}
+           adImage={popupImageAd?.image}   
+            backlink={popupImageAd?.link} 
           skipDelay={5}
-          backlink="https://www.saveflox.com"
+          
           onSkip={() => {
             setAdModal(null);
             if (pendingDownload) { pendingDownload(); setPendingDownload(null); }

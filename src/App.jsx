@@ -35,9 +35,9 @@ import GlideIn from "./components/GlideIn";
 
 import { useVisitorTracking } from "./hooks/useVisitorTracking";
 
-import adsBanner from "./ads/ads1.jpg";
-import adsBanner2 from "./ads/ads2.jpg";
-import adsBanner3 from "./ads/ads3.jpg";
+// import adsBanner from "./ads/ads1.jpg";
+// import adsBanner2 from "./ads/ads2.jpg";
+// import adsBanner3 from "./ads/ads3.jpg";
 
 
 function ProtectedAdmin({ children }) {
@@ -48,11 +48,11 @@ function Home() {
   return (
     <>
       <GlideIn><Hero /></GlideIn>
-      <AdSlot slot="home-top" format="leaderboard" image={adsBanner3} link="https://www.saveflox.com" />
+      <AdSlot slot="home-top" format="leaderboard" />
       <GlideIn><WhyChoose /></GlideIn>
-      <AdSlot slot="home-middle" format="leaderboard" image={adsBanner} link="https://www.saveflox.com" />
+      <AdSlot slot="home-middle" format="leaderboard" />
       <GlideIn><HowItWorks /></GlideIn>
-      <AdSlot slot="home-bottom" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
+      <AdSlot slot="home-bottom" format="leaderboard" />
       <GlideIn><FAQ /></GlideIn>
     </>
   );

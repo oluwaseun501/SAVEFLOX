@@ -3,11 +3,12 @@ import { Download, Link, Globe, Video, Loader } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import "../styles/Hero.css";
 import DotsLoader from "./DotsLoader";
-import adsBanner from "../ads/ads1.jpg";
-import adsBanner3 from "../ads/ads3.jpg";
-import adsVideo from "../ads/adsVid.mp4";
+// import adsBanner from "../ads/ads1.jpg";
+// import adsBanner3 from "../ads/ads3.jpg";
+// import adsVideo from "../ads/adsVid.mp4";
 import { Helmet } from "react-helmet-async";
 import DownloadAdModal from "./DownloadAdModal";
+import { useAdRotation } from "../hooks/useAdRotation";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both` });
@@ -23,6 +24,9 @@ export default function Hero() {
   const [slowWarning, setSlowWarning] = useState(false);
   const [adModal, setAdModal] = useState(null);
   const [pendingDownload, setPendingDownload] = useState(null);
+    const popupImageAd = useAdRotation("popup-image");
+  const popupVideoAd = useAdRotation("popup-video");
+
 
   const detectPlatformFromUrl = (u) => {
     const l = u.toLowerCase();
@@ -180,9 +184,10 @@ export default function Hero() {
   <DownloadAdModal
   page="home"
     type="image"
-    adImage={adsBanner3}
+     adImage={popupImageAd?.image}   
+      backlink={popupImageAd?.link} 
     skipDelay={5}
-    backlink="https://www.saveflox.com"
+   
     onSkip={() => setAdModal(null)}
     onClose={() => setAdModal(null)}
   />
@@ -191,9 +196,10 @@ export default function Hero() {
   <DownloadAdModal
   page="home"
     type="video"
-    adVideo={adsVideo}
+   adVideo={popupVideoAd?.video}
+    backlink={popupVideoAd?.link} 
     watchTime={15}
-    backlink="https://www.ghostnum.com"
+    
     onCountdownEnd={() => {
       if (pendingDownload) { pendingDownload(); setPendingDownload(null); }
     }}

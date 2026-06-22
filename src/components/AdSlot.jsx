@@ -1,6 +1,7 @@
 import "../styles/AdSlot.css";
 import { useAds } from "../context/AdsContext";
 import { supabase } from "../lib/supabase";
+import { useAdRotation } from "../hooks/useAdRotation"; 
 
 async function trackAdClick(slot, link) {
   try {
@@ -12,24 +13,30 @@ async function trackAdClick(slot, link) {
 
 export default function AdSlot({ slot = "default", format = "leaderboard", label, image, link }) {
   const { adsEnabled } = useAds();
+  const rotatedAd = useAdRotation(slot); //
+
   if (!adsEnabled) return null;
 
+  // Use rotated ad if available, otherwise fall back to manually passed props
+  const activeImage = rotatedAd?.image || image;
+  const activeLink  = rotatedAd?.link  || link;
+
   function handleClick() {
-    trackAdClick(slot, link || "none");
+    trackAdClick(slot, activeLink || "none");
   }
 
   return (
     <div className="ad-slot-section">
       <div className={`ad-slot ad-${format}`} data-slot={slot}>
-        {image ? (
+        {activeImage ? (
           <a
             className="ad-image-link"
-            href={link || "#"}
-            target={link ? "_blank" : undefined}
-            rel={link ? "noopener noreferrer" : undefined}
+            href={activeLink || "#"}
+            target={activeLink ? "_blank" : undefined}
+            rel={activeLink ? "noopener noreferrer" : undefined}
             onClick={handleClick}
           >
-            <img src={image} alt="Advertisement" className="ad-image" />
+            <img src={activeImage} alt="Advertisement" className="ad-image" />
             <span className="ad-image-badge">Ad</span>
           </a>
         ) : (

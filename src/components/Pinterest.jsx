@@ -7,15 +7,16 @@ import HowItWorks from "./HowItWorks";
 import FAQ from "./FAQ";
 import AdSlot from "./AdSlot";
 import DotsLoader from "./DotsLoader";
-import adsBanner from "../ads/ads1.jpg";
-import adsBanner2 from "../ads/ads2.jpg";
-import adsBanner3 from "../ads/ads3.jpg";
-import adsVideo from "../ads/adsVid.mp4";
+// import adsBanner from "../ads/ads1.jpg";
+// import adsBanner2 from "../ads/ads2.jpg";
+// import adsBanner3 from "../ads/ads3.jpg";
+// import adsVideo from "../ads/adsVid.mp4";
 
 import { Helmet } from "react-helmet-async";
 import { PinterestDownloaderSEO } from "./SEOComponents";
 import { RelatedServices } from "./BreadcrumbsAndLinks";
 import DownloadAdModal from "./DownloadAdModal";
+import { useAdRotation } from "../hooks/useAdRotation";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both` });
@@ -31,6 +32,9 @@ export default function Pinterest() {
   const [slowWarning, setSlowWarning] = useState(false);
   const [adModal, setAdModal] = useState(null);
   const [pendingDownload, setPendingDownload] = useState(null);
+    const popupImageAd = useAdRotation("popup-image");
+  const popupVideoAd = useAdRotation("popup-video");
+
 
   const detectPlatformFromUrl = (u) => {
     const l = u.toLowerCase();
@@ -177,11 +181,11 @@ export default function Pinterest() {
         </div>
       </section>
 
-      <AdSlot slot="pinterest-top" format="leaderboard" image={adsBanner2} link="https://www.ghostnum.com" />
+      <AdSlot slot="pinterest-top" format="leaderboard"  />
       <WhyChoose />
-      <AdSlot slot="pinterest-middle" format="leaderboard" image={adsBanner3} link="https://www.ghostnum.com" />
+      <AdSlot slot="pinterest-middle" format="leaderboard" />
       <HowItWorks />
-      <AdSlot slot="pinterest-bottom" format="leaderboard" image={adsBanner} link="https://www.ghostnum.com" />
+      <AdSlot slot="pinterest-bottom" format="leaderboard"  />
       <FAQ />
       <RelatedServices currentPage="/pinterest" />
 
@@ -189,9 +193,10 @@ export default function Pinterest() {
        <DownloadAdModal
        page="pinterest"
          type="image"
-         adImage={adsBanner}
+          adImage={popupImageAd?.image}   
+           backlink={popupImageAd?.link} 
          skipDelay={5}
-         backlink="https://www.saveflox.com"   // ← your website URL
+         
          onSkip={() => setAdModal(null)}
          onClose={() => setAdModal(null)}
        />
@@ -200,9 +205,10 @@ export default function Pinterest() {
        <DownloadAdModal
        page="pinterest"
          type="video"
-         adVideo={adsVideo}
+         adVideo={popupVideoAd?.video}
+          backlink={popupVideoAd?.link} 
          watchTime={15}
-         backlink="https://www.ghostnum.com"   // ← your website URL
+         
          onCountdownEnd={() => {
            // download starts in background, modal stays open
            if (pendingDownload) { pendingDownload(); setPendingDownload(null); }
