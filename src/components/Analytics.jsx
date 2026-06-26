@@ -1,10 +1,26 @@
 import { useState, useEffect } from "react";
 import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, CartesianGrid, Legend, ResponsiveContainer,
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
 } from "recharts";
 import {
-  TrendingUp, TrendingDown, Download, Percent, Clock, Music,
+  TrendingUp,
+  TrendingDown,
+  Download,
+  Percent,
+  Clock,
+  Music,
 } from "lucide-react";
 import AdminSidebar from "./AdminSidebar";
 import AdminTopbar from "./AdminTopbar";
@@ -74,8 +90,19 @@ function getRangeDays(range) {
 function getDateRange(range) {
   const now = new Date();
   const end = now.toISOString();
-  const start = new Date(now.getTime() - getRangeDays(range) * 24 * 60 * 60 * 1000).toISOString();
+  const start = new Date(
+    now.getTime() - getRangeDays(range) * 24 * 60 * 60 * 1000
+  ).toISOString();
   return { start, end };
+}
+
+async function safeCall(fn) {
+  try {
+    const res = await fn();
+    return res;
+  } catch {
+    return null;
+  }
 }
 
 export default function Analytics() {
@@ -95,36 +122,49 @@ export default function Analytics() {
       setError(null);
       const { start, end } = getDateRange(range);
       try {
-        const [statsRes, platformsRes, countriesRes, devicesRes, trendRes] = await Promise.all([
-          analyticsAPI.getDashboardStats(start, end),
-          analyticsAPI.getPlatformAnalytics(start, end),
-          analyticsAPI.getCountryAnalytics(start, end),
-          analyticsAPI.getDeviceAnalytics(start, end),
-          analyticsAPI.getAnalyticsByRange(start, end),
-        ]);
+        const [statsRes, platformsRes, countriesRes, devicesRes, trendRes] =
+          await Promise.all([
+            safeCall(() => analyticsAPI.getDashboardStats(start, end)),
+            safeCall(() => analyticsAPI.getPlatformAnalytics(start, end)),
+            safeCall(() => analyticsAPI.getCountryAnalytics(start, end)),
+            safeCall(() => analyticsAPI.getDeviceAnalytics(start, end)),
+            safeCall(() => analyticsAPI.getAnalyticsByRange(start, end)),
+          ]);
 
         setStats(statsRes?.data || {});
 
         const platforms = platformsRes?.data?.platforms || [];
-        setPlatformDataState(platforms.map((p, i) => ({
-          name: p.platform,
-          value: p.count,
-          fill: ["#0f172a", "#1d4ed8", "#ec4899", "#2563eb", "#22c55e"][i % 5],
-        })));
+        setPlatformDataState(
+          platforms.map((p, i) => ({
+            name: p.platform,
+            value: p.count,
+            fill: ["#0f172a", "#1d4ed8", "#ec4899", "#2563eb", "#22c55e"][
+              i % 5
+            ],
+          }))
+        );
 
         const countries = countriesRes?.data?.countries || [];
-        setCountryDataState(countries.map((c) => ({ name: c.country, count: c.count })));
+        setCountryDataState(
+          countries.map((c) => ({ name: c.country, count: c.count }))
+        );
 
         const devices = devicesRes?.data?.devices || [];
-        setDeviceDataState(devices.map((d, i) => ({
-          name: d.device || "Unknown",
-          value: d.count,
-          fill: ["#1d4ed8", "#22c55e", "#f59e0b"][i % 3],
-        })));
+        setDeviceDataState(
+          devices.map((d, i) => ({
+            name: d.device || "Unknown",
+            value: d.count,
+            fill: ["#1d4ed8", "#22c55e", "#f59e0b"][i % 3],
+          }))
+        );
 
         setTrendDataState(trendRes?.data?.trend || DEFAULT_EMPTY);
       } catch (err) {
-        setError(err?.response?.data?.error || err?.message || "Failed to load analytics");
+        setError(
+          err?.response?.data?.error ||
+            err?.message ||
+            "Failed to load analytics"
+        );
       } finally {
         setLoading(false);
       }
@@ -154,10 +194,34 @@ export default function Analytics() {
   }, []);
 
   const kpis = [
-    { label: "Total Downloads", value: stats.total_downloads?.toLocaleString?.() || "—", change: "+0%", up: true, icon: Download },
-    { label: "Downloads Today", value: stats.downloads_today || "—", change: "+0%", up: true, icon: Clock },
-    { label: "Success Rate", value: stats.success_rate ? `${stats.success_rate}%` : "—", change: "-", up: stats.success_rate >= 0, icon: Percent },
-    { label: "MP3 Downloads", value: stats.mp3_downloads?.toLocaleString?.() || "—", change: "-", up: true, icon: Music },
+    {
+      label: "Total Downloads",
+      value: stats.total_downloads?.toLocaleString?.() || "—",
+      change: "+0%",
+      up: true,
+      icon: Download,
+    },
+    {
+      label: "Downloads Today",
+      value: stats.downloads_today || "—",
+      change: "+0%",
+      up: true,
+      icon: Clock,
+    },
+    {
+      label: "Success Rate",
+      value: stats.success_rate ? `${stats.success_rate}%` : "—",
+      change: "-",
+      up: stats.success_rate >= 0,
+      icon: Percent,
+    },
+    {
+      label: "MP3 Downloads",
+      value: stats.mp3_downloads?.toLocaleString?.() || "—",
+      change: "-",
+      up: true,
+      icon: Music,
+    },
   ];
 
   return (
@@ -169,13 +233,17 @@ export default function Analytics() {
           <header className="analytics-header">
             <div>
               <h1 className="admin-title">Analytics</h1>
-              <p className="admin-subtitle">Deep dive into traffic, downloads, and audience trends.</p>
+              <p className="admin-subtitle">
+                Deep dive into traffic, downloads, and audience trends.
+              </p>
             </div>
             <div className="analytics-range">
               {ranges.map((r) => (
                 <button
                   key={r}
-                  className={`analytics-range-btn ${range === r ? "active" : ""}`}
+                  className={`analytics-range-btn ${
+                    range === r ? "active" : ""
+                  }`}
                   onClick={() => setRange(r)}
                 >
                   {r}
@@ -184,14 +252,18 @@ export default function Analytics() {
             </div>
           </header>
 
-          {loading && <div className="admin-loading-card">Loading analytics...</div>}
+          {loading && (
+            <div className="admin-loading-card">Loading analytics...</div>
+          )}
           {error && <div className="admin-error-banner">{error}</div>}
 
           <div className="admin-stats">
             {kpis.map(({ label, value, change, up, icon: Icon }) => (
               <div key={label} className="admin-stat">
                 <div className="admin-stat-top">
-                  <div className="admin-stat-icon"><Icon size={18} /></div>
+                  <div className="admin-stat-icon">
+                    <Icon size={18} />
+                  </div>
                   <span className={`admin-stat-change ${up ? "up" : "down"}`}>
                     {up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                     {change}
@@ -206,17 +278,29 @@ export default function Analytics() {
 
           <div className="admin-chart-card">
             <div className="analytics-card-head">
-              <h2 className="admin-chart-title">Traffic &amp; Downloads Trend</h2>
+              <h2 className="admin-chart-title">
+                Traffic &amp; Downloads Trend
+              </h2>
               <span className="analytics-pill">{range}</span>
             </div>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={trendDataState.length ? trendDataState : trendDataFallback}>
+              <LineChart
+                data={
+                  trendDataState.length ? trendDataState : trendDataFallback
+                }
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
                 <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} />
                 <YAxis stroke="#94a3b8" fontSize={12} />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="downloads" stroke="#22c55e" strokeWidth={2.5} dot={{ r: 3 }} />
+                <Line
+                  type="monotone"
+                  dataKey="downloads"
+                  stroke="#22c55e"
+                  strokeWidth={2.5}
+                  dot={{ r: 3 }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -227,15 +311,26 @@ export default function Analytics() {
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
-                    data={platformDataState.length ? platformDataState : platformDataFallback}
-                    dataKey="value" nameKey="name"
-                    innerRadius={55} outerRadius={90} paddingAngle={3}
+                    data={
+                      platformDataState.length
+                        ? platformDataState
+                        : platformDataFallback
+                    }
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={55}
+                    outerRadius={90}
+                    paddingAngle={3}
                   >
-                    {(platformDataState.length ? platformDataState : platformDataFallback).map((entry, i) => (
+                    {(platformDataState.length
+                      ? platformDataState
+                      : platformDataFallback
+                    ).map((entry, i) => (
                       <Cell key={i} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <Tooltip /><Legend />
+                  <Tooltip />
+                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -245,15 +340,26 @@ export default function Analytics() {
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
-                    data={deviceDataState.length ? deviceDataState : deviceDataFallback}
-                    dataKey="value" nameKey="name"
-                    innerRadius={55} outerRadius={90} paddingAngle={3}
+                    data={
+                      deviceDataState.length
+                        ? deviceDataState
+                        : deviceDataFallback
+                    }
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={55}
+                    outerRadius={90}
+                    paddingAngle={3}
                   >
-                    {(deviceDataState.length ? deviceDataState : deviceDataFallback).map((entry, i) => (
+                    {(deviceDataState.length
+                      ? deviceDataState
+                      : deviceDataFallback
+                    ).map((entry, i) => (
                       <Cell key={i} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <Tooltip /><Legend />
+                  <Tooltip />
+                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -277,12 +383,18 @@ export default function Analytics() {
               <h2 className="admin-chart-title">Top Countries</h2>
               <ul className="analytics-country-list">
                 {(() => {
-                  const display = geoCountries.length ? geoCountries : countryDataState.length ? countryDataState : countryDataFallback;
+                  const display = geoCountries.length
+                    ? geoCountries
+                    : countryDataState.length
+                    ? countryDataState
+                    : countryDataFallback;
                   const max = display[0]?.count || 1;
                   if (!display.length) {
                     return (
                       <li className="analytics-country">
-                        <span className="analytics-country-name">No country data yet</span>
+                        <span className="analytics-country-name">
+                          No country data yet
+                        </span>
                       </li>
                     );
                   }
@@ -291,11 +403,18 @@ export default function Analytics() {
                     return (
                       <li key={c.name} className="analytics-country">
                         <div className="analytics-country-row">
-                          <span className="analytics-country-name">{c.name}</span>
-                          <span className="analytics-country-count">{c.count.toLocaleString()}</span>
+                          <span className="analytics-country-name">
+                            {c.name}
+                          </span>
+                          <span className="analytics-country-count">
+                            {c.count.toLocaleString()}
+                          </span>
                         </div>
                         <div className="analytics-country-bar">
-                          <div className="analytics-country-bar-fill" style={{ width: `${pct}%` }} />
+                          <div
+                            className="analytics-country-bar-fill"
+                            style={{ width: `${pct}%` }}
+                          />
                         </div>
                       </li>
                     );
@@ -336,15 +455,18 @@ export default function Analytics() {
                     <span
                       key={hi}
                       className="analytics-heatmap-cell"
-                      style={{ background: `rgba(29, 78, 216, ${0.08 + v * 0.85})` }}
-                      title={`${days[di]} ${hi}:00 — intensity ${(v * 100).toFixed(0)}%`}
+                      style={{
+                        background: `rgba(29, 78, 216, ${0.08 + v * 0.85})`,
+                      }}
+                      title={`${days[di]} ${hi}:00 — intensity ${(
+                        v * 100
+                      ).toFixed(0)}%`}
                     />
                   ))}
                 </div>
               ))}
             </div>
           </div>
-
         </div>
       </main>
     </div>
