@@ -116,12 +116,18 @@ export default function Analytics() {
   const [error, setError] = useState(null);
   const [geoCountries, setGeoCountries] = useState([]);
   const [rangeTotal, setRangeTotal] = useState(null);
+  const [customStart, setCustomStart] = useState("");
+const [customEnd, setCustomEnd] = useState("");
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      setError(null);
-      const { start, end } = getDateRange(range);
+  
+    useEffect(() => {
+  if (range === "Custom" && (!customStart || !customEnd)) return;
+  async function load() {
+    setLoading(true);
+    setError(null);
+    const { start, end } = range === "Custom"
+      ? { start: new Date(customStart).toISOString(), end: new Date(customEnd + "T23:59:59").toISOString() }
+      : getDateRange(range);
       try {
         const [statsRes, platformsRes, countriesRes, devicesRes, trendRes] =
           await Promise.all([
@@ -175,7 +181,7 @@ setRangeTotal(total);
       }
     }
     load();
-  }, [range]);
+  }, [range, customStart, customEnd]);
 
   useEffect(() => {
     async function loadGeoCountries() {
@@ -242,6 +248,7 @@ setRangeTotal(total);
               </p>
             </div>
             <div className="analytics-range">
+
               {ranges.map((r) => (
                 <button
                   key={r}
@@ -253,7 +260,27 @@ setRangeTotal(total);
                   {r}
                 </button>
               ))}
+
+
             </div>
+
+                          {range === "Custom" && (
+  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
+    <input
+      type="date"
+      value={customStart}
+      onChange={(e) => setCustomStart(e.target.value)}
+      style={{ padding: "4px 8px", borderRadius: "6px", border: "1px solid #ccc" }}
+    />
+    <span>to</span>
+    <input
+      type="date"
+      value={customEnd}
+      onChange={(e) => setCustomEnd(e.target.value)}
+      style={{ padding: "4px 8px", borderRadius: "6px", border: "1px solid #ccc" }}
+    />
+  </div>
+)}
           </header>
 
           {loading && (
