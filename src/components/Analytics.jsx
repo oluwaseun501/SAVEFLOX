@@ -115,6 +115,7 @@ export default function Analytics() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [geoCountries, setGeoCountries] = useState([]);
+  const [rangeTotal, setRangeTotal] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -158,7 +159,11 @@ export default function Analytics() {
           }))
         );
 
-        setTrendDataState(trendRes?.data?.trend || DEFAULT_EMPTY);
+        const trend = trendRes?.data?.trend || DEFAULT_EMPTY;
+setTrendDataState(trend);
+const total = trend.reduce((sum, day) => sum + (day.downloads || 0), 0);
+setRangeTotal(total);
+
       } catch (err) {
         setError(
           err?.response?.data?.error ||
@@ -194,9 +199,8 @@ export default function Analytics() {
   }, []);
 
   const kpis = [
-    {
-      label: "Total Downloads",
-      value: stats.total_downloads?.toLocaleString?.() || "—",
+    
+      { label: "Total Downloads", value: rangeTotal !== null ? rangeTotal.toLocaleString() : stats.total_downloads?.toLocaleString?.() || "—",
       change: "+0%",
       up: true,
       icon: Download,
