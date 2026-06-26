@@ -55,16 +55,21 @@ export default function DownloadLogs() {
         setLogs(fetchedLogs);
         setTotal(response.data.total || 0);
 
-        const successCount = fetchedLogs.filter((row) => row.status === "success").length;
-        const mp3Count = response.data.total_mp3 ?? fetchedLogs.filter((row) => row.format?.toUpperCase() === "MP3").length;
-const mp4Count = response.data.total_mp4 ?? fetchedLogs.filter((row) => row.format?.toUpperCase() === "MP4").length;
+        // After:
+const successCount = fetchedLogs.filter((row) => row.status === "success").length;
 
-        setStats({
-          total: response.data.total || 0,
-          mp3: mp3Count,
-          mp4: mp4Count,
-          successRate: fetchedLogs.length ? Math.round((successCount / fetchedLogs.length) * 100) : 0,
-        });
+const [mp3Res, mp4Res] = await Promise.all([
+  analyticsAPI.getDownloadLogs(1, 0, { format: "MP3" }).catch(() => null),
+  analyticsAPI.getDownloadLogs(1, 0, { format: "MP4" }).catch(() => null),
+]);
+
+setStats({
+  total: response.data.total || 0,
+  mp3: mp3Res?.data?.total || 0,
+  mp4: mp4Res?.data?.total || 0,
+  successRate: fetchedLogs.length ? Math.round((successCount / fetchedLogs.length) * 100) : 0,
+});
+
       } catch (err) {
         if (!mounted) return;
         setError(err?.response?.data?.error || "Unable to load download logs.");
