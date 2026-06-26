@@ -81,6 +81,13 @@ const heatmap = days.map((d, di) =>
 
 const DEFAULT_EMPTY = [];
 
+// ✅ FIX 1: Helper that converts the selected range label into a number of days
+function getRangeDays(range) {
+  if (range === "Last 7 days") return 7;
+  if (range === "Last 90 days") return 90;
+  return 30; // default for "Last 30 days" and "Custom"
+}
+
 export default function Analytics() {
   const [range, setRange] = useState("Last 30 days");
   const [stats, setStats] = useState({});
@@ -125,7 +132,9 @@ export default function Analytics() {
 
         const now = new Date();
         const end = now.toISOString();
-        const start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        // ✅ FIX 2: Use getRangeDays(range) instead of the hardcoded 30
+        const rangeDays = getRangeDays(range);
+        const start = new Date(now.getTime() - rangeDays * 24 * 60 * 60 * 1000).toISOString();
         const trendRes = await analyticsAPI.getAnalyticsByRange(start, end);
         setTrendDataState(trendRes?.data?.trend || DEFAULT_EMPTY);
       } catch (err) {
@@ -135,7 +144,7 @@ export default function Analytics() {
       }
     }
     load();
-  }, []);
+  }, [range]); // ✅ FIX 3: Added `range` here so the fetch re-runs every time a button is clicked
 
   useEffect(() => {
     async function loadGeoCountries() {
