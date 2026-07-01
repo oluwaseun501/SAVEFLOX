@@ -1,358 +1,254 @@
 import { useState, useEffect } from "react";
-import { Globe, Users, MapPin, Clock, Download, TrendingUp } from "lucide-react";
+import { Globe, Users, Clock, Download } from "lucide-react";
 import {
   LineChart, Line,
   BarChart, Bar,
   XAxis, YAxis,
   Tooltip, CartesianGrid,
-  ResponsiveContainer, Cell,
+  ResponsiveContainer,
 } from "recharts";
 import AdminSidebar from "./AdminSidebar";
 import AdminTopbar from "./AdminTopbar";
 import "../styles/AdminDashboard.css";
 import "../styles/Analytics.css";
-import { analyticsAPI } from "../services/api";
 import { supabase } from "../lib/supabase";
+import { analyticsAPI } from "../services/api";
 
-const PLATFORM_COLORS = {
-  tiktok:    "#0f172a",
-  instagram: "#ec4899",
-  twitter:   "#1d4ed8",
-  facebook:  "#2563eb",
-  pinterest: "#ef4444",
-  youtube:   "#dc2626",
-};
-const FORMAT_COLORS = ["#1d4ed8", "#22c55e", "#f59e0b", "#ec4899"];
+// ── helpers ──────────────────────────────────────────────────────────────────
 
-function getPlatformColor(name = "") {
-  return PLATFORM_COLORS[name.toLowerCase()] || "#94a3b8";
+/** Pull the date string (YYYY-MM-DD) from whichever timestamp column exists */
+function getDate(row) {
+  const raw = row.created_at || row.timestamp || row.visit_date || row.visited_at || "";
+  return typeof raw === "string" ? raw.slice(0, 10) : "";
 }
 
+/** Pull the country from whichever column exists */
+function getCountry(row) {
+  return row.country || row.ip_country || row.visitor_country || row.location || "Unknown";
+}
+
+/** Build YYYY-MM-DD keys for the last N days */
+function lastNDays(n) {
+  const days = {};
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days[d.toISOString().slice(0, 10)] = 0;
+  }
+  return days;
+}
+
+// ── component ─────────────────────────────────────────────────────────────────
+
 export default function Visits() {
-  const [visitCountries,    setVisitCountries]    = useState([]);
-  const [downloadCountries, setDownloadCountries] = useState([]);
-  const [platformData,      setPlatformData]      = useState([]);
-  const [formatData,        setFormatData]        = useState([]);
-  const [visitTrend,        setVisitTrend]        = useState([]);
-  const [recentDownloads,   setRecentDownloads]   = useState([]);
-  const [totalVisits,       setTotalVisits]       = useState(0);
-  const [todayVisits,       setTodayVisits]       = useState(0);
-  const [totalDownloads,    setTotalDownloads]    = useState(0);
-  const [loading,           setLoading]           = useState(true);
+  const [visitCountries, setVisitCountries] = useState([]);
+  const [trend7,         setTrend7]         = useState([]);
+  const [trend30,        setTrend30]        = useState([]);
+  const [totalVisits,    setTotalVisits]    = useState(0);
+  const [todayVisits,    setTodayVisits]    = useState(0);
+  const [last7Visits,    setLast7Visits]    = useState(0);
+  const [last30Visits,   setLast30Visits]   = useState(0);
+  const [totalDownloads, setTotalDownloads] = useState(null);
+  const [loading,        setLoading]        = useState(true);
+  const [error,          setError]          = useState("");
 
   useEffect(() => {
-    async function loadAll() {
+    async function load() {
       setLoading(true);
-      try {
-        // Run Supabase visitor query + API calls in parallel
-        const [visitorRes, logsRes, statsRes] = await Promise.all([
-          // ── Visitor countries: exact same query that worked before ──
-          supabase.from("visitor_logs").select("country, created_at, timestamp"),
-          // ── Download logs via API (already works in Downloads Log page) ──
-          analyticsAPI.getDownloadLogs(500, 0, {}).catch(() => null),
-          analyticsAPI.getDashboardStats().catch(() => null),
-        ]);
+      setError("");
 
-        // ── Visits by country (from visitor_logs — the working Supabase query) ──
-        const vData = visitorRes?.data || [];
-        if (vData.length > 0) {
-          setTotalVisits(vData.length);
+      // ── 1. Pull all visitor_logs rows (select * avoids column-name errors) ──
+      const { data: vData, error: vErr } = await supabase
+        .from("visitor_logs")
+        .select("*");
 
-          const todayStr = new Date().toISOString().slice(0, 10);
-          setTodayVisits(
-            vData.filter((r) => (r.created_at || r.timestamp || "").slice(0, 10) === todayStr).length
-          );
+      if (vErr) {
+        console.error("visitor_logs error:", vErr);
+        setError("Could not load visitor data: " + vErr.message);
+      } else if (vData && vData.length > 0) {
+        const todayStr = new Date().toISOString().slice(0, 10);
 
-          const cGroup = vData.reduce((acc, r) => {
-            const k = r.country || "Unknown";
-            acc[k] = (acc[k] || 0) + 1;
-            return acc;
-          }, {});
-          setVisitCountries(
-            Object.entries(cGroup)
-              .map(([name, count]) => ({ name, count }))
-              .sort((a, b) => b.count - a.count)
-          );
-        }
+        const days7  = lastNDays(7);
+        const days30 = lastNDays(30);
 
-        // ── Everything else from download logs API ──
-        const logs = logsRes?.data?.logs || [];
-        if (logs.length > 0) {
-          setTotalDownloads(logsRes?.data?.total || logs.length);
+        let countToday = 0;
+        const countryMap = {};
 
-          // Downloads by country
-          const dcGroup = logs.reduce((acc, r) => {
-            const k = r.country || "Unknown";
-            acc[k] = (acc[k] || 0) + 1;
-            return acc;
-          }, {});
-          setDownloadCountries(
-            Object.entries(dcGroup)
-              .map(([name, count]) => ({ name, count }))
-              .sort((a, b) => b.count - a.count)
-          );
+        vData.forEach((row) => {
+          const day     = getDate(row);
+          const country = getCountry(row);
 
-          // Platform breakdown (no Snapchat)
-          const pGroup = logs.reduce((acc, r) => {
-            const k = (r.platform || "Unknown").toLowerCase();
-            if (k === "snapchat") return acc;
-            acc[k] = (acc[k] || 0) + 1;
-            return acc;
-          }, {});
-          setPlatformData(
-            Object.entries(pGroup)
-              .map(([name, count]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), count, fill: getPlatformColor(name) }))
-              .sort((a, b) => b.count - a.count)
-          );
+          if (day === todayStr) countToday++;
+          if (days7[day]  !== undefined) days7[day]++;
+          if (days30[day] !== undefined) days30[day]++;
 
-          // Format breakdown
-          const fGroup = logs.reduce((acc, r) => {
-            const k = (r.format || "Unknown").toUpperCase();
-            acc[k] = (acc[k] || 0) + 1;
-            return acc;
-          }, {});
-          setFormatData(
-            Object.entries(fGroup)
-              .map(([name, count]) => ({ name, count }))
-              .sort((a, b) => b.count - a.count)
-          );
+          countryMap[country] = (countryMap[country] || 0) + 1;
+        });
 
-          // Downloads trend — last 7 days
-          const days = {};
-          for (let i = 6; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            days[d.toISOString().slice(0, 10)] = 0;
-          }
-          logs.forEach((r) => {
-            const day = (r.timestamp || r.created_at || "").slice(0, 10);
-            if (days[day] !== undefined) days[day]++;
-          });
-          setVisitTrend(
-            Object.entries(days).map(([date, downloads]) => ({ date: date.slice(5), downloads }))
-          );
+        const last7Count  = Object.values(days7).reduce((a, b) => a + b, 0);
+        const last30Count = Object.values(days30).reduce((a, b) => a + b, 0);
 
-          // Recent 20 downloads
-          setRecentDownloads(logs.slice(0, 20));
-        }
+        setTotalVisits(vData.length);
+        setTodayVisits(countToday);
+        setLast7Visits(last7Count);
+        setLast30Visits(last30Count);
 
-        // Dashboard stats as fallback for totals
-        const stats = statsRes?.data || {};
-        if (vData.length === 0 && stats.total_downloads != null)
-          setTotalDownloads(stats.total_downloads);
+        setTrend7(
+          Object.entries(days7).map(([date, visits]) => ({
+            date: date.slice(5), // "MM-DD"
+            visits,
+          }))
+        );
 
-      } catch (e) {
-        console.error("Visits load error:", e);
+        setTrend30(
+          Object.entries(days30).map(([date, visits]) => ({
+            date: date.slice(5),
+            visits,
+          }))
+        );
+
+        setVisitCountries(
+          Object.entries(countryMap)
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count)
+        );
       }
+
+      // ── 2. Total downloads from API (stat card only) ──
+      try {
+        const stats = await analyticsAPI.getDashboardStats();
+        const d = stats?.data;
+        setTotalDownloads(d?.total_downloads ?? d?.totalDownloads ?? null);
+      } catch (_) {}
+
       setLoading(false);
     }
-    loadAll();
+
+    load();
   }, []);
 
-  const visitMax    = visitCountries[0]?.count    || 1;
-  const downloadMax = downloadCountries[0]?.count || 1;
-
-  function fmtTime(row) {
-    const ts = row.timestamp || row.created_at;
-    if (!ts) return "—";
-    return new Date(ts).toLocaleString("en-GB", {
-      day: "2-digit", month: "short", year: "numeric",
-      hour: "2-digit", minute: "2-digit",
-    });
-  }
+  const visitMax = visitCountries[0]?.count || 1;
 
   return (
-    <div className="admin">
+    <div className="admin-layout">
       <AdminSidebar />
-      <main className="admin-main">
-        <AdminTopbar email="admin@saveflux.com" />
-        <div className="admin-main-inner">
-
-          <header className="admin-header">
+      <div className="admin-main">
+        <AdminTopbar />
+        <div className="admin-content">
+          <div className="admin-page-header">
             <div>
-              <h1 className="admin-title">Visits</h1>
-              <p className="admin-subtitle">Where your visitors come from and what they download.</p>
+              <h1 className="admin-page-title">Visits</h1>
+              <p className="admin-subtitle">Where your visitors come from and how often they visit.</p>
             </div>
-          </header>
+          </div>
 
-          {loading ? (
-            <div className="admin-loading-card">Loading data…</div>
-          ) : (
-            <>
-              {/* ── Stat Cards ── */}
-              <div className="admin-stats" style={{ marginBottom: "1.5rem" }}>
-                {[
-                  { icon: <Users size={18} />,    label: "Total Visits",      value: totalVisits.toLocaleString() },
-                  { icon: <Clock size={18} />,    label: "Downloads Today",   value: todayVisits.toLocaleString() },
-                  { icon: <Globe size={18} />,    label: "Visitor Countries", value: visitCountries.length || downloadCountries.length },
-                  { icon: <Download size={18} />, label: "Total Downloads",   value: totalDownloads.toLocaleString() },
-                ].map(({ icon, label, value }) => (
-                  <div key={label} className="admin-stat">
-                    <div className="admin-stat-top"><div className="admin-stat-icon">{icon}</div></div>
-                    <div className="admin-stat-label">{label}</div>
-                    <div className="admin-stat-value">{value}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* ── Country Bars ── */}
-              <div className="admin-charts" style={{ marginBottom: "1.5rem" }}>
-                <div className="admin-chart-card">
-                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:"1.25rem" }}>
-                    <Globe size={18} color="#1d4ed8" />
-                    <h2 className="admin-chart-title" style={{ margin:0 }}>Visits by Country</h2>
-                  </div>
-                  {visitCountries.length === 0 ? (
-                    <p style={{ color:"#94a3b8" }}>No visit data available from API.</p>
-                  ) : (
-                    <ul className="analytics-country-list">
-                      {visitCountries.map((c) => (
-                        <li key={c.name} className="analytics-country">
-                          <div className="analytics-country-row">
-                            <span className="analytics-country-name">{c.name}</span>
-                            <span className="analytics-country-count">{c.count.toLocaleString()}</span>
-                          </div>
-                          <div className="analytics-country-bar">
-                            <div className="analytics-country-bar-fill" style={{ width:`${(c.count/visitMax)*100}%` }} />
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-
-                <div className="admin-chart-card">
-                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:"1.25rem" }}>
-                    <MapPin size={18} color="#22c55e" />
-                    <h2 className="admin-chart-title" style={{ margin:0 }}>Downloads by Country</h2>
-                  </div>
-                  {downloadCountries.length === 0 ? (
-                    <p style={{ color:"#94a3b8" }}>No download country data yet.</p>
-                  ) : (
-                    <ul className="analytics-country-list">
-                      {downloadCountries.map((c) => (
-                        <li key={c.name} className="analytics-country">
-                          <div className="analytics-country-row">
-                            <span className="analytics-country-name">{c.name}</span>
-                            <span className="analytics-country-count">{c.count.toLocaleString()}</span>
-                          </div>
-                          <div className="analytics-country-bar">
-                            <div className="analytics-country-bar-fill"
-                              style={{ width:`${(c.count/downloadMax)*100}%`, background:"linear-gradient(90deg,#16a34a,#22c55e)" }} />
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
-
-              {/* ── Downloads Trend (last 7 days) ── */}
-              {visitTrend.some((d) => d.downloads > 0) && (
-                <div className="admin-chart-card" style={{ marginBottom:"1.5rem" }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:"1.25rem" }}>
-                    <TrendingUp size={18} color="#1d4ed8" />
-                    <h2 className="admin-chart-title" style={{ margin:0 }}>Downloads — Last 7 Days</h2>
-                  </div>
-                  <ResponsiveContainer width="100%" height={240}>
-                    <LineChart data={visitTrend}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
-                      <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} />
-                      <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="downloads" stroke="#22c55e" strokeWidth={2.5} dot={{ r:3 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-
-              {/* ── Platform + Format ── */}
-              <div className="admin-charts" style={{ marginBottom:"1.5rem" }}>
-                <div className="admin-chart-card">
-                  <h2 className="admin-chart-title" style={{ marginBottom:"1rem" }}>Downloads by Platform</h2>
-                  {platformData.length === 0 ? (
-                    <p style={{ color:"#94a3b8" }}>No platform data yet.</p>
-                  ) : (
-                    <ResponsiveContainer width="100%" height={220}>
-                      <BarChart data={platformData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
-                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
-                        <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
-                        <Tooltip />
-                        <Bar dataKey="count" radius={[6,6,0,0]}>
-                          {platformData.map((e, i) => <Cell key={i} fill={e.fill} />)}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
-
-                <div className="admin-chart-card">
-                  <h2 className="admin-chart-title" style={{ marginBottom:"1rem" }}>Downloads by Format</h2>
-                  {formatData.length === 0 ? (
-                    <p style={{ color:"#94a3b8" }}>No format data yet.</p>
-                  ) : (
-                    <ResponsiveContainer width="100%" height={220}>
-                      <BarChart data={formatData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
-                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
-                        <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
-                        <Tooltip />
-                        <Bar dataKey="count" radius={[6,6,0,0]}>
-                          {formatData.map((e, i) => <Cell key={i} fill={FORMAT_COLORS[i % FORMAT_COLORS.length]} />)}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
-              </div>
-
-              {/* ── Recent Downloads Table ── */}
-              {recentDownloads.length > 0 && (
-                <div className="admin-table-card">
-                  <h2 className="admin-chart-title" style={{ marginBottom:"1rem" }}>Recent Downloads</h2>
-                  <div className="admin-table-wrapper">
-                    <table className="admin-table">
-                      <thead>
-                        <tr>
-                          <th>Time</th>
-                          <th>Country</th>
-                          <th>Platform</th>
-                          <th>Format</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {recentDownloads.map((r, i) => (
-                          <tr key={i}>
-                            <td style={{ whiteSpace:"nowrap" }}>{fmtTime(r)}</td>
-                            <td>{r.country || "Unknown"}</td>
-                            <td>
-                              <span style={{ background:getPlatformColor(r.platform||""), color:"#fff", padding:"2px 8px", borderRadius:4, fontSize:"0.8rem" }}>
-                                {r.platform || "—"}
-                              </span>
-                            </td>
-                            <td>
-                              <span style={{ background:(r.format||"").toUpperCase()==="MP3"?"#22c55e":"#1d4ed8", color:"#fff", padding:"2px 8px", borderRadius:4, fontSize:"0.8rem" }}>
-                                {r.format || "—"}
-                              </span>
-                            </td>
-                            <td>
-                              <span className={`admin-status ${r.status==="success"?"ok":"fail"}`}>
-                                {r.status === "success" ? "Completed" : (r.status || "—")}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </>
+          {error && (
+            <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "12px 16px", color: "#dc2626", marginBottom: 20 }}>
+              {error}
+            </div>
           )}
+
+          {/* ── Stat cards ─────────────────────────────────────────────── */}
+          <div className="stats-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 28 }}>
+            <StatCard icon={<Users size={18} />} label="Total Visits" value={loading ? "…" : totalVisits.toLocaleString()} />
+            <StatCard icon={<Clock size={18} />} label="Visitors Today" value={loading ? "…" : todayVisits.toLocaleString()} />
+            <StatCard icon={<Clock size={18} />} label="Last 7 Days" value={loading ? "…" : last7Visits.toLocaleString()} />
+            <StatCard icon={<Clock size={18} />} label="Last 30 Days" value={loading ? "…" : last30Visits.toLocaleString()} />
+          </div>
+
+          {/* ── Second row: Countries + Total Downloads ─────────────────── */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 20, marginBottom: 28, alignItems: "start" }}>
+            {/* Visits by Country */}
+            <div className="analytics-card">
+              <h3 className="analytics-card-title">
+                <Globe size={16} /> Visits by Country
+              </h3>
+              {loading ? (
+                <p style={{ color: "#94a3b8", padding: "12px 0" }}>Loading…</p>
+              ) : visitCountries.length === 0 ? (
+                <p style={{ color: "#94a3b8", padding: "12px 0" }}>No visitor country data yet.</p>
+              ) : (
+                <div className="analytics-country-list">
+                  {visitCountries.slice(0, 15).map((c) => (
+                    <div key={c.name} className="analytics-country-row">
+                      <span className="analytics-country-name">{c.name}</span>
+                      <div className="analytics-country-bar-wrap">
+                        <div
+                          className="analytics-country-bar-fill"
+                          style={{ width: `${(c.count / visitMax) * 100}%` }}
+                        />
+                      </div>
+                      <span className="analytics-country-count">{c.count.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Total Downloads card */}
+            {totalDownloads !== null && (
+              <div className="analytics-card" style={{ minWidth: 180, textAlign: "center" }}>
+                <h3 className="analytics-card-title" style={{ justifyContent: "center" }}>
+                  <Download size={16} /> Total Downloads
+                </h3>
+                <p style={{ fontSize: 36, fontWeight: 700, color: "#1d4ed8", margin: "16px 0 4px" }}>
+                  {totalDownloads.toLocaleString()}
+                </p>
+                <p style={{ fontSize: 13, color: "#94a3b8" }}>all time</p>
+              </div>
+            )}
+          </div>
+
+          {/* ── Visits – Last 7 Days ────────────────────────────────────── */}
+          {!loading && trend7.some((d) => d.visits > 0) && (
+            <div className="analytics-card" style={{ marginBottom: 24 }}>
+              <h3 className="analytics-card-title">
+                <Clock size={16} /> Visits — Last 7 Days
+              </h3>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={trend7} margin={{ top: 8, right: 24, bottom: 0, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="visits" stroke="#1d4ed8" strokeWidth={2.5} dot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* ── Visits – Last 30 Days ───────────────────────────────────── */}
+          {!loading && trend30.some((d) => d.visits > 0) && (
+            <div className="analytics-card">
+              <h3 className="analytics-card-title">
+                <Clock size={16} /> Visits — Last 30 Days
+              </h3>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={trend30} margin={{ top: 8, right: 24, bottom: 0, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(v, i) => i % 5 === 0 ? v : ""} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="visits" stroke="#22c55e" strokeWidth={2.5} dot={{ r: 2 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
         </div>
-      </main>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ icon, label, value }) {
+  return (
+    <div className="stat-card">
+      <div className="stat-card-header">
+        <span className="stat-card-icon">{icon}</span>
+      </div>
+      <p className="stat-card-label">{label}</p>
+      <p className="stat-card-value">{value}</p>
     </div>
   );
 }
