@@ -61,7 +61,9 @@ export default function AdminDashboard() {
           { label: "MP3 Downloads", value: statsData.mp3_downloads?.toLocaleString?.() || "0", change: "-", up: true, icon: Activity },
         ]);
 
-        const topPlatforms = statsData.top_platforms || [];
+        const topPlatforms = (statsData.top_platforms || []).filter(
+          (p) => p.platform?.toLowerCase() !== "snapchat"
+        );
         setPlatformData(
           topPlatforms.length
             ? topPlatforms.map((p, i) => ({
