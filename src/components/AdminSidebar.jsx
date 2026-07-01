@@ -5,7 +5,8 @@ import {
   BarChart3,
   Download,
   FileText,
-  Settings,
+  MousePointerClick,
+  Globe,
   Menu,
   X,
 } from "lucide-react";
@@ -13,11 +14,12 @@ import "../styles/AdminSidebar.css";
 import logo from "../assets/logo-text.png";
 
 const menu = [
-  { name: "Dashboard",     icon: LayoutDashboard, path: "/admin" },
-  { name: "Analytics",     icon: BarChart3,       path: "/admin/analytics" },
-  { name: "Downloads Log", icon: Download,        path: "/admin/downloads" },
-  { name: "Blog Posts",    icon: FileText,        path: "/admin/blog" },
-  // { name: "Settings",      icon: Settings,        path: "/admin/settings" },
+  { name: "Dashboard",       icon: LayoutDashboard,    path: "/admin" },
+  { name: "Analytics",       icon: BarChart3,           path: "/admin/analytics" },
+  { name: "Downloads Log",   icon: Download,            path: "/admin/downloads" },
+  { name: "Ads Performance", icon: MousePointerClick,   path: "/admin/ads" },
+  { name: "Visits",          icon: Globe,               path: "/admin/visits" },
+  { name: "Blog Posts",      icon: FileText,            path: "/admin/blog" },
 ];
 
 export default function AdminSidebar() {
@@ -36,7 +38,9 @@ export default function AdminSidebar() {
     } else {
       document.body.style.overflow = "";
     }
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [open]);
 
   return (

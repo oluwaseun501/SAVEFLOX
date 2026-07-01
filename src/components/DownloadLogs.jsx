@@ -16,7 +16,7 @@ import AdminTopbar from "./AdminTopbar";
 import "../styles/DownloadLogs.css";
 import { analyticsAPI, authAPI } from "../services/api";
 
-const PLATFORMS = ["All", "TikTok", "Instagram", "Facebook", "Twitter", "Pinterest", "Snapchat"];
+const PLATFORMS = ["All", "TikTok", "Instagram", "Facebook", "Twitter", "Pinterest"];
 const FORMATS = ["All", "MP4", "MP3"];
 const STATUSES = ["All", "success", "failed"];
 const PAGE_SIZE = 10;
@@ -55,20 +55,19 @@ export default function DownloadLogs() {
         setLogs(fetchedLogs);
         setTotal(response.data.total || 0);
 
-        // After:
-const successCount = fetchedLogs.filter((row) => row.status === "success").length;
+        const successCount = fetchedLogs.filter((row) => row.status === "success").length;
 
-const [mp3Res, mp4Res] = await Promise.all([
-  analyticsAPI.getDownloadLogs(1, 0, { format: "MP3" }).catch(() => null),
-  analyticsAPI.getDownloadLogs(1, 0, { format: "MP4" }).catch(() => null),
-]);
+        const [mp3Res, mp4Res] = await Promise.all([
+          analyticsAPI.getDownloadLogs(1, 0, { format: "MP3" }).catch(() => null),
+          analyticsAPI.getDownloadLogs(1, 0, { format: "MP4" }).catch(() => null),
+        ]);
 
-setStats({
-  total: response.data.total || 0,
-  mp3: mp3Res?.data?.total || 0,
-  mp4: mp4Res?.data?.total || 0,
-  successRate: fetchedLogs.length ? Math.round((successCount / fetchedLogs.length) * 100) : 0,
-});
+        setStats({
+          total: response.data.total || 0,
+          mp3: mp3Res?.data?.total || 0,
+          mp4: mp4Res?.data?.total || 0,
+          successRate: fetchedLogs.length ? Math.round((successCount / fetchedLogs.length) * 100) : 0,
+        });
 
       } catch (err) {
         if (!mounted) return;

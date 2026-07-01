@@ -16,6 +16,8 @@ import AdminLogin from "./components/AdminLogin";
 import AdminDashboard from "./components/AdminDashboard";
 import Analytics from "./components/Analytics";
 import DownloadLogs from "./components/DownloadLogs";
+import AdPerformance from "./components/AdPerformance";
+import Visits from "./components/Visits";
 import MyBlog from "./components/MyBlog";
 import AdSlot from "./components/AdSlot";
 import NotFound from "./components/NotFound";
@@ -34,10 +36,6 @@ import { useEffect, useState } from "react";
 import GlideIn from "./components/GlideIn";
 
 import { useVisitorTracking } from "./hooks/useVisitorTracking";
-
-// import adsBanner from "./ads/ads1.jpg";
-// import adsBanner2 from "./ads/ads2.jpg";
-// import adsBanner3 from "./ads/ads3.jpg";
 
 
 function ProtectedAdmin({ children }) {
@@ -64,7 +62,7 @@ function App() {
   const location = useLocation();
   const { pathname } = location;
   const isAdmin = pathname.startsWith("/admin");
-const isAdminDomain = window.location.hostname === "admin.saveflox.com";
+  const isAdminDomain = window.location.hostname === "admin.saveflox.com";
   const [loading, setLoading] = useState(false);
 
   const SITE_URL = "https://www.saveflox.com";
@@ -158,20 +156,22 @@ const isAdminDomain = window.location.hostname === "admin.saveflox.com";
     <>
       <TopProgressBar />
       <TopProgressBar />
-     {!isAdmin && !isAdminDomain && <Navbar />}
+      {!isAdmin && !isAdminDomain && <Navbar />}
 
       {loading && !isAdmin ? (
         <PageLoader />
-        ) : isAdminDomain ? (
-  <Routes>
-    <Route path="/" element={<Navigate to="/login" replace />} />
-    <Route path="/login" element={<><Seo {...seo.login} /><AdminLogin /></>} />
-    <Route path="/admin" element={<ProtectedAdmin><Seo {...seo.admin} /><AdminDashboard /></ProtectedAdmin>} />
-    <Route path="/admin/analytics" element={<ProtectedAdmin><Analytics /></ProtectedAdmin>} />
-    <Route path="/admin/downloads" element={<ProtectedAdmin><DownloadLogs /></ProtectedAdmin>} />
-    <Route path="/admin/blog" element={<ProtectedAdmin><MyBlog /></ProtectedAdmin>} />
-    <Route path="*" element={<Navigate to="/login" replace />} />
-  </Routes>
+      ) : isAdminDomain ? (
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<><Seo {...seo.login} /><AdminLogin /></>} />
+          <Route path="/admin" element={<ProtectedAdmin><Seo {...seo.admin} /><AdminDashboard /></ProtectedAdmin>} />
+          <Route path="/admin/analytics" element={<ProtectedAdmin><Analytics /></ProtectedAdmin>} />
+          <Route path="/admin/downloads" element={<ProtectedAdmin><DownloadLogs /></ProtectedAdmin>} />
+          <Route path="/admin/ads" element={<ProtectedAdmin><AdPerformance /></ProtectedAdmin>} />
+          <Route path="/admin/visits" element={<ProtectedAdmin><Visits /></ProtectedAdmin>} />
+          <Route path="/admin/blog" element={<ProtectedAdmin><MyBlog /></ProtectedAdmin>} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
       ) : (
         <Routes>
           <Route
@@ -291,11 +291,9 @@ const isAdminDomain = window.location.hostname === "admin.saveflox.com";
               </>
             }
           />
-          
-          <Route
-  path="/login"
-  element={<Navigate to="/" replace />}
-/>
+
+          <Route path="/login" element={<Navigate to="/" replace />} />
+
           <Route
             path="/admin"
             element={
@@ -320,6 +318,24 @@ const isAdminDomain = window.location.hostname === "admin.saveflox.com";
               <ProtectedAdmin>
                 <Seo title="Download Logs — SaveFlox Admin" description="View download logs and recent activity in the SaveFlox admin dashboard." canonical={`${SITE_URL}/admin/downloads`} noIndex />
                 <DownloadLogs />
+              </ProtectedAdmin>
+            }
+          />
+          <Route
+            path="/admin/ads"
+            element={
+              <ProtectedAdmin>
+                <Seo title="Ads Performance — SaveFlox Admin" description="Track ad slot clicks and performance across all pages in the SaveFlox admin panel." canonical={`${SITE_URL}/admin/ads`} noIndex />
+                <AdPerformance />
+              </ProtectedAdmin>
+            }
+          />
+          <Route
+            path="/admin/visits"
+            element={
+              <ProtectedAdmin>
+                <Seo title="Visits — SaveFlox Admin" description="View countries your visitors are accessing the site from." canonical={`${SITE_URL}/admin/visits`} noIndex />
+                <Visits />
               </ProtectedAdmin>
             }
           />
