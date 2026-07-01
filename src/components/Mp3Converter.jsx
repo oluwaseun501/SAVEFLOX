@@ -18,8 +18,20 @@ import { RelatedServices } from "./BreadcrumbsAndLinks";
 // import adsBanner2 from "../ads/ads2.jpg";
 import DownloadAdModal from "./DownloadAdModal";
 import { useAdRotation } from "../hooks/useAdRotation";
+import apiClient from "../services/api";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://server.saveflox.com/api";
+
+// Detect platform from URL so the log entry matches other download logs
+function detectPlatform(url = "") {
+  if (/tiktok/i.test(url))           return "tiktok";
+  if (/instagram/i.test(url))        return "instagram";
+  if (/twitter\.com|x\.com/i.test(url)) return "twitter";
+  if (/facebook/i.test(url))         return "facebook";
+  if (/pinterest/i.test(url))        return "pinterest";
+  if (/youtube\.com|youtu\.be/i.test(url)) return "youtube";
+  return "mp3-converter";
+}
 const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both` });
 
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
@@ -307,14 +319,14 @@ export default function Mp3Converter() {
     }
   };
 
-  // Clear blob cache after each download so the next download re-hits the
-  // backend /mp3/download endpoint (which logs it). The decoded audio buffer
-  // cache is kept so replays stay instant.
-  const clearBlobCacheForLogging = () => {
-    if (blobCacheRef.current[url]) {
-      URL.revokeObjectURL(blobCacheRef.current[url]);
-      delete blobCacheRef.current[url];
-    }
+  // Log every MP3 download through the main API so it appears in
+  // the Downloads Log and MP3 count — fire-and-forget, never blocks UX
+  const logMp3Download = () => {
+    apiClient.post("/download", {
+      url,
+      platform: detectPlatform(url),
+      format: "mp3",
+    }).catch(() => {});
   };
 
   // Download original — no effects, no popup
@@ -332,8 +344,7 @@ export default function Mp3Converter() {
       document.body.appendChild(a); a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(dlUrl);
-      // Reset blob cache so the next download re-hits the backend (logs it)
-      clearBlobCacheForLogging();
+      logMp3Download();
     } catch (err) {
       setError(`Download failed: ${err.message}`);
     } finally {
@@ -374,8 +385,7 @@ export default function Mp3Converter() {
       document.body.appendChild(a); a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(dlUrl);
-      // Reset blob cache so the next download re-hits the backend (logs it)
-      clearBlobCacheForLogging();
+      logMp3Download();
     } catch (err) {
       setError(`Download failed: ${err.message}`);
     } finally {
