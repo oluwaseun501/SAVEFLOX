@@ -1,127 +1,157 @@
 import { useState, useEffect } from "react";
-import { Globe, Users, MapPin, Clock, Download } from "lucide-react";
+import { Globe, Users, MapPin, Clock, Download, TrendingUp } from "lucide-react";
+import {
+  LineChart, Line,
+  BarChart, Bar,
+  XAxis, YAxis,
+  Tooltip, CartesianGrid,
+  ResponsiveContainer, Cell,
+} from "recharts";
 import AdminSidebar from "./AdminSidebar";
 import AdminTopbar from "./AdminTopbar";
 import "../styles/AdminDashboard.css";
 import "../styles/Analytics.css";
 import { supabase } from "../lib/supabase";
-import { analyticsAPI } from "../services/api";
+
+const PLATFORM_COLORS = {
+  tiktok:    "#0f172a",
+  instagram: "#ec4899",
+  twitter:   "#1d4ed8",
+  facebook:  "#2563eb",
+  pinterest: "#ef4444",
+  youtube:   "#dc2626",
+};
+
+function getPlatformColor(name = "") {
+  return PLATFORM_COLORS[name.toLowerCase()] || "#94a3b8";
+}
 
 export default function Visits() {
-  const [countries, setCountries] = useState([]);
+  const [visitCountries,    setVisitCountries]    = useState([]);
   const [downloadCountries, setDownloadCountries] = useState([]);
-  const [recentVisitors, setRecentVisitors] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [totalVisits, setTotalVisits] = useState(0);
-  const [todayVisits, setTodayVisits] = useState(0);
-  const [uniqueCountries, setUniqueCountries] = useState(0);
+  const [visitTrend,        setVisitTrend]        = useState([]);
+  const [platformData,      setPlatformData]      = useState([]);
+  const [formatData,        setFormatData]        = useState([]);
+  const [recentDownloads,   setRecentDownloads]   = useState([]);
+  const [totalVisits,       setTotalVisits]       = useState(0);
+  const [todayVisits,       setTodayVisits]       = useState(0);
+  const [totalDownloads,    setTotalDownloads]    = useState(0);
+  const [loading,           setLoading]           = useState(true);
 
   useEffect(() => {
     async function loadAll() {
       setLoading(true);
 
-      // ── Visitor logs (select * to match whatever columns exist) ──
-      const { data: visitData, error: visitError } = await supabase
+      // ── visitor_logs ──────────────────────────────────────────────────────
+      const { data: vData } = await supabase
         .from("visitor_logs")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(1000);
+        .select("country, created_at, timestamp");
 
-      if (!visitError && visitData && visitData.length > 0) {
-        setTotalVisits(visitData.length);
+      if (vData && vData.length > 0) {
+        setTotalVisits(vData.length);
 
-        // Today's visits – try created_at, fall back to timestamp
+        // today
         const todayStr = new Date().toISOString().slice(0, 10);
-        const todayCount = visitData.filter((r) => {
-          const ts = r.created_at || r.timestamp || "";
-          return ts.slice(0, 10) === todayStr;
-        }).length;
-        setTodayVisits(todayCount);
+        setTodayVisits(
+          vData.filter((r) => (r.created_at || r.timestamp || "").slice(0, 10) === todayStr).length
+        );
 
-        // Group by country
-        const grouped = visitData.reduce((acc, row) => {
-          const key = row.country || "Unknown";
-          acc[key] = (acc[key] || 0) + 1;
+        // visits by country
+        const cGroup = vData.reduce((acc, r) => {
+          const k = r.country || "Unknown";
+          acc[k] = (acc[k] || 0) + 1;
           return acc;
         }, {});
-        const sorted = Object.entries(grouped)
-          .map(([name, count]) => ({ name, count }))
-          .sort((a, b) => b.count - a.count);
-        setCountries(sorted);
-        setUniqueCountries(sorted.length);
+        setVisitCountries(
+          Object.entries(cGroup).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
+        );
 
-        // Recent visitors (last 20 rows)
-        setRecentVisitors(visitData.slice(0, 20));
-      } else {
-        // visitError present — log for debugging
-        if (visitError) console.error("visitor_logs error:", visitError.message);
+        // visits over last 7 days
+        const days = {};
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          days[d.toISOString().slice(0, 10)] = 0;
+        }
+        vData.forEach((r) => {
+          const day = (r.created_at || r.timestamp || "").slice(0, 10);
+          if (days[day] !== undefined) days[day]++;
+        });
+        setVisitTrend(
+          Object.entries(days).map(([date, visits]) => ({
+            date: date.slice(5), // MM-DD
+            visits,
+          }))
+        );
       }
 
-      // ── Downloads by country via existing API ──
-      try {
-        const dlRes = await analyticsAPI.getDownloadLogs(1000, 0, {});
-        const dlLogs = dlRes?.data?.logs || [];
-        const dlGrouped = dlLogs.reduce((acc, row) => {
-          const key = row.country || "Unknown";
-          if (!key || key === "Unknown") return acc;
-          acc[key] = (acc[key] || 0) + 1;
+      // ── download_logs ─────────────────────────────────────────────────────
+      const { data: dData } = await supabase
+        .from("download_logs")
+        .select("country, platform, format, timestamp, created_at, status, url")
+        .order("id", { ascending: false })
+        .limit(500);
+
+      if (dData && dData.length > 0) {
+        setTotalDownloads(dData.length);
+
+        // downloads by country
+        const dcGroup = dData.reduce((acc, r) => {
+          const k = r.country || "Unknown";
+          acc[k] = (acc[k] || 0) + 1;
           return acc;
         }, {});
-        const dlSorted = Object.entries(dlGrouped)
-          .map(([name, count]) => ({ name, count }))
-          .sort((a, b) => b.count - a.count);
-        setDownloadCountries(dlSorted);
-      } catch (e) {
-        console.error("download logs error:", e);
+        setDownloadCountries(
+          Object.entries(dcGroup).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
+        );
+
+        // downloads by platform (filter snapchat)
+        const pGroup = dData.reduce((acc, r) => {
+          const k = (r.platform || "Unknown").toLowerCase();
+          if (k === "snapchat") return acc;
+          acc[k] = (acc[k] || 0) + 1;
+          return acc;
+        }, {});
+        setPlatformData(
+          Object.entries(pGroup)
+            .map(([name, count]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), count, fill: getPlatformColor(name) }))
+            .sort((a, b) => b.count - a.count)
+        );
+
+        // MP4 vs MP3
+        const fGroup = dData.reduce((acc, r) => {
+          const k = (r.format || "Unknown").toUpperCase();
+          acc[k] = (acc[k] || 0) + 1;
+          return acc;
+        }, {});
+        setFormatData(
+          Object.entries(fGroup)
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count)
+        );
+
+        // recent 20 downloads
+        setRecentDownloads(dData.slice(0, 20));
       }
 
       setLoading(false);
     }
-
     loadAll();
   }, []);
 
-  const visitMax = countries[0]?.count || 1;
-  const dlMax = downloadCountries[0]?.count || 1;
+  const visitMax    = visitCountries[0]?.count    || 1;
+  const downloadMax = downloadCountries[0]?.count || 1;
 
-  function formatTime(row) {
+  function fmtTime(row) {
     const ts = row.created_at || row.timestamp;
     if (!ts) return "—";
     return new Date(ts).toLocaleString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      day: "2-digit", month: "short", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
     });
   }
 
-  function parseDevice(ua) {
-    if (!ua) return "—";
-    if (/mobile|android|iphone|ipad/i.test(ua)) return "Mobile";
-    if (/tablet/i.test(ua)) return "Tablet";
-    return "Desktop";
-  }
-
-  function parseBrowser(ua) {
-    if (!ua) return "—";
-    if (/chrome/i.test(ua) && !/edge|edg/i.test(ua)) return "Chrome";
-    if (/firefox/i.test(ua)) return "Firefox";
-    if (/safari/i.test(ua) && !/chrome/i.test(ua)) return "Safari";
-    if (/edge|edg/i.test(ua)) return "Edge";
-    if (/opera|opr/i.test(ua)) return "Opera";
-    return "Other";
-  }
-
-  // Detect which IP column exists from the first visitor row
-  function getIp(row) {
-    return row.ip_address || row.ip || "—";
-  }
-
-  // Detect which user-agent column exists
-  function getUa(row) {
-    return row.user_agent || row.useragent || row.ua || "";
-  }
+  const FORMAT_COLORS = ["#1d4ed8", "#22c55e", "#f59e0b", "#ec4899"];
 
   return (
     <div className="admin">
@@ -129,73 +159,56 @@ export default function Visits() {
       <main className="admin-main">
         <AdminTopbar email="admin@saveflux.com" />
         <div className="admin-main-inner">
+
           <header className="admin-header">
             <div>
               <h1 className="admin-title">Visits</h1>
               <p className="admin-subtitle">
-                Detailed breakdown of where your visitors come from and what they download.
+                Where your visitors come from and what they download.
               </p>
             </div>
           </header>
 
           {loading ? (
-            <div className="admin-loading-card">Loading visit data...</div>
+            <div className="admin-loading-card">Loading data…</div>
           ) : (
             <>
-              {/* ── Stat Cards ── */}
+              {/* ── Stat Cards ─────────────────────────────────────────────── */}
               <div className="admin-stats" style={{ marginBottom: "1.5rem" }}>
-                <div className="admin-stat">
-                  <div className="admin-stat-top">
-                    <div className="admin-stat-icon"><Users size={18} /></div>
+                {[
+                  { icon: <Users size={18} />,    label: "Total Visits",      value: totalVisits.toLocaleString() },
+                  { icon: <Clock size={18} />,    label: "Visits Today",      value: todayVisits.toLocaleString() },
+                  { icon: <Globe size={18} />,    label: "Visitor Countries", value: visitCountries.length },
+                  { icon: <Download size={18} />, label: "Total Downloads",   value: totalDownloads.toLocaleString() },
+                ].map(({ icon, label, value }) => (
+                  <div key={label} className="admin-stat">
+                    <div className="admin-stat-top"><div className="admin-stat-icon">{icon}</div></div>
+                    <div className="admin-stat-label">{label}</div>
+                    <div className="admin-stat-value">{value}</div>
                   </div>
-                  <div className="admin-stat-label">Total Visits</div>
-                  <div className="admin-stat-value">{totalVisits.toLocaleString()}</div>
-                </div>
-                <div className="admin-stat">
-                  <div className="admin-stat-top">
-                    <div className="admin-stat-icon"><Clock size={18} /></div>
-                  </div>
-                  <div className="admin-stat-label">Visits Today</div>
-                  <div className="admin-stat-value">{todayVisits.toLocaleString()}</div>
-                </div>
-                <div className="admin-stat">
-                  <div className="admin-stat-top">
-                    <div className="admin-stat-icon"><Globe size={18} /></div>
-                  </div>
-                  <div className="admin-stat-label">Unique Countries</div>
-                  <div className="admin-stat-value">{uniqueCountries.toLocaleString()}</div>
-                </div>
-                <div className="admin-stat">
-                  <div className="admin-stat-top">
-                    <div className="admin-stat-icon"><Download size={18} /></div>
-                  </div>
-                  <div className="admin-stat-label">Download Countries</div>
-                  <div className="admin-stat-value">{downloadCountries.length.toLocaleString()}</div>
-                </div>
+                ))}
               </div>
 
-              {/* ── Two-column: Visits by Country + Downloads by Country ── */}
+              {/* ── Country Bars ───────────────────────────────────────────── */}
               <div className="admin-charts" style={{ marginBottom: "1.5rem" }}>
+
                 <div className="admin-chart-card">
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "1.25rem" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:"1.25rem" }}>
                     <Globe size={18} color="#1d4ed8" />
-                    <h2 className="admin-chart-title" style={{ margin: 0 }}>Visits by Country</h2>
+                    <h2 className="admin-chart-title" style={{ margin:0 }}>Visits by Country</h2>
                   </div>
-                  {countries.length === 0 ? (
-                    <p style={{ color: "#94a3b8" }}>No visit data yet.</p>
+                  {visitCountries.length === 0 ? (
+                    <p style={{ color:"#94a3b8" }}>No visit data yet.</p>
                   ) : (
                     <ul className="analytics-country-list">
-                      {countries.map((c) => (
+                      {visitCountries.map((c) => (
                         <li key={c.name} className="analytics-country">
                           <div className="analytics-country-row">
                             <span className="analytics-country-name">{c.name}</span>
                             <span className="analytics-country-count">{c.count.toLocaleString()}</span>
                           </div>
                           <div className="analytics-country-bar">
-                            <div
-                              className="analytics-country-bar-fill"
-                              style={{ width: `${(c.count / visitMax) * 100}%` }}
-                            />
+                            <div className="analytics-country-bar-fill" style={{ width:`${(c.count/visitMax)*100}%` }} />
                           </div>
                         </li>
                       ))}
@@ -204,12 +217,12 @@ export default function Visits() {
                 </div>
 
                 <div className="admin-chart-card">
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "1.25rem" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:"1.25rem" }}>
                     <MapPin size={18} color="#22c55e" />
-                    <h2 className="admin-chart-title" style={{ margin: 0 }}>Downloads by Country</h2>
+                    <h2 className="admin-chart-title" style={{ margin:0 }}>Downloads by Country</h2>
                   </div>
                   {downloadCountries.length === 0 ? (
-                    <p style={{ color: "#94a3b8" }}>No download country data yet.</p>
+                    <p style={{ color:"#94a3b8" }}>No download data yet.</p>
                   ) : (
                     <ul className="analytics-country-list">
                       {downloadCountries.map((c) => (
@@ -221,10 +234,7 @@ export default function Visits() {
                           <div className="analytics-country-bar">
                             <div
                               className="analytics-country-bar-fill"
-                              style={{
-                                width: `${(c.count / dlMax) * 100}%`,
-                                background: "linear-gradient(90deg,#16a34a,#22c55e)",
-                              }}
+                              style={{ width:`${(c.count/downloadMax)*100}%`, background:"linear-gradient(90deg,#16a34a,#22c55e)" }}
                             />
                           </div>
                         </li>
@@ -232,41 +242,128 @@ export default function Visits() {
                     </ul>
                   )}
                 </div>
+
               </div>
 
-              {/* ── Recent Visitors Table ── */}
+              {/* ── Visits Trend (last 7 days) ─────────────────────────────── */}
+              {visitTrend.length > 0 && (
+                <div className="admin-chart-card" style={{ marginBottom:"1.5rem" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:"1.25rem" }}>
+                    <TrendingUp size={18} color="#1d4ed8" />
+                    <h2 className="admin-chart-title" style={{ margin:0 }}>Visits — Last 7 Days</h2>
+                  </div>
+                  <ResponsiveContainer width="100%" height={240}>
+                    <LineChart data={visitTrend}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
+                      <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} />
+                      <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="visits" stroke="#1d4ed8" strokeWidth={2.5} dot={{ r:3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {/* ── Platform + Format charts ───────────────────────────────── */}
+              <div className="admin-charts" style={{ marginBottom:"1.5rem" }}>
+
+                <div className="admin-chart-card">
+                  <h2 className="admin-chart-title" style={{ marginBottom:"1rem" }}>Downloads by Platform</h2>
+                  {platformData.length === 0 ? (
+                    <p style={{ color:"#94a3b8" }}>No platform data yet.</p>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart data={platformData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
+                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
+                        <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
+                        <Tooltip />
+                        <Bar dataKey="count" radius={[6,6,0,0]}>
+                          {platformData.map((entry, i) => (
+                            <Cell key={i} fill={entry.fill} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+
+                <div className="admin-chart-card">
+                  <h2 className="admin-chart-title" style={{ marginBottom:"1rem" }}>Downloads by Format</h2>
+                  {formatData.length === 0 ? (
+                    <p style={{ color:"#94a3b8" }}>No format data yet.</p>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart data={formatData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
+                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
+                        <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
+                        <Tooltip />
+                        <Bar dataKey="count" radius={[6,6,0,0]}>
+                          {formatData.map((entry, i) => (
+                            <Cell key={i} fill={FORMAT_COLORS[i % FORMAT_COLORS.length]} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+
+              </div>
+
+              {/* ── Recent Downloads Table ─────────────────────────────────── */}
               <div className="admin-table-card">
-                <h2 className="admin-chart-title" style={{ marginBottom: "1rem" }}>
-                  Recent Visitors
-                </h2>
+                <h2 className="admin-chart-title" style={{ marginBottom:"1rem" }}>Recent Downloads</h2>
                 <div className="admin-table-wrapper">
                   <table className="admin-table">
                     <thead>
                       <tr>
                         <th>Time</th>
                         <th>Country</th>
-                        <th>IP Address</th>
-                        <th>Device</th>
-                        <th>Browser</th>
+                        <th>Platform</th>
+                        <th>Format</th>
+                        <th>Status</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {recentVisitors.length === 0 ? (
+                      {recentDownloads.length === 0 ? (
                         <tr>
-                          <td colSpan="5" style={{ textAlign: "center", color: "#94a3b8", padding: "2rem" }}>
-                            No recent visitor data.
+                          <td colSpan="5" style={{ textAlign:"center", color:"#94a3b8", padding:"2rem" }}>
+                            No recent download data.
                           </td>
                         </tr>
                       ) : (
-                        recentVisitors.map((v, i) => (
+                        recentDownloads.map((r, i) => (
                           <tr key={i}>
-                            <td style={{ whiteSpace: "nowrap" }}>{formatTime(v)}</td>
-                            <td>{v.country || "Unknown"}</td>
-                            <td style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
-                              {getIp(v)}
+                            <td style={{ whiteSpace:"nowrap" }}>{fmtTime(r)}</td>
+                            <td>{r.country || "Unknown"}</td>
+                            <td>
+                              <span style={{
+                                background: getPlatformColor(r.platform || ""),
+                                color:"#fff",
+                                padding:"2px 8px",
+                                borderRadius:4,
+                                fontSize:"0.8rem",
+                              }}>
+                                {r.platform || "—"}
+                              </span>
                             </td>
-                            <td>{parseDevice(getUa(v))}</td>
-                            <td>{parseBrowser(getUa(v))}</td>
+                            <td>
+                              <span style={{
+                                background: (r.format||"").toUpperCase() === "MP3" ? "#22c55e" : "#1d4ed8",
+                                color:"#fff",
+                                padding:"2px 8px",
+                                borderRadius:4,
+                                fontSize:"0.8rem",
+                              }}>
+                                {r.format || "—"}
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`admin-status ${r.status === "success" ? "ok" : "fail"}`}>
+                                {r.status === "success" ? "Completed" : (r.status || "—")}
+                              </span>
+                            </td>
                           </tr>
                         ))
                       )}
@@ -274,6 +371,7 @@ export default function Visits() {
                   </table>
                 </div>
               </div>
+
             </>
           )}
         </div>
