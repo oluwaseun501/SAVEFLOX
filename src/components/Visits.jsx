@@ -92,10 +92,11 @@ export default function Visits() {
                           className="analytics-country-bar-fill"
                           style={{ width: `${pct}%` }}
                         />
+                        
                       </div>
                     </li>
 
-                    
+
                   );
                 })}
               </ul>
