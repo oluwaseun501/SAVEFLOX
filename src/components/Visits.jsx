@@ -5,6 +5,7 @@ import AdminTopbar from "./AdminTopbar";
 import "../styles/AdminDashboard.css";
 import "../styles/Analytics.css";
 import { supabase } from "../lib/supabase";
+import { analyticsAPI } from "../services/api";
 
 export default function Visits() {
   const [countries, setCountries] = useState([]);
@@ -14,26 +15,27 @@ export default function Visits() {
   const [totalVisits, setTotalVisits] = useState(0);
   const [todayVisits, setTodayVisits] = useState(0);
   const [uniqueCountries, setUniqueCountries] = useState(0);
-  const [email, setEmail] = useState("admin@saveflux.com");
 
   useEffect(() => {
     async function loadAll() {
       setLoading(true);
 
-      // Load visits data
+      // ── Visitor logs (select * to match whatever columns exist) ──
       const { data: visitData, error: visitError } = await supabase
         .from("visitor_logs")
-        .select("country, ip_address, created_at, user_agent")
-        .order("created_at", { ascending: false });
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1000);
 
-      if (!visitError && visitData) {
+      if (!visitError && visitData && visitData.length > 0) {
         setTotalVisits(visitData.length);
 
-        // Today's visits
+        // Today's visits – try created_at, fall back to timestamp
         const todayStr = new Date().toISOString().slice(0, 10);
-        const todayCount = visitData.filter(
-          (r) => r.created_at && r.created_at.slice(0, 10) === todayStr
-        ).length;
+        const todayCount = visitData.filter((r) => {
+          const ts = r.created_at || r.timestamp || "";
+          return ts.slice(0, 10) === todayStr;
+        }).length;
         setTodayVisits(todayCount);
 
         // Group by country
@@ -48,18 +50,20 @@ export default function Visits() {
         setCountries(sorted);
         setUniqueCountries(sorted.length);
 
-        // Recent visitors (last 20)
+        // Recent visitors (last 20 rows)
         setRecentVisitors(visitData.slice(0, 20));
+      } else {
+        // visitError present — log for debugging
+        if (visitError) console.error("visitor_logs error:", visitError.message);
       }
 
-      // Load download countries from download_logs
-      const { data: dlData, error: dlError } = await supabase
-        .from("download_logs")
-        .select("country");
-
-      if (!dlError && dlData) {
-        const dlGrouped = dlData.reduce((acc, row) => {
+      // ── Downloads by country via existing API ──
+      try {
+        const dlRes = await analyticsAPI.getDownloadLogs(1000, 0, {});
+        const dlLogs = dlRes?.data?.logs || [];
+        const dlGrouped = dlLogs.reduce((acc, row) => {
           const key = row.country || "Unknown";
+          if (!key || key === "Unknown") return acc;
           acc[key] = (acc[key] || 0) + 1;
           return acc;
         }, {});
@@ -67,6 +71,8 @@ export default function Visits() {
           .map(([name, count]) => ({ name, count }))
           .sort((a, b) => b.count - a.count);
         setDownloadCountries(dlSorted);
+      } catch (e) {
+        console.error("download logs error:", e);
       }
 
       setLoading(false);
@@ -78,10 +84,10 @@ export default function Visits() {
   const visitMax = countries[0]?.count || 1;
   const dlMax = downloadCountries[0]?.count || 1;
 
-  function formatTime(ts) {
+  function formatTime(row) {
+    const ts = row.created_at || row.timestamp;
     if (!ts) return "—";
-    const d = new Date(ts);
-    return d.toLocaleString("en-GB", {
+    return new Date(ts).toLocaleString("en-GB", {
       day: "2-digit",
       month: "short",
       year: "numeric",
@@ -91,14 +97,14 @@ export default function Visits() {
   }
 
   function parseDevice(ua) {
-    if (!ua) return "Unknown";
+    if (!ua) return "—";
     if (/mobile|android|iphone|ipad/i.test(ua)) return "Mobile";
     if (/tablet/i.test(ua)) return "Tablet";
     return "Desktop";
   }
 
   function parseBrowser(ua) {
-    if (!ua) return "Unknown";
+    if (!ua) return "—";
     if (/chrome/i.test(ua) && !/edge|edg/i.test(ua)) return "Chrome";
     if (/firefox/i.test(ua)) return "Firefox";
     if (/safari/i.test(ua) && !/chrome/i.test(ua)) return "Safari";
@@ -107,17 +113,27 @@ export default function Visits() {
     return "Other";
   }
 
+  // Detect which IP column exists from the first visitor row
+  function getIp(row) {
+    return row.ip_address || row.ip || "—";
+  }
+
+  // Detect which user-agent column exists
+  function getUa(row) {
+    return row.user_agent || row.useragent || row.ua || "";
+  }
+
   return (
     <div className="admin">
       <AdminSidebar />
       <main className="admin-main">
-        <AdminTopbar email={email} />
+        <AdminTopbar email="admin@saveflux.com" />
         <div className="admin-main-inner">
           <header className="admin-header">
             <div>
               <h1 className="admin-title">Visits</h1>
               <p className="admin-subtitle">
-                Detailed breakdown of where your visitors come from and what they do.
+                Detailed breakdown of where your visitors come from and what they download.
               </p>
             </div>
           </header>
@@ -126,37 +142,40 @@ export default function Visits() {
             <div className="admin-loading-card">Loading visit data...</div>
           ) : (
             <>
-              {/* Stat Cards */}
+              {/* ── Stat Cards ── */}
               <div className="admin-stats" style={{ marginBottom: "1.5rem" }}>
-                <StatCard
-                  icon={<Users size={18} />}
-                  label="Total Visits"
-                  value={totalVisits.toLocaleString()}
-                  tone="blue"
-                />
-                <StatCard
-                  icon={<Clock size={18} />}
-                  label="Visits Today"
-                  value={todayVisits.toLocaleString()}
-                  tone="green"
-                />
-                <StatCard
-                  icon={<Globe size={18} />}
-                  label="Unique Countries"
-                  value={uniqueCountries.toLocaleString()}
-                  tone="blue"
-                />
-                <StatCard
-                  icon={<Download size={18} />}
-                  label="Download Countries"
-                  value={downloadCountries.length.toLocaleString()}
-                  tone="green"
-                />
+                <div className="admin-stat">
+                  <div className="admin-stat-top">
+                    <div className="admin-stat-icon"><Users size={18} /></div>
+                  </div>
+                  <div className="admin-stat-label">Total Visits</div>
+                  <div className="admin-stat-value">{totalVisits.toLocaleString()}</div>
+                </div>
+                <div className="admin-stat">
+                  <div className="admin-stat-top">
+                    <div className="admin-stat-icon"><Clock size={18} /></div>
+                  </div>
+                  <div className="admin-stat-label">Visits Today</div>
+                  <div className="admin-stat-value">{todayVisits.toLocaleString()}</div>
+                </div>
+                <div className="admin-stat">
+                  <div className="admin-stat-top">
+                    <div className="admin-stat-icon"><Globe size={18} /></div>
+                  </div>
+                  <div className="admin-stat-label">Unique Countries</div>
+                  <div className="admin-stat-value">{uniqueCountries.toLocaleString()}</div>
+                </div>
+                <div className="admin-stat">
+                  <div className="admin-stat-top">
+                    <div className="admin-stat-icon"><Download size={18} /></div>
+                  </div>
+                  <div className="admin-stat-label">Download Countries</div>
+                  <div className="admin-stat-value">{downloadCountries.length.toLocaleString()}</div>
+                </div>
               </div>
 
-              {/* Two column: Visits by Country + Downloads by Country */}
+              {/* ── Two-column: Visits by Country + Downloads by Country ── */}
               <div className="admin-charts" style={{ marginBottom: "1.5rem" }}>
-                {/* Visits by Country */}
                 <div className="admin-chart-card">
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "1.25rem" }}>
                     <Globe size={18} color="#1d4ed8" />
@@ -166,25 +185,24 @@ export default function Visits() {
                     <p style={{ color: "#94a3b8" }}>No visit data yet.</p>
                   ) : (
                     <ul className="analytics-country-list">
-                      {countries.map((c) => {
-                        const pct = (c.count / visitMax) * 100;
-                        return (
-                          <li key={c.name} className="analytics-country">
-                            <div className="analytics-country-row">
-                              <span className="analytics-country-name">{c.name}</span>
-                              <span className="analytics-country-count">{c.count.toLocaleString()}</span>
-                            </div>
-                            <div className="analytics-country-bar">
-                              <div className="analytics-country-bar-fill" style={{ width: `${pct}%` }} />
-                            </div>
-                          </li>
-                        );
-                      })}
+                      {countries.map((c) => (
+                        <li key={c.name} className="analytics-country">
+                          <div className="analytics-country-row">
+                            <span className="analytics-country-name">{c.name}</span>
+                            <span className="analytics-country-count">{c.count.toLocaleString()}</span>
+                          </div>
+                          <div className="analytics-country-bar">
+                            <div
+                              className="analytics-country-bar-fill"
+                              style={{ width: `${(c.count / visitMax) * 100}%` }}
+                            />
+                          </div>
+                        </li>
+                      ))}
                     </ul>
                   )}
                 </div>
 
-                {/* Downloads by Country */}
                 <div className="admin-chart-card">
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "1.25rem" }}>
                     <MapPin size={18} color="#22c55e" />
@@ -194,29 +212,29 @@ export default function Visits() {
                     <p style={{ color: "#94a3b8" }}>No download country data yet.</p>
                   ) : (
                     <ul className="analytics-country-list">
-                      {downloadCountries.map((c) => {
-                        const pct = (c.count / dlMax) * 100;
-                        return (
-                          <li key={c.name} className="analytics-country">
-                            <div className="analytics-country-row">
-                              <span className="analytics-country-name">{c.name}</span>
-                              <span className="analytics-country-count">{c.count.toLocaleString()}</span>
-                            </div>
-                            <div className="analytics-country-bar">
-                              <div
-                                className="analytics-country-bar-fill"
-                                style={{ width: `${pct}%`, background: "linear-gradient(90deg,#16a34a,#22c55e)" }}
-                              />
-                            </div>
-                          </li>
-                        );
-                      })}
+                      {downloadCountries.map((c) => (
+                        <li key={c.name} className="analytics-country">
+                          <div className="analytics-country-row">
+                            <span className="analytics-country-name">{c.name}</span>
+                            <span className="analytics-country-count">{c.count.toLocaleString()}</span>
+                          </div>
+                          <div className="analytics-country-bar">
+                            <div
+                              className="analytics-country-bar-fill"
+                              style={{
+                                width: `${(c.count / dlMax) * 100}%`,
+                                background: "linear-gradient(90deg,#16a34a,#22c55e)",
+                              }}
+                            />
+                          </div>
+                        </li>
+                      ))}
                     </ul>
                   )}
                 </div>
               </div>
 
-              {/* Recent Visitors Table */}
+              {/* ── Recent Visitors Table ── */}
               <div className="admin-table-card">
                 <h2 className="admin-chart-title" style={{ marginBottom: "1rem" }}>
                   Recent Visitors
@@ -242,13 +260,13 @@ export default function Visits() {
                       ) : (
                         recentVisitors.map((v, i) => (
                           <tr key={i}>
-                            <td style={{ whiteSpace: "nowrap" }}>{formatTime(v.created_at)}</td>
+                            <td style={{ whiteSpace: "nowrap" }}>{formatTime(v)}</td>
                             <td>{v.country || "Unknown"}</td>
                             <td style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
-                              {v.ip_address || "—"}
+                              {getIp(v)}
                             </td>
-                            <td>{parseDevice(v.user_agent)}</td>
-                            <td>{parseBrowser(v.user_agent)}</td>
+                            <td>{parseDevice(getUa(v))}</td>
+                            <td>{parseBrowser(getUa(v))}</td>
                           </tr>
                         ))
                       )}
@@ -260,18 +278,6 @@ export default function Visits() {
           )}
         </div>
       </main>
-    </div>
-  );
-}
-
-function StatCard({ icon, label, value, tone = "blue" }) {
-  return (
-    <div className="admin-stat">
-      <div className="admin-stat-top">
-        <div className={`admin-stat-icon${tone === "green" ? " green" : ""}`}>{icon}</div>
-      </div>
-      <div className="admin-stat-label">{label}</div>
-      <div className="admin-stat-value">{value}</div>
     </div>
   );
 }

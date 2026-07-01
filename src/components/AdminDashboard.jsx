@@ -48,17 +48,20 @@ export default function AdminDashboard() {
       setLoading(true);
       setError(null);
       try {
-        const [statsRes, logsRes] = await Promise.all([
+        const [statsRes, logsRes, mp3Res] = await Promise.all([
           analyticsAPI.getDashboardStats(),
           analyticsAPI.getDownloadLogs(6, 0),
+          analyticsAPI.getDownloadLogs(1, 0, { format: "MP3" }).catch(() => null),
         ]);
 
         const statsData = statsRes?.data || {};
+        // Use the direct MP3 query total (more reliable than statsData.mp3_downloads)
+        const mp3Count = mp3Res?.data?.total ?? statsData.mp3_downloads ?? 0;
         setStats([
           { label: "Total Downloads", value: statsData.total_downloads?.toLocaleString?.() || "0", change: "+0%", up: true, icon: Download },
           { label: "Downloads Today", value: statsData.downloads_today?.toLocaleString?.() || "0", change: "+0%", up: true, icon: TrendingUp },
           { label: "Success Rate", value: statsData.success_rate != null ? `${statsData.success_rate}%` : "0%", change: "-", up: statsData.success_rate >= 0, icon: Users },
-          { label: "MP3 Downloads", value: statsData.mp3_downloads?.toLocaleString?.() || "0", change: "-", up: true, icon: Activity },
+          { label: "MP3 Downloads", value: mp3Count.toLocaleString(), change: "-", up: true, icon: Activity },
         ]);
 
         const topPlatforms = (statsData.top_platforms || []).filter(

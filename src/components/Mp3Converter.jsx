@@ -307,6 +307,16 @@ export default function Mp3Converter() {
     }
   };
 
+  // Clear blob cache after each download so the next download re-hits the
+  // backend /mp3/download endpoint (which logs it). The decoded audio buffer
+  // cache is kept so replays stay instant.
+  const clearBlobCacheForLogging = () => {
+    if (blobCacheRef.current[url]) {
+      URL.revokeObjectURL(blobCacheRef.current[url]);
+      delete blobCacheRef.current[url];
+    }
+  };
+
   // Download original — no effects, no popup
   const downloadOriginal = async () => {
     if (!url) return;
@@ -322,6 +332,8 @@ export default function Mp3Converter() {
       document.body.appendChild(a); a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(dlUrl);
+      // Reset blob cache so the next download re-hits the backend (logs it)
+      clearBlobCacheForLogging();
     } catch (err) {
       setError(`Download failed: ${err.message}`);
     } finally {
@@ -362,6 +374,8 @@ export default function Mp3Converter() {
       document.body.appendChild(a); a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(dlUrl);
+      // Reset blob cache so the next download re-hits the backend (logs it)
+      clearBlobCacheForLogging();
     } catch (err) {
       setError(`Download failed: ${err.message}`);
     } finally {
