@@ -100,7 +100,7 @@ export default function DownloadLogs() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const exportCsv = () => {
-    const headers = ["Timestamp", "Platform", "URL", "Format", "Quality", "Size", "Status", "IP", "Country"];
+    const headers = ["Timestamp", "Platform", "URL", "Format", "Quality", "Size", "Status", "IP", "Country", "City", "ISP"];
     const rows = logs.map((log) => [
       log.timestamp,
       log.platform,
@@ -111,6 +111,8 @@ export default function DownloadLogs() {
       log.status,
       log.ip,
       log.country,
+      log.city || '',
+      log.isp || '',
     ]);
     const csv = [headers, ...rows]
       .map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
@@ -203,12 +205,14 @@ export default function DownloadLogs() {
                   <th>Status</th>
                   <th>IP Address</th>
                   <th>Country</th>
+                  <th>City</th>
+                  <th>ISP</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="9" className="dl-empty">Loading downloads…</td>
+                    <td colSpan="11" className="dl-empty">Loading downloads…</td>
                   </tr>
                 ) : logs.length > 0 ? (
                   logs.map((row) => (
@@ -233,11 +237,13 @@ export default function DownloadLogs() {
                       </td>
                       <td className="dl-cell-mono">{row.ip}</td>
                       <td>{row.country}</td>
+                      <td>{row.city || '—'}</td>
+                      <td>{row.isp || '—'}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="9" className="dl-empty">No downloads match your filters.</td>
+                    <td colSpan="11" className="dl-empty">No downloads match your filters.</td>
                   </tr>
                 )}
               </tbody>
