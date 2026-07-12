@@ -30,9 +30,11 @@ export default function Instagram() {
   const [slowWarning, setSlowWarning] = useState(false);
   const [adModal, setAdModal] = useState(null);
   const [pendingDownload, setPendingDownload] = useState(null);
-    const popupImageAd = useAdRotation("popup-image");
+  const popupImageAd = useAdRotation("popup-image");
   const popupVideoAd = useAdRotation("popup-video");
-
+  const [slideDownloading, setSlideDownloading] = useState({});
+  const [slideDone, setSlideDone] = useState({});
+  
 
   const detectPlatformFromUrl = (u) => {
     const l = u.toLowerCase();
@@ -104,6 +106,27 @@ export default function Instagram() {
     finally { setDownloading(null); }
   };
 
+  const triggerSlideDownload = async (slideIndex) => {
+  setSlideDownloading((prev) => ({ ...prev, [slideIndex]: true }));
+  try {
+    const response = await fetch(`${API_BASE_URL}/instagram/slides`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url, slide_index: slideIndex }),
+    });
+    if (!response.ok) throw new Error("Download failed");
+    const blob = await response.blob();
+    const downloadUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = `instagram_slide_${slideIndex + 1}.jpg`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(downloadUrl);
+    setSlideDone((prev) => ({ ...prev, [slideIndex]: true }));
+  } catch { setError("Slide download failed. Please try again."); }
+  finally { setSlideDownloading((prev) => ({ ...prev, [slideIndex]: false })); }
+};
+
   const handleDownload = (qualityType = "normal") => {
     if (!url || !preview) return;
     const platform = detectPlatformFromUrl(url);
@@ -158,34 +181,82 @@ export default function Instagram() {
           {loading && <DotsLoader />}
           {slowWarning && <p className="instagram-slow-msg">Taking longer than usual, please wait...</p>}
 
-          {preview && (
-            <div className="instagram-preview" style={mountStyle(0)}>
-              <div className="preview-header">
-                <img src={preview.thumbnail} alt="Preview" className="preview-thumbnail" />
-                <div className="preview-info">
-                  <h3>{preview.title}</h3>
-                  <p>👤 {preview.uploader}</p>
-                  <p>⏱️ {preview.duration}</p>
-                  <div className="preview-stats">
-                    <span><Eye size={14} /> {formatNumber(preview.views)}</span>
-                    <span><Heart size={14} /> {formatNumber(preview.likes)}</span>
-                    <span><MessageCircle size={14} /> {formatNumber(preview.comment_count)}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="download-actions">
-                <button className="dl-btn dl-btn--normal" onClick={() => handleDownload("normal")} disabled={downloading !== null}>
-                  {downloading === "normal" ? <Loader size={18} className="spinner" /> : <Download size={18} />}
-                  {downloading === "normal" ? "Downloading..." : "Download Video"}
-                </button>
-                <button className="dl-btn dl-btn--hd" onClick={() => handleDownload("hd")} disabled={downloading !== null}>
-                  {downloading === "hd" ? <Loader size={18} className="spinner" /> : <Download size={18} />}
-                  {downloading === "hd" ? "Downloading..." : "Download Video HD"}
-                  {downloading !== "hd" && <span className="dl-hd-badge">HD</span>}
-                </button>
-              </div>
+         {preview && (
+  <div className="instagram-preview" style={mountStyle(0)}>
+    <div className="preview-header">
+      <img src={preview.thumbnail} alt="Preview" className="preview-thumbnail" />
+      <div className="preview-info">
+        <h3>{preview.title}</h3>
+        <p>👤 {preview.uploader}</p>
+        {preview.type === "carousel" ? (
+          <p>🖼️ {preview.item_count} slides</p>
+        ) : (
+          <>
+            <p>⏱️ {preview.duration}</p>
+            <div className="preview-stats">
+              <span><Eye size={14} /> {formatNumber(preview.views)}</span>
+              <span><Heart size={14} /> {formatNumber(preview.likes)}</span>
+              <span><MessageCircle size={14} /> {formatNumber(preview.comment_count)}</span>
             </div>
-          )}
+          </>
+        )}
+      </div>
+    </div>
+
+    {preview.type === "carousel" ? (
+      <div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", marginTop: "16px" }}>
+          {preview.slides.map((slide) => (
+            <div key={slide.index} style={{ position: "relative", borderRadius: "10px", overflow: "hidden", background: "#1a1a2e" }}>
+              <img
+                src={slide.thumbnail || slide.url}
+                alt={`Slide ${slide.index + 1}`}
+                style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", display: "block" }}
+                onError={(e) => { e.target.style.display = "none"; }}
+              />
+              <span style={{ position: "absolute", top: "6px", left: "6px", background: "rgba(0,0,0,0.65)", color: "#fff", fontSize: "11px", fontWeight: "600", padding: "2px 7px", borderRadius: "20px" }}>
+                {slide.index + 1}
+              </span>
+              <button
+                onClick={() => triggerSlideDownload(slide.index)}
+                disabled={slideDownloading[slide.index] || slideDone[slide.index]}
+                style={{
+                  position: "absolute", bottom: "6px", left: "50%", transform: "translateX(-50%)",
+                  background: slideDone[slide.index] ? "#22c55e" : slideDownloading[slide.index] ? "#555" : "rgba(255,255,255,0.92)",
+                  color: slideDone[slide.index] ? "#fff" : slideDownloading[slide.index] ? "#fff" : "#111",
+                  border: "none", borderRadius: "8px", padding: "4px 10px", fontSize: "11px", fontWeight: "600",
+                  cursor: slideDownloading[slide.index] || slideDone[slide.index] ? "default" : "pointer",
+                  whiteSpace: "nowrap", transition: "background 0.2s",
+                }}
+              >
+                {slideDone[slide.index] ? "✓ Saved" : slideDownloading[slide.index] ? "..." : "↓ Save"}
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          className="dl-btn dl-btn--normal"
+          style={{ marginTop: "14px", width: "100%" }}
+          onClick={() => preview.slides.forEach((s) => { if (!slideDownloading[s.index] && !slideDone[s.index]) triggerSlideDownload(s.index); })}
+        >
+          <Download size={18} /> Download All ({preview.item_count} images)
+        </button>
+      </div>
+    ) : (
+      <div className="download-actions">
+        <button className="dl-btn dl-btn--normal" onClick={() => handleDownload("normal")} disabled={downloading !== null}>
+          {downloading === "normal" ? <Loader size={18} className="spinner" /> : <Download size={18} />}
+          {downloading === "normal" ? "Downloading..." : "Download Video"}
+        </button>
+        <button className="dl-btn dl-btn--hd" onClick={() => handleDownload("hd")} disabled={downloading !== null}>
+          {downloading === "hd" ? <Loader size={18} className="spinner" /> : <Download size={18} />}
+          {downloading === "hd" ? "Downloading..." : "Download Video HD"}
+          {downloading !== "hd" && <span className="dl-hd-badge">HD</span>}
+        </button>
+      </div>
+    )}
+  </div>
+)}
 
           {error && <div className="instagram-error" style={mountStyle(0)}><span>❌ {error}</span></div>}
         </div>

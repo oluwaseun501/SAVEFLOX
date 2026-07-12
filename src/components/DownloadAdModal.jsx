@@ -9,11 +9,12 @@ export default function DownloadAdModal({
   adVideo,
   onClose,
   onSkip,
-  onCountdownEnd,   // NEW: called when watchTime is up (triggers download in bg)
+  onCountdownEnd,
   skipDelay = 5,
   watchTime = 15,
-  backlink,  
-  page = "unknown",       // NEW: URL to open when clicking the ad
+  downloadDelay = 5,  // triggers download this many seconds after video starts
+  backlink,
+  page = "unknown",
 }) {
   const [countdown, setCountdown] = useState(watchTime);
   const [canClose, setCanClose] = useState(false);
@@ -29,7 +30,7 @@ export default function DownloadAdModal({
     }
   }, [type, skipDelay]);
 
-  // Video ad — count down, then trigger download in background, unlock close button
+  // Video ad — count down watchTime, then unlock the close button
   useEffect(() => {
     if (type !== "video") return;
     const interval = setInterval(() => {
@@ -45,24 +46,29 @@ export default function DownloadAdModal({
     return () => clearInterval(interval);
   }, [type, watchTime]);
 
-  // When countdown ends, trigger download in background (don't auto-close)
+  // Trigger download after downloadDelay seconds (before close button unlocks)
   useEffect(() => {
-    if (!canClose || type !== "video" || downloadStarted) return;
-    setDownloadStarted(true);
-    if (onCountdownEnd) onCountdownEnd(); // starts download in background
-  }, [canClose, type, onCountdownEnd, downloadStarted]);
+    if (type !== "video") return;
+    const timer = setTimeout(() => {
+      if (!downloadStarted) {
+        setDownloadStarted(true);
+        if (onCountdownEnd) onCountdownEnd();
+      }
+    }, downloadDelay * 1000);
+    return () => clearTimeout(timer);
+  }, [type, downloadDelay]); // eslint-disable-line react-hooks/exhaustive-deps
 
-const handleAdClick = async () => {
-  try {
-    await supabase.from("ad_clicks").insert({
-      slot: `${page}-popup-${type}`,   // 👈 e.g. "tiktok-popup-image", "facebook-popup-video"
-      link: backlink || "none",
-    });
-  } catch (err) {
-    // silent fail
-  }
-  if (backlink) window.open(backlink, "_blank", "noopener,noreferrer");
-};
+  const handleAdClick = async () => {
+    try {
+      await supabase.from("ad_clicks").insert({
+        slot: `${page}-popup-${type}`,
+        link: backlink || "none",
+      });
+    } catch (err) {
+      // silent fail
+    }
+    if (backlink) window.open(backlink, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <div className="adm-overlay">
@@ -125,10 +131,10 @@ const handleAdClick = async () => {
                   )
                 }
               </div>
-             <div className="adm-video-footer">
+              <div className="adm-video-footer">
                 {canClose
-                  ? <span className="adm-ready">Starting your HD download…</span>
-                  : <span className="adm-unlocks">HD download begins in <strong>{countdown}s</strong></span>
+                  ? <span className="adm-ready">Your download is ready!</span>
+                  : <span className="adm-unlocks">Close in <strong>{countdown}s</strong></span>
                 }
               </div>
             </>
