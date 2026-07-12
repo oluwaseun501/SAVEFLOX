@@ -5,13 +5,7 @@ import ads3 from "../ads/ads3.jpg";
 import ads4 from "../ads/ads4.jpg";
 import ads5 from "../ads/ads5.jpg";
 import ads6 from "../ads/ads6.jpg";
-// import ads7 from "../ads/33.jpg";
-// import ads8 from "../ads/44.jpg";
-// import ads9 from "../ads/55.jpg";
-// import ads10 from "../ads/66.jpg";
-// import ads11 from "../ads/77.jpg";
-// import ads12 from "../ads/88.jpg";
-// import ads13 from "../ads/99.jpg";
+
 
 import adsVid from "../ads/adsVid.mp4";
 
