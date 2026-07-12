@@ -131,6 +131,7 @@ export default function DownloadAdModal({
                   )
                 }
               </div>
+              
               <div className="adm-video-footer">
                 {canClose
                   ? <span className="adm-ready">Your download is ready!</span>
