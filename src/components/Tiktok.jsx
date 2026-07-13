@@ -19,7 +19,13 @@ import { useAdRotation } from "../hooks/useAdRotation";
 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
+const SLIDESHOW_SERVER_URL = "http://localhost:3001";
+
 const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both` });
+
+// Detect TikTok slideshow/photo URLs — these go to the Node.js server
+const isTikTokSlideshow = (u) =>
+  u.toLowerCase().includes("tiktok.com") && u.toLowerCase().includes("/photo/");
 
 export default function Tiktok() {
   const { t } = useTranslation();
@@ -34,7 +40,7 @@ export default function Tiktok() {
   const popupImageAd = useAdRotation("popup-image");
   const popupVideoAd = useAdRotation("popup-video");
   const [slideDownloading, setSlideDownloading] = useState({});
-const [slideDone, setSlideDone] = useState({});
+  const [slideDone, setSlideDone] = useState({});
 
 
   const detectPlatformFromUrl = (u) => {
@@ -55,14 +61,27 @@ const [slideDone, setSlideDone] = useState({});
     if (!platform) { setError("Unsupported platform."); return; }
     setLoading(true); setError(null); setPreview(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/preview`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: targetUrl, platform }),
-      });
-      const data = await response.json();
-      if (data.success) { setPreview(data); }
-      else { setError(data.error || "Failed to fetch video info"); }
+      // ── CHANGE 1: TikTok slideshow/photo URLs → Node.js slideshow server ──
+      if (isTikTokSlideshow(targetUrl)) {
+        const response = await fetch(`${SLIDESHOW_SERVER_URL}/tiktok/preview`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: targetUrl }),
+        });
+        const data = await response.json();
+        if (data.success) { setPreview(data); }
+        else { setError(data.error || "Failed to fetch slideshow info"); }
+      } else {
+        // All other URLs (TikTok video, Instagram, Facebook, etc.) → Flask
+        const response = await fetch(`${API_BASE_URL}/preview`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: targetUrl, platform }),
+        });
+        const data = await response.json();
+        if (data.success) { setPreview(data); }
+        else { setError(data.error || "Failed to fetch video info"); }
+      }
     } catch { setError("Network error. Please try again."); }
     finally { setLoading(false); }
   };
@@ -106,26 +125,27 @@ const [slideDone, setSlideDone] = useState({});
     finally { setDownloading(null); }
   };
 
+  // ── CHANGE 2: Slide downloads → Node.js slideshow server ──
   const triggerSlideDownload = async (slideIndex) => {
-  setSlideDownloading((prev) => ({ ...prev, [slideIndex]: true }));
-  try {
-    const response = await fetch(`${API_BASE_URL}/tiktok/slides`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url, slide_index: slideIndex }),
-    });
-    if (!response.ok) throw new Error("Download failed");
-    const blob = await response.blob();
-    const downloadUrl = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = downloadUrl;
-    a.download = `tiktok_slide_${slideIndex + 1}.jpg`;
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a); URL.revokeObjectURL(downloadUrl);
-    setSlideDone((prev) => ({ ...prev, [slideIndex]: true }));
-  } catch { setError("Slide download failed. Please try again."); }
-  finally { setSlideDownloading((prev) => ({ ...prev, [slideIndex]: false })); }
-};
+    setSlideDownloading((prev) => ({ ...prev, [slideIndex]: true }));
+    try {
+      const response = await fetch(`${SLIDESHOW_SERVER_URL}/tiktok/download`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, index: slideIndex }),
+      });
+      if (!response.ok) throw new Error("Download failed");
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = `tiktok_slide_${slideIndex + 1}.jpg`;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(downloadUrl);
+      setSlideDone((prev) => ({ ...prev, [slideIndex]: true }));
+    } catch { setError("Slide download failed. Please try again."); }
+    finally { setSlideDownloading((prev) => ({ ...prev, [slideIndex]: false })); }
+  };
 
   const handleDownload = (qualityType = "normal") => {
     if (!url || !preview) return;
