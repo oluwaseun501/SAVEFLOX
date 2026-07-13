@@ -315,6 +315,7 @@ export default function Tiktok() {
           onClose={() => setAdModal(null)}   // only closes the modal
         />
       )}
+      
           </>
         );
       }
