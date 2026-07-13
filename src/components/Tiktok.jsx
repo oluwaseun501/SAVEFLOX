@@ -25,7 +25,7 @@ const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delay
 
 // Detect TikTok slideshow/photo URLs — these go to the Node.js server
 const isTikTokSlideshow = (u) =>
-  u.toLowerCase().includes("tiktok.com") && u.toLowerCase().includes("/photo/");
+  u.toLowerCase().includes("tiktok.com") || u.toLowerCase().includes("vm.tiktok.com") || u.toLowerCase().includes("vt.tiktok.com");
 
 export default function Tiktok() {
   const { t } = useTranslation();
@@ -55,36 +55,46 @@ export default function Tiktok() {
   };
 
   const handlePreview = async (pastedUrl) => {
-    const targetUrl = (typeof pastedUrl === "string" ? pastedUrl : null) || url;
-    if (!targetUrl) { setError("Please enter a URL"); return; }
-    const platform = detectPlatformFromUrl(targetUrl);
-    if (!platform) { setError("Unsupported platform."); return; }
-    setLoading(true); setError(null); setPreview(null);
-    try {
-      // ── CHANGE 1: TikTok slideshow/photo URLs → Node.js slideshow server ──
-      if (isTikTokSlideshow(targetUrl)) {
-        const response = await fetch(`${SLIDESHOW_SERVER_URL}/tiktok/preview`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: targetUrl }),
-        });
-        const data = await response.json();
-        if (data.success) { setPreview(data); }
-        else { setError(data.error || "Failed to fetch slideshow info"); }
+  const targetUrl = (typeof pastedUrl === "string" ? pastedUrl : null) || url;
+  if (!targetUrl) { setError("Please enter a URL"); return; }
+  const platform = detectPlatformFromUrl(targetUrl);
+  if (!platform) { setError("Unsupported platform."); return; }
+  setLoading(true); setError(null); setPreview(null);
+  try {
+    if (isTikTokSlideshow(targetUrl)) {
+      // Try slideshow server first
+      const response = await fetch(`${SLIDESHOW_SERVER_URL}/tiktok/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: targetUrl }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setPreview(data);
       } else {
-        // All other URLs (TikTok video, Instagram, Facebook, etc.) → Flask
-        const response = await fetch(`${API_BASE_URL}/preview`, {
+        // Slideshow server failed (short URL / regular video) → fall back to Flask
+        const fallback = await fetch(`${API_BASE_URL}/preview`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url: targetUrl, platform }),
         });
-        const data = await response.json();
-        if (data.success) { setPreview(data); }
-        else { setError(data.error || "Failed to fetch video info"); }
+        const fallbackData = await fallback.json();
+        if (fallbackData.success) { setPreview(fallbackData); }
+        else { setError(fallbackData.error || "Failed to fetch video info"); }
       }
-    } catch { setError("Network error. Please try again."); }
-    finally { setLoading(false); }
-  };
+    } else {
+      const response = await fetch(`${API_BASE_URL}/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: targetUrl, platform }),
+      });
+      const data = await response.json();
+      if (data.success) { setPreview(data); }
+      else { setError(data.error || "Failed to fetch video info"); }
+    }
+  } catch { setError("Network error. Please try again."); }
+  finally { setLoading(false); }
+};
 
   const handlePasteOrClear = async () => {
     if (url) { setUrl(""); setPreview(null); setError(null); }
@@ -315,7 +325,6 @@ export default function Tiktok() {
           onClose={() => setAdModal(null)}   // only closes the modal
         />
       )}
-      
           </>
         );
       }

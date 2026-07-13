@@ -16,7 +16,7 @@ const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delay
 
 // Detect TikTok slideshow/photo URLs — these go to the Node.js server
 const isTikTokSlideshow = (u) =>
-  u.toLowerCase().includes("tiktok.com") && u.toLowerCase().includes("/photo/");
+  u.toLowerCase().includes("tiktok.com") || u.toLowerCase().includes("vm.tiktok.com") || u.toLowerCase().includes("vt.tiktok.com");
 
 export default function Hero() {
   const { t } = useTranslation();
@@ -65,38 +65,50 @@ export default function Hero() {
   };
 
   const handlePreview = async (pastedUrl) => {
-    const targetUrl = (typeof pastedUrl === "string" ? pastedUrl : null) || url;
-    if (!targetUrl) { setError("Please enter a URL"); return; }
-    const platform = detectPlatformFromUrl(targetUrl);
-    if (!platform) { setError("Unsupported platform."); return; }
-    setSlowWarning(false);
-    const slowTimer = setTimeout(() => setSlowWarning(true), 5000);
-    setLoading(true); setError(null); setPreview(null);
-    setSlideDownloading({}); setSlideDone({});
-    try {
-      // ── CHANGE 1: TikTok slideshow/photo URLs → Node.js slideshow server ──
-      if (isTikTokSlideshow(targetUrl)) {
-        const response = await fetch(`${SLIDESHOW_SERVER_URL}/tiktok/preview`, {
+  const targetUrl = (typeof pastedUrl === "string" ? pastedUrl : null) || url;
+  if (!targetUrl) { setError("Please enter a URL"); return; }
+  const platform = detectPlatformFromUrl(targetUrl);
+  if (!platform) { setError("Unsupported platform."); return; }
+  setSlowWarning(false);
+  const slowTimer = setTimeout(() => setSlowWarning(true), 5000);
+  setLoading(true); setError(null); setPreview(null);
+  setSlideDownloading({}); setSlideDone({});
+  try {
+    if (isTikTokSlideshow(targetUrl)) {
+      // Try slideshow server first
+      const response = await fetch(`${SLIDESHOW_SERVER_URL}/tiktok/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: targetUrl }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setPreview(data);
+      } else {
+        // Slideshow server failed (short URL / regular video) → fall back to Flask
+        const fallback = await fetch(`${API_BASE_URL}/preview`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: targetUrl }),
-        });
-        const data = await response.json();
-        if (data.success) setPreview(data);
-        else setError(data.error || "Failed to fetch slideshow info");
-      } else {
-        // All other URLs → Flask
-        const response = await fetch(`${API_BASE_URL}/preview`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url: targetUrl, platform }),
         });
-        const data = await response.json();
-        if (data.success) setPreview(data);
-        else setError(data.error || "Failed to fetch video info");
+        const fallbackData = await fallback.json();
+        if (fallbackData.success) { setPreview(fallbackData); }
+        else { setError(fallbackData.error || "Failed to fetch video info"); }
       }
-    } catch { setError("Network error. Please try again."); }
-    finally { clearTimeout(slowTimer); setSlowWarning(false); setLoading(false); }
-  };
+    } else {
+      const response = await fetch(`${API_BASE_URL}/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: targetUrl, platform }),
+      });
+      const data = await response.json();
+      if (data.success) { setPreview(data); }
+      else { setError(data.error || "Failed to fetch video info"); }
+    }
+  } catch { setError("Network error. Please try again."); }
+  finally { clearTimeout(slowTimer); setSlowWarning(false); setLoading(false); }
+};
+
 
   const triggerDownload = async (qualityType, platform) => {
     setDownloading(qualityType);
