@@ -19,7 +19,7 @@ import { useAdRotation } from "../hooks/useAdRotation";
 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
-const SLIDESHOW_SERVER_URL = "http://localhost:3001";
+const SLIDESHOW_SERVER_URL = "https://saveflox.onrender.com";
 
 const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both` });
 
