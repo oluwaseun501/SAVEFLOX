@@ -15,6 +15,7 @@ import { TwitterDownloaderSEO } from "./SEOComponents";
 import { RelatedServices } from "./BreadcrumbsAndLinks";
 import DownloadAdModal from "./DownloadAdModal";
 import { useAdRotation } from "../hooks/useAdRotation";
+import ServicesStrip from "./ServicesStrip"; 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both` });
@@ -122,6 +123,8 @@ export default function Twitter() {
         <meta name="description" content="Download Twitter and X videos for free in HD. Paste any tweet link and save instantly." />
         <link rel="canonical" href="https://www.saveflox.com/twitter-downloader" />
       </Helmet>
+
+      <ServicesStrip currentPage="/twitter-downloader" />
 
       <section className="twitter">
         <div className="twitter-content">

@@ -3,18 +3,15 @@ import { Download, Link, Globe, Video, Loader } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import "../styles/Hero.css";
 import DotsLoader from "./DotsLoader";
-// import adsBanner from "../ads/ads1.jpg";
-// import adsBanner3 from "../ads/ads3.jpg";
-// import adsVideo from "../ads/adsVid.mp4";
 import { Helmet } from "react-helmet-async";
 import DownloadAdModal from "./DownloadAdModal";
 import { useAdRotation } from "../hooks/useAdRotation";
+import ServicesStrip from "./ServicesStrip"; // ← ADD THIS IMPORT
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 const SLIDESHOW_SERVER_URL = "https://saveflox.onrender.com";
 const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both` });
 
-// Detect TikTok slideshow/photo URLs — these go to the Node.js server
 const isTikTokSlideshow = (u) =>
   u.toLowerCase().includes("tiktok.com") || u.toLowerCase().includes("vm.tiktok.com") || u.toLowerCase().includes("vt.tiktok.com");
 
@@ -33,7 +30,6 @@ export default function Hero() {
   const [slideDone, setSlideDone] = useState({});
   const popupImageAd = useAdRotation("popup-image");
   const popupVideoAd = useAdRotation("popup-video");
-
 
   const detectPlatformFromUrl = (u) => {
     const l = u.toLowerCase();
@@ -65,50 +61,47 @@ export default function Hero() {
   };
 
   const handlePreview = async (pastedUrl) => {
-  const targetUrl = (typeof pastedUrl === "string" ? pastedUrl : null) || url;
-  if (!targetUrl) { setError("Please enter a URL"); return; }
-  const platform = detectPlatformFromUrl(targetUrl);
-  if (!platform) { setError("Unsupported platform."); return; }
-  setSlowWarning(false);
-  const slowTimer = setTimeout(() => setSlowWarning(true), 5000);
-  setLoading(true); setError(null); setPreview(null);
-  setSlideDownloading({}); setSlideDone({});
-  try {
-    if (isTikTokSlideshow(targetUrl)) {
-      // Try slideshow server first
-      const response = await fetch(`${SLIDESHOW_SERVER_URL}/tiktok/preview`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: targetUrl }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        setPreview(data);
+    const targetUrl = (typeof pastedUrl === "string" ? pastedUrl : null) || url;
+    if (!targetUrl) { setError("Please enter a URL"); return; }
+    const platform = detectPlatformFromUrl(targetUrl);
+    if (!platform) { setError("Unsupported platform."); return; }
+    setSlowWarning(false);
+    const slowTimer = setTimeout(() => setSlowWarning(true), 5000);
+    setLoading(true); setError(null); setPreview(null);
+    setSlideDownloading({}); setSlideDone({});
+    try {
+      if (isTikTokSlideshow(targetUrl)) {
+        const response = await fetch(`${SLIDESHOW_SERVER_URL}/tiktok/preview`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: targetUrl }),
+        });
+        const data = await response.json();
+        if (data.success) {
+          setPreview(data);
+        } else {
+          const fallback = await fetch(`${API_BASE_URL}/preview`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: targetUrl, platform }),
+          });
+          const fallbackData = await fallback.json();
+          if (fallbackData.success) { setPreview(fallbackData); }
+          else { setError(fallbackData.error || "Failed to fetch video info"); }
+        }
       } else {
-        // Slideshow server failed (short URL / regular video) → fall back to Flask
-        const fallback = await fetch(`${API_BASE_URL}/preview`, {
+        const response = await fetch(`${API_BASE_URL}/preview`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url: targetUrl, platform }),
         });
-        const fallbackData = await fallback.json();
-        if (fallbackData.success) { setPreview(fallbackData); }
-        else { setError(fallbackData.error || "Failed to fetch video info"); }
+        const data = await response.json();
+        if (data.success) { setPreview(data); }
+        else { setError(data.error || "Failed to fetch video info"); }
       }
-    } else {
-      const response = await fetch(`${API_BASE_URL}/preview`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: targetUrl, platform }),
-      });
-      const data = await response.json();
-      if (data.success) { setPreview(data); }
-      else { setError(data.error || "Failed to fetch video info"); }
-    }
-  } catch { setError("Network error. Please try again."); }
-  finally { clearTimeout(slowTimer); setSlowWarning(false); setLoading(false); }
-};
-
+    } catch { setError("Network error. Please try again."); }
+    finally { clearTimeout(slowTimer); setSlowWarning(false); setLoading(false); }
+  };
 
   const triggerDownload = async (qualityType, platform) => {
     setDownloading(qualityType);
@@ -131,7 +124,6 @@ export default function Hero() {
     finally { setDownloading(null); }
   };
 
-  // ── CHANGE 2: Slide downloads → Node.js slideshow server ──
   const triggerSlideDownload = async (slideIndex) => {
     setSlideDownloading((prev) => ({ ...prev, [slideIndex]: true }));
     try {
@@ -168,6 +160,9 @@ export default function Hero() {
         <meta name="description" content="Download videos from TikTok, Instagram, Facebook, Pinterest, Snapchat and more for free. Fast, HD quality, no watermark." />
         <link rel="canonical" href="https://www.saveflox.com/" />
       </Helmet>
+
+      {/* ── Services Strip: sits right below the navbar, above everything else ── */}
+      <ServicesStrip currentPage="/" />
 
       <section className="hero">
         <div className="hero-content">

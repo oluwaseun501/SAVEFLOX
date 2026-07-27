@@ -7,15 +7,12 @@ import WhyChoose from "./WhyChoose";
 import HowItWorks from "./HowItWorks";
 import FAQ from "./FAQ";
 import DotsLoader from "./DotsLoader";
-// import adsBanner from "../ads/ads1.jpg";
-// import adsVideo from "../ads/adsVid.mp4";
-// import adsBanner2 from "../ads/ads2.jpg";
-// import adsBanner3 from "../ads/ads3.jpg";
 import { Helmet } from "react-helmet-async";
 import { TikTokDownloaderSEO } from "./SEOComponents";
 import { RelatedServices } from "./BreadcrumbsAndLinks";
 import DownloadAdModal from "./DownloadAdModal";
 import { useAdRotation } from "../hooks/useAdRotation";
+import ServicesStrip from "./ServicesStrip"; 
 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
@@ -23,7 +20,6 @@ const SLIDESHOW_SERVER_URL = "https://saveflox.onrender.com";
 
 const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both` });
 
-// Detect TikTok slideshow/photo URLs — these go to the Node.js server
 const isTikTokSlideshow = (u) =>
   u.toLowerCase().includes("tiktok.com") || u.toLowerCase().includes("vm.tiktok.com") || u.toLowerCase().includes("vt.tiktok.com");
 
@@ -62,7 +58,6 @@ export default function Tiktok() {
   setLoading(true); setError(null); setPreview(null);
   try {
     if (isTikTokSlideshow(targetUrl)) {
-      // Try slideshow server first
       const response = await fetch(`${SLIDESHOW_SERVER_URL}/tiktok/preview`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -72,7 +67,6 @@ export default function Tiktok() {
       if (data.success) {
         setPreview(data);
       } else {
-        // Slideshow server failed (short URL / regular video) → fall back to Flask
         const fallback = await fetch(`${API_BASE_URL}/preview`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -135,7 +129,6 @@ export default function Tiktok() {
     finally { setDownloading(null); }
   };
 
-  // ── CHANGE 2: Slide downloads → Node.js slideshow server ──
   const triggerSlideDownload = async (slideIndex) => {
     setSlideDownloading((prev) => ({ ...prev, [slideIndex]: true }));
     try {
@@ -180,6 +173,9 @@ export default function Tiktok() {
         <meta name="description" content="Download TikTok videos without watermark for free. Fast, HD quality. No app needed." />
         <link rel="canonical" href="https://www.saveflox.com/tiktok-downloader" />
       </Helmet>
+
+      {/* ── Services Strip: right below navbar ── */}
+      <ServicesStrip currentPage="/tiktok-downloader" />
 
       <section className="tiktok">
         <div className="tiktok-content">
@@ -292,39 +288,38 @@ export default function Tiktok() {
         </div>
       </section>
 
-            <AdSlot slot="tiktok-top" format="leaderboard" />
-            <WhyChoose />
+      <AdSlot slot="tiktok-top" format="leaderboard" />
+      <WhyChoose />
       <AdSlot slot="tiktok-middle" format="leaderboard" />
-            <HowItWorks />
-            <AdSlot slot="tiktok-bottom" format="leaderboard" />
-            <FAQ />
-            <RelatedServices currentPage="/tiktok" />
-      
-           {adModal === "normal" && (
+      <HowItWorks />
+      <AdSlot slot="tiktok-bottom" format="leaderboard" />
+      <FAQ />
+      <RelatedServices currentPage="/tiktok" />
+
+      {adModal === "normal" && (
         <DownloadAdModal
-        page="tiktok"
+          page="tiktok"
           type="image"
-           adImage={popupImageAd?.image}
-            backlink={popupImageAd?.link}   
+          adImage={popupImageAd?.image}
+          backlink={popupImageAd?.link}
           skipDelay={5}
           onSkip={() => setAdModal(null)}
           onClose={() => setAdModal(null)}
         />
       )}
-                  {adModal === "hd" && (
+      {adModal === "hd" && (
         <DownloadAdModal
-        page="tiktok"
+          page="tiktok"
           type="video"
           adVideo={popupVideoAd?.video}
-           backlink={popupVideoAd?.link} 
+          backlink={popupVideoAd?.link}
           watchTime={15}
           onCountdownEnd={() => {
-            // download starts in background, modal stays open
             if (pendingDownload) { pendingDownload(); setPendingDownload(null); }
           }}
-          onClose={() => setAdModal(null)}   // only closes the modal
+          onClose={() => setAdModal(null)}
         />
       )}
-          </>
-        );
-      }
+    </>
+  );
+}

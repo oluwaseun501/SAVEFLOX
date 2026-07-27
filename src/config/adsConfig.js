@@ -8,6 +8,7 @@ import ads6 from "../ads/ads6.jpg";
 
 
 import adsVid from "../ads/adsVid.mp4";
+import adsVid2 from "../ads/adsVid2.mp4";
 
 export const ADS = {
   // ── HOME PAGE ──────────────────────────
@@ -107,6 +108,6 @@ export const ADS = {
      { image: ads6, link: "https://www.saveflox.com" },
   ],
   "popup-video": [
-    { video: adsVid, link: "https://www.ghostnum.com" },
+    { video: adsVid2, link: "https://www.ghostnum.com" },
   ],
 };

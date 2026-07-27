@@ -15,6 +15,7 @@ import { InstagramDownloaderSEO } from "./SEOComponents";
 import { RelatedServices } from "./BreadcrumbsAndLinks";
 import DownloadAdModal from "./DownloadAdModal";
 import { useAdRotation } from "../hooks/useAdRotation";
+import ServicesStrip from "./ServicesStrip"; 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both` });
@@ -145,6 +146,8 @@ export default function Instagram() {
         <meta name="description" content="Download Instagram videos, reels, and stories for free without watermark." />
         <link rel="canonical" href="https://www.saveflox.com/instagram-downloader" />
       </Helmet>
+
+      <ServicesStrip currentPage="/instagram-downloader" />
 
       <section className="instagram">
         <div className="instagram-content">

@@ -15,6 +15,7 @@ import { FacebookDownloaderSEO } from "./SEOComponents";
 import { RelatedServices } from "./BreadcrumbsAndLinks";
 import DownloadAdModal from "./DownloadAdModal";
 import { useAdRotation } from "../hooks/useAdRotation";
+import ServicesStrip from "./ServicesStrip"; 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both` });
@@ -135,6 +136,8 @@ export default function Facebook() {
         <meta name="description" content="Download Facebook videos for free in HD or SD quality. Paste any Facebook video link and download instantly with SaveFlox." />
         <link rel="canonical" href="https://www.saveflox.com/facebook-downloader" />
       </Helmet>
+
+      <ServicesStrip currentPage="/facebook-downloader" />
 
       <section className="facebook">
         <div className="facebook-content">

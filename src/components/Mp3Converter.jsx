@@ -9,6 +9,7 @@ import {
   Mic,
   Scissors,
   Loader,
+  Gauge,
 } from "lucide-react";
 import "../styles/Mp3Converter.css";
 import { Helmet } from "react-helmet-async";
@@ -19,6 +20,7 @@ import { RelatedServices } from "./BreadcrumbsAndLinks";
 import DownloadAdModal from "./DownloadAdModal";
 import { useAdRotation } from "../hooks/useAdRotation";
 import apiClient from "../services/api";
+import ServicesStrip from "./ServicesStrip"; 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "https://server.saveflox.com/api";
 
@@ -103,6 +105,9 @@ function olaShift(audioBuffer, semitones) {
 
 const VOICE_SEMITONES = { Chipmunk: 7, Deep: -7 };
 
+// Speed presets shown in the UI
+const SPEED_PRESETS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
 function applyVoiceGraph(ctx, inputNode, eff) {
   const gain = ctx.createGain();
   gain.gain.value = eff.volume / 100;
@@ -166,7 +171,7 @@ export default function Mp3Converter() {
   const [audioDuration, setAudioDuration] = useState(0);
   const [adModal, setAdModal] = useState(null);
   const [pendingDownload, setPendingDownload] = useState(null);
-    const popupImageAd = useAdRotation("popup-image");
+  const popupImageAd = useAdRotation("popup-image");
   const popupVideoAd = useAdRotation("popup-video");
 
   const [effects, setEffects] = useState({
@@ -175,6 +180,8 @@ export default function Mp3Converter() {
     voice: "Original",
     trimStart: 0,
     trimEnd: 0,
+    // ── NEW: playback speed (1 = normal, 0.5 = half, 2 = double) ──
+    speed: 1,
   });
 
   const ctxRef = useRef(null);
@@ -256,6 +263,10 @@ export default function Mp3Converter() {
       const source = ctx.createBufferSource();
       source.buffer = pitchedBuffer;
       sourceRef.current = source;
+
+      // ── NEW: apply speed to live playback ──
+      source.playbackRate.value = eff.speed;
+
       const { gainNode, oscillators } = applyVoiceGraph(ctx, source, eff);
       gainRef.current = gainNode;
       oscillatorRefs.current = oscillators;
@@ -368,10 +379,19 @@ export default function Mp3Converter() {
       const sr = pitchedBuffer.sampleRate;
       const numCh = pitchedBuffer.numberOfChannels;
       const echoTail = eff.voice === "Echo" ? 1.5 : 0;
-      const outLen = Math.ceil((trimDuration + echoTail) * sr);
+
+      // ── NEW: account for speed when sizing the offline buffer ──
+      // At 2× speed the rendered clip is half the duration; at 0.5× it is double.
+      const renderedDuration = trimDuration / eff.speed + echoTail;
+      const outLen = Math.ceil(renderedDuration * sr);
+
       const offCtx = new OfflineAudioContext(numCh, outLen, sr);
       const source = offCtx.createBufferSource();
       source.buffer = pitchedBuffer;
+
+      // ── NEW: apply speed to offline render ──
+      source.playbackRate.value = eff.speed;
+
       const { oscillators } = applyVoiceGraph(offCtx, source, eff);
       oscillators.forEach((o) => o.start(0));
       source.start(0, startSec, trimDuration);
@@ -400,6 +420,7 @@ export default function Mp3Converter() {
   const isEdited =
     effects.volume !== 100 ||
     effects.voice !== "Original" ||
+    effects.speed !== 1 ||           // ── NEW: speed check ──
     effects.trimStart !== 0 ||
     (effects.trimEnd > 0 && effects.trimEnd !== audioDuration);
 
@@ -411,6 +432,8 @@ export default function Mp3Converter() {
         <meta name="description" content="Convert TikTok, Instagram, Facebook, and Pinterest videos to MP3 audio for free." />
         <link rel="canonical" href="https://www.saveflox.com/mp3-converter" />
       </Helmet>
+
+      <ServicesStrip currentPage="/mp3-converter" />
 
       <section className="mp3">
         <div className="mp3-content">
@@ -483,6 +506,36 @@ export default function Mp3Converter() {
                     onChange={(e) => setEffects({ ...effects, volume: parseInt(e.target.value) })} />
                   <small className="mp3-hint">100% = normal · 200% = double volume (may distort)</small>
                 </div>
+              </div>
+
+              {/* ── NEW: Speed Control ── */}
+              <div className="mp3-control">
+                <label className="mp3-control-label">
+                  <Gauge size={16} /> Playback Speed: {effects.speed}×
+                </label>
+                <div className="mp3-voice-row">
+                  {SPEED_PRESETS.map((s) => (
+                    <button
+                      key={s}
+                      className={`mp3-voice-pill ${effects.speed === s ? "active" : ""}`}
+                      title={s === 1 ? "Normal speed" : s < 1 ? "Slower" : "Faster"}
+                      onClick={() => {
+                        setEffects({ ...effects, speed: s });
+                        if (isPlaying) stopAudio();
+                      }}
+                    >
+                      {s}×
+                    </button>
+                  ))}
+                </div>
+                {effects.speed !== 1 && (
+                  <small className="mp3-hint">
+                    {effects.speed < 1
+                      ? `Slowed to ${effects.speed}× — audio will be longer`
+                      : `Sped up to ${effects.speed}× — audio will be shorter`}
+                    {" "}· Press Play again to hear the change
+                  </small>
+                )}
               </div>
 
               {/* Voice Effect */}
