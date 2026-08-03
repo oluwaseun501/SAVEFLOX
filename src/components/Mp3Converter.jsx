@@ -309,7 +309,11 @@ export default function Mp3Converter() {
         body: JSON.stringify({ url: targetUrl }),
       });
       const data = await res.json();
-      if (data.success) setPreview(data);
+      if (data.success) {
+  setPreview(data);
+ 
+  setTimeout(() => getDecodedBuffer().catch(() => {}), 500);
+}
       else setError(data.error || "Failed to fetch audio info");
     } catch { setError("Network error. Please try again."); }
     finally { setLoading(false); }

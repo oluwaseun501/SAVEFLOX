@@ -103,26 +103,58 @@ export default function Hero() {
     finally { clearTimeout(slowTimer); setSlowWarning(false); setLoading(false); }
   };
 
-  const triggerDownload = async (qualityType, platform) => {
-    setDownloading(qualityType);
-    try {
-      const response = await fetch(`${API_BASE_URL}/download`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, platform, quality: qualityType === "hd" ? "hd" : "normal", format_type: "video" }),
+const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+const triggerDownload = async (qualityType, platform) => {
+  setDownloading(qualityType);
+  try {
+    if (isMobile()) {
+      // Mobile: navigate directly to the GET endpoint.
+      // This avoids the iOS/Android restriction on programmatic blob downloads
+      // after long async operations.
+      const params = new URLSearchParams({
+        url,
+        platform,
+        quality: qualityType === "hd" ? "hd" : "normal",
+        format_type: "video",
       });
-      if (!response.ok) throw new Error("Download failed");
-      const blob = await response.blob();
-      const contentDisposition = response.headers.get("Content-Disposition");
-      let filename = `${platform}_video.mp4`;
-      if (contentDisposition) { const match = contentDisposition.match(/filename="?([^"]+)"?/); if (match) filename = match[1]; }
-      const downloadUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = downloadUrl; a.download = filename;
-      document.body.appendChild(a); a.click();
-      document.body.removeChild(a); URL.revokeObjectURL(downloadUrl);
-    } catch { setError("Download failed. Please try again."); }
-    finally { setDownloading(null); }
-  };
+      window.location.href = `${API_BASE_URL}/download?${params}`;
+      return;
+    }
+
+    // Desktop: use existing fetch → blob → anchor approach
+    const response = await fetch(`${API_BASE_URL}/download`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url,
+        platform,
+        quality: qualityType === "hd" ? "hd" : "normal",
+        format_type: "video",
+      }),
+    });
+    if (!response.ok) throw new Error("Download failed");
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get("Content-Disposition");
+    let filename = `${platform}_video.mp4`;
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?([^"]+)"?/);
+      if (match) filename = match[1];
+    }
+    const downloadUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(downloadUrl);
+  } catch {
+    setError("Download failed. Please try again.");
+  } finally {
+    setDownloading(null);
+  }
+};
 
   const triggerSlideDownload = async (slideIndex) => {
     setSlideDownloading((prev) => ({ ...prev, [slideIndex]: true }));
