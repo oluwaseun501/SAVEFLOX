@@ -37,6 +37,8 @@ import GlideIn from "./components/GlideIn";
 
 import { useVisitorTracking } from "./hooks/useVisitorTracking";
 
+import EntryAd from "./components/EntryAd";
+
 
 function ProtectedAdmin({ children }) {
   return isAuthenticated() ? children : <Navigate to="/login" replace />;
@@ -157,6 +159,7 @@ function App() {
       <TopProgressBar />
       <TopProgressBar />
       {!isAdmin && !isAdminDomain && <Navbar />}
+      {!isAdmin && !isAdminDomain && <EntryAd />}
 
       {loading && !isAdmin ? (
         <PageLoader />
