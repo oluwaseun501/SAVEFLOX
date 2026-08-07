@@ -18,6 +18,7 @@ export const ADS = {
     // { image: ads5, link: "https://selar.com/g987516f15" },
     
   ],
+  
   "home-middle": [ { image: ads6, link: "https://selar.com/kz71028727" },
     // { image: ads4, link: "https://www.saveflox.com" },
     // { image: ads5, link: "https://www.saveflox.com" },
