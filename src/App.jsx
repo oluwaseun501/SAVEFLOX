@@ -35,6 +35,9 @@ import { isAuthenticated } from "./utils/auth";
 import { useEffect, useState } from "react";
 import GlideIn from "./components/GlideIn";
 
+import CourseLinks from "./components/CourseLinks";
+import { coursesByPlatform } from "./data/courseLinksData";
+
 import { useVisitorTracking } from "./hooks/useVisitorTracking";
 
 import EntryAd from "./components/EntryAd";
@@ -52,6 +55,10 @@ function Home() {
       <GlideIn><WhyChoose /></GlideIn>
       <AdSlot slot="home-middle" format="leaderboard" />
       <GlideIn><HowItWorks /></GlideIn>
+      <CourseLinks
+  platform="home"
+  courses={coursesByPlatform.home}
+/>
       <AdSlot slot="home-bottom" format="leaderboard" />
       <GlideIn><FAQ /></GlideIn>
     </>

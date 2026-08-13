@@ -16,6 +16,8 @@ import { RelatedServices } from "./BreadcrumbsAndLinks";
 import DownloadAdModal from "./DownloadAdModal";
 import { useAdRotation } from "../hooks/useAdRotation";
 import ServicesStrip from "./ServicesStrip"; 
+import CourseLinks from "./CourseLinks";
+import { coursesByPlatform } from "../data/courseLinksData";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both` });
@@ -198,6 +200,10 @@ export default function Twitter() {
       <WhyChoose />
       <AdSlot slot="twitter-middle" format="leaderboard"  />
       <HowItWorks />
+      <CourseLinks
+  platform="twitter"
+  courses={coursesByPlatform.twitter}
+/>
       <AdSlot slot="twitter-bottom" format="leaderboard"  />
       <FAQ />
       <RelatedServices currentPage="/twitter" />

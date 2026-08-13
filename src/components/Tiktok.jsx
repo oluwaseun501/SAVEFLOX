@@ -13,6 +13,8 @@ import { RelatedServices } from "./BreadcrumbsAndLinks";
 import DownloadAdModal from "./DownloadAdModal";
 import { useAdRotation } from "../hooks/useAdRotation";
 import ServicesStrip from "./ServicesStrip"; 
+import CourseLinks from "./CourseLinks";
+import { coursesByPlatform } from "../data/courseLinksData";
 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
@@ -320,6 +322,10 @@ const triggerDownload = async (qualityType, platform) => {
       <WhyChoose />
       <AdSlot slot="tiktok-middle" format="leaderboard" />
       <HowItWorks />
+      <CourseLinks
+  platform="tiktok"
+  courses={coursesByPlatform.tiktok}
+/>
       <AdSlot slot="tiktok-bottom" format="leaderboard" />
       <FAQ />
       <RelatedServices currentPage="/tiktok" />

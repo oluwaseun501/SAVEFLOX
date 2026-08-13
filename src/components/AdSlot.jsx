@@ -1,25 +1,30 @@
 import "../styles/AdSlot.css";
 import { useAds } from "../context/AdsContext";
 import { supabase } from "../lib/supabase";
-import { useAdRotation } from "../hooks/useAdRotation"; 
+import { useAdRotation } from "../hooks/useAdRotation";
 
-async function trackAdClick(slot, link) {
+export async function trackAdClick(slot, link) {
   try {
     await supabase.from("ad_clicks").insert({ slot, link });
   } catch (err) {
-    // silent fail
+    // Keep click tracking from interrupting the visitor's navigation.
   }
 }
 
-export default function AdSlot({ slot = "default", format = "leaderboard", label, image, link }) {
+export default function AdSlot({
+  slot = "default",
+  format = "leaderboard",
+  label,
+  image,
+  link,
+}) {
   const { adsEnabled } = useAds();
-  const rotatedAd = useAdRotation(slot); //
+  const rotatedAd = useAdRotation(slot);
 
   if (!adsEnabled) return null;
 
-  // Use rotated ad if available, otherwise fall back to manually passed props
   const activeImage = rotatedAd?.image || image;
-  const activeLink  = rotatedAd?.link  || link;
+  const activeLink = rotatedAd?.link || link;
 
   function handleClick() {
     trackAdClick(slot, activeLink || "none");
@@ -41,7 +46,9 @@ export default function AdSlot({ slot = "default", format = "leaderboard", label
           </a>
         ) : (
           <div className="ad-placeholder">
-            <span className="ad-placeholder-label">{label || "Advertisement"}</span>
+            <span className="ad-placeholder-label">
+              {label || "Advertisement"}
+            </span>
             <span className="ad-placeholder-slot">slot: {slot}</span>
           </div>
         )}
