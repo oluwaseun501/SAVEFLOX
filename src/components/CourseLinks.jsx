@@ -65,8 +65,8 @@ export default function CourseLinks({
           </h2>
           <p className="course-links__subtitle">
             {t(
-              "course_links_subtitle",
-              `Useful ${platformName} courses and resources`
+              // "course_links_subtitle",
+              // `Useful ${platformName} courses and resources`
             )}
           </p>
         </div>

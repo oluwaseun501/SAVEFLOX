@@ -12,8 +12,8 @@ export default function FAQ() {
     { question: t("faq_q1"), answer: t("faq_a1") },
     { question: t("faq_q2"), answer: t("faq_a2") },
     { question: t("faq_q3"), answer: t("faq_a3") },
-    { question: t("faq_q4"), answer: t("faq_a4") },
-    { question: t("faq_q5"), answer: t("faq_a5") },
+    // { question: t("faq_q4"), answer: t("faq_a4") },
+    // { question: t("faq_q5"), answer: t("faq_a5") },
   ];
 
   const toggleFAQ = (idx) => {

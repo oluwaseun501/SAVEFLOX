@@ -7,11 +7,11 @@ export default function WhyChoose() {
   const { t } = useTranslation();
 
   const features = [
-    { icon: <Zap size={22} />,        title: t("fast_title"),    description: t("fast_desc") },
-    { icon: <Shield size={22} />,     title: t("safe_title"),    description: t("safe_desc") },
+    // { icon: <Zap size={22} />,        title: t("fast_title"),    description: t("fast_desc") },
+    // { icon: <Shield size={22} />,     title: t("safe_title"),    description: t("safe_desc") },
     { icon: <Video size={22} />,      title: t("quality_title"), description: t("quality_desc") },
     { icon: <Music size={22} />,      title: t("mp3_title"),     description: t("mp3_desc") },
-    { icon: <Scissors size={22} />,   title: t("editor_title"),  description: t("editor_desc") },
+    // { icon: <Scissors size={22} />,   title: t("editor_title"),  description: t("editor_desc") },
     { icon: <Smartphone size={22} />, title: t("devices_title"), description: t("devices_desc") },
   ];
 
