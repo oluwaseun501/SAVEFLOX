@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
-  Download as DownloadIcon,
-  Search,
-  FileDown,
-  Music,
-  Video,
   CheckCircle2,
-  XCircle,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ArrowUpDown,
+  Download as DownloadIcon,
+  FileDown,
+  Music,
+  Search,
+  Video,
+  XCircle,
 } from "lucide-react";
 import AdminSidebar from "./AdminSidebar";
 import AdminTopbar from "./AdminTopbar";
@@ -28,6 +28,92 @@ const FORMATS = ["All", "MP4", "MP3"];
 const STATUSES = ["All", "success", "failed"];
 const PAGE_SIZE = 10;
 
+function getLogKey(log, index) {
+  return String(log.id || `${log.timestamp || "download"}-${index}`);
+}
+
+function getPlatformClass(platform) {
+  return String(platform || "unknown").toLowerCase();
+}
+
+function getFormatClass(format) {
+  return String(format || "unknown").toLowerCase();
+}
+
+function MobileDownloadCard({ log, expanded, onToggle }) {
+  const format = log.format || "Unknown";
+  const isSuccess = log.status === "success";
+
+  return (
+    <article className={`dl-mobile-card ${expanded ? "is-expanded" : ""}`}>
+      <button
+        className="dl-mobile-card-toggle"
+        type="button"
+        aria-expanded={expanded}
+        onClick={onToggle}
+      >
+        <div className="dl-mobile-card-top">
+          <span className={`dl-platform-tag ${getPlatformClass(log.platform)}`}>
+            {log.platform || "Unknown platform"}
+          </span>
+          <span className={`dl-status ${isSuccess ? "success" : "failed"}`}>
+            {isSuccess ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
+            {isSuccess ? "Success" : "Failed"}
+          </span>
+        </div>
+
+        <div className="dl-mobile-url" title={log.url}>
+          {log.url || "URL unavailable"}
+        </div>
+
+        <div className="dl-mobile-card-summary">
+          <time>{log.timestamp || "Unknown time"}</time>
+          <span className={`dl-format-tag ${getFormatClass(format)}`}>
+            {format === "MP3" ? <Music size={11} /> : <Video size={11} />}
+            {format}
+          </span>
+          <span>{log.quality || "—"}</span>
+          <span>{log.fileSize || "—"}</span>
+          <ChevronDown
+            className="dl-mobile-chevron"
+            size={16}
+            aria-hidden="true"
+          />
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="dl-mobile-details">
+          <div>
+            <span>IP address</span>
+            <strong>{log.ip || "—"}</strong>
+          </div>
+          <div>
+            <span>Country</span>
+            <strong>{log.country || "—"}</strong>
+          </div>
+          <div>
+            <span>City</span>
+            <strong>{log.city || "—"}</strong>
+          </div>
+          <div>
+            <span>ISP</span>
+            <strong>{log.isp || "—"}</strong>
+          </div>
+          <div>
+            <span>Quality</span>
+            <strong>{log.quality || "—"}</strong>
+          </div>
+          <div>
+            <span>File size</span>
+            <strong>{log.fileSize || "—"}</strong>
+          </div>
+        </div>
+      )}
+    </article>
+  );
+}
+
 export default function DownloadLogs() {
   const [query, setQuery] = useState("");
   const [platform, setPlatform] = useState("All");
@@ -45,6 +131,7 @@ export default function DownloadLogs() {
   const [email, setEmail] = useState("admin@saveflux.com");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [expandedMobileId, setExpandedMobileId] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -52,6 +139,7 @@ export default function DownloadLogs() {
     async function loadLogs() {
       setLoading(true);
       setError("");
+      setExpandedMobileId(null);
 
       try {
         const response = await analyticsAPI.getDownloadLogs(
@@ -81,6 +169,8 @@ export default function DownloadLogs() {
           analyticsAPI.getDashboardStats().catch(() => null),
         ]);
 
+        if (!mounted) return;
+
         setStats({
           total: response.data.total || 0,
           mp3: mp3Res?.data?.total || 0,
@@ -91,8 +181,7 @@ export default function DownloadLogs() {
         if (!mounted) return;
         setError(err?.response?.data?.error || "Unable to load download logs.");
       } finally {
-        if (!mounted) return;
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     }
 
@@ -104,6 +193,7 @@ export default function DownloadLogs() {
 
   useEffect(() => {
     let mounted = true;
+
     authAPI
       .getProfile()
       .then((response) => {
@@ -111,14 +201,20 @@ export default function DownloadLogs() {
         setEmail(response.data?.user?.email || "admin@saveflux.com");
       })
       .catch(() => {
-        if (!mounted) return;
+        // Keep the default admin email when the profile request is unavailable.
       });
+
     return () => {
       mounted = false;
     };
   }, []);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const updateFilter = (setter) => (event) => {
+    setter(event.target.value);
+    setPage(1);
+  };
 
   const exportCsv = () => {
     const headers = [
@@ -149,15 +245,17 @@ export default function DownloadLogs() {
     ]);
     const csv = [headers, ...rows]
       .map((row) =>
-        row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","),
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
       )
       .join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `download-logs-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `download-logs-${new Date()
+      .toISOString()
+      .slice(0, 10)}.csv`;
+    anchor.click();
     URL.revokeObjectURL(url);
   };
 
@@ -179,6 +277,7 @@ export default function DownloadLogs() {
             </div>
             <button
               className="dl-export-btn"
+              type="button"
               onClick={exportCsv}
               disabled={loading || logs.length === 0}
             >
@@ -223,53 +322,35 @@ export default function DownloadLogs() {
                 type="text"
                 placeholder="Search by URL, IP or country..."
                 value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
+                onChange={(event) => {
+                  setQuery(event.target.value);
                   setPage(1);
                 }}
               />
             </div>
 
-            <select
-              value={platform}
-              onChange={(e) => {
-                setPlatform(e.target.value);
-                setPage(1);
-              }}
-            >
-              {PLATFORMS.map((p) => (
-                <option key={p} value={p}>
-                  {p === "All" ? "All platforms" : p}
+            <select value={platform} onChange={updateFilter(setPlatform)}>
+              {PLATFORMS.map((item) => (
+                <option key={item} value={item}>
+                  {item === "All" ? "All platforms" : item}
                 </option>
               ))}
             </select>
 
-            <select
-              value={format}
-              onChange={(e) => {
-                setFormat(e.target.value);
-                setPage(1);
-              }}
-            >
-              {FORMATS.map((f) => (
-                <option key={f} value={f}>
-                  {f === "All" ? "All formats" : f}
+            <select value={format} onChange={updateFilter(setFormat)}>
+              {FORMATS.map((item) => (
+                <option key={item} value={item}>
+                  {item === "All" ? "All formats" : item}
                 </option>
               ))}
             </select>
 
-            <select
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value);
-                setPage(1);
-              }}
-            >
-              {STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {s === "All"
+            <select value={status} onChange={updateFilter(setStatus)}>
+              {STATUSES.map((item) => (
+                <option key={item} value={item}>
+                  {item === "All"
                     ? "All statuses"
-                    : s.charAt(0).toUpperCase() + s.slice(1)}
+                    : item.charAt(0).toUpperCase() + item.slice(1)}
                 </option>
               ))}
             </select>
@@ -300,12 +381,14 @@ export default function DownloadLogs() {
                     </td>
                   </tr>
                 ) : logs.length > 0 ? (
-                  logs.map((row) => (
-                    <tr key={row.id}>
+                  logs.map((row, index) => (
+                    <tr key={getLogKey(row, index)}>
                       <td className="dl-cell-time">{row.timestamp}</td>
                       <td>
                         <span
-                          className={`dl-platform-tag ${row.platform.toLowerCase()}`}
+                          className={`dl-platform-tag ${getPlatformClass(
+                            row.platform,
+                          )}`}
                         >
                           {row.platform}
                         </span>
@@ -315,7 +398,9 @@ export default function DownloadLogs() {
                       </td>
                       <td>
                         <span
-                          className={`dl-format-tag ${row.format.toLowerCase()}`}
+                          className={`dl-format-tag ${getFormatClass(
+                            row.format,
+                          )}`}
                         >
                           {row.format === "MP3" ? (
                             <Music size={11} />
@@ -355,6 +440,32 @@ export default function DownloadLogs() {
             </table>
           </div>
 
+          <div className="dl-mobile-list">
+            {loading ? (
+              <div className="dl-mobile-state">Loading downloads…</div>
+            ) : logs.length > 0 ? (
+              logs.map((row, index) => {
+                const key = getLogKey(row, index);
+                return (
+                  <MobileDownloadCard
+                    expanded={expandedMobileId === key}
+                    key={key}
+                    log={row}
+                    onToggle={() =>
+                      setExpandedMobileId((current) =>
+                        current === key ? null : key,
+                      )
+                    }
+                  />
+                );
+              })
+            ) : (
+              <div className="dl-mobile-state">
+                No downloads match your filters.
+              </div>
+            )}
+          </div>
+
           <div className="dl-pagination">
             <div className="dl-page-info">
               Showing <strong>{logs.length}</strong> of <strong>{total}</strong>{" "}
@@ -362,7 +473,8 @@ export default function DownloadLogs() {
             </div>
             <div className="dl-page-controls">
               <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                type="button"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
                 disabled={page === 1 || loading}
                 aria-label="Previous page"
               >
@@ -372,7 +484,10 @@ export default function DownloadLogs() {
                 {page} / {totalPages}
               </span>
               <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                type="button"
+                onClick={() =>
+                  setPage((current) => Math.min(totalPages, current + 1))
+                }
                 disabled={page === totalPages || loading}
                 aria-label="Next page"
               >
