@@ -11,6 +11,7 @@ import {
   Loader,
   Gauge,
 } from "lucide-react";
+import lamejs from "lamejs";
 import "../styles/Mp3Converter.css";
 import { Helmet } from "react-helmet-async";
 import { MP3ConverterSEO } from "./SEOComponents";
@@ -38,28 +39,75 @@ const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delay
 
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
-function audioBufferToWav(buffer) {
-  const numCh = buffer.numberOfChannels;
-  const sr = buffer.sampleRate;
-  const len = buffer.length;
-  const ab = new ArrayBuffer(44 + len * numCh * 2);
-  const view = new DataView(ab);
-  const str = (off, s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); };
-  str(0, "RIFF"); view.setUint32(4, 36 + len * numCh * 2, true);
-  str(8, "WAVE"); str(12, "fmt ");
-  view.setUint32(16, 16, true); view.setUint16(20, 1, true);
-  view.setUint16(22, numCh, true); view.setUint32(24, sr, true);
-  view.setUint32(28, sr * numCh * 2, true); view.setUint16(32, numCh * 2, true);
-  view.setUint16(34, 16, true); str(36, "data");
-  view.setUint32(40, len * numCh * 2, true);
-  let off = 44;
-  for (let i = 0; i < len; i++) {
-    for (let ch = 0; ch < numCh; ch++) {
-      const s = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]));
-      view.setInt16(off, s * 0x7fff, true); off += 2;
+function audioBufferToMp3(buffer) {
+  const channels = Math.min(buffer.numberOfChannels, 2);
+  const sampleRate = buffer.sampleRate;
+  const kbps = 128;
+
+  const encoder = new lamejs.Mp3Encoder(
+    channels,
+    sampleRate,
+    kbps
+  );
+
+  const left = buffer.getChannelData(0);
+  const right =
+    channels === 2
+      ? buffer.getChannelData(1)
+      : null;
+
+  const sampleBlockSize = 1152;
+  const mp3Data = [];
+
+  const floatTo16BitPCM = (input, start, end) => {
+    const output = new Int16Array(end - start);
+
+    for (let i = start; i < end; i++) {
+      const sample = Math.max(-1, Math.min(1, input[i]));
+      output[i - start] =
+        sample < 0
+          ? sample * 0x8000
+          : sample * 0x7fff;
+    }
+
+    return output;
+  };
+
+  for (
+    let i = 0;
+    i < left.length;
+    i += sampleBlockSize
+  ) {
+    const end = Math.min(
+      i + sampleBlockSize,
+      left.length
+    );
+
+    const leftChunk = floatTo16BitPCM(left, i, end);
+
+    let mp3buf;
+
+    if (channels === 2) {
+      const rightChunk = floatTo16BitPCM(right, i, end);
+      mp3buf = encoder.encodeBuffer(leftChunk, rightChunk);
+    } else {
+      mp3buf = encoder.encodeBuffer(leftChunk);
+    }
+
+    if (mp3buf.length > 0) {
+      mp3Data.push(new Int8Array(mp3buf));
     }
   }
-  return new Blob([ab], { type: "audio/wav" });
+
+  const endBuffer = encoder.flush();
+
+  if (endBuffer.length > 0) {
+    mp3Data.push(new Int8Array(endBuffer));
+  }
+
+  return new Blob(mp3Data, {
+    type: "audio/mpeg",
+  });
 }
 
 function olaShift(audioBuffer, semitones) {
@@ -184,6 +232,7 @@ export default function Mp3Converter() {
     speed: 1,
   });
 
+  
   const ctxRef = useRef(null);
   const sourceRef = useRef(null);
   const gainRef = useRef(null);
@@ -350,12 +399,12 @@ export default function Mp3Converter() {
     setDownloading(true); setError(null);
     try {
       const rawBuffer = await getDecodedBuffer();
-      const wavBlob = audioBufferToWav(rawBuffer);
-      const dlUrl = URL.createObjectURL(wavBlob);
+      const mp3Blob = audioBufferToMp3(rawBuffer);
+      const dlUrl = URL.createObjectURL(mp3Blob);
       const a = document.createElement("a");
       a.href = dlUrl;
       const title = (preview?.title || "audio").replace(/[^a-z0-9]/gi, "_").slice(0, 40);
-      a.download = `${title}.wav`;
+      a.download = `${title}.mp3`;
       document.body.appendChild(a); a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(dlUrl);
@@ -400,12 +449,12 @@ export default function Mp3Converter() {
       oscillators.forEach((o) => o.start(0));
       source.start(0, startSec, trimDuration);
       const rendered = await offCtx.startRendering();
-      const wavBlob = audioBufferToWav(rendered);
-      const dlUrl = URL.createObjectURL(wavBlob);
+      const mp3Blob = audioBufferToMp3(rendered);
+      const dlUrl = URL.createObjectURL(mp3Blob);
       const a = document.createElement("a");
       a.href = dlUrl;
       const title = (preview?.title || "audio").replace(/[^a-z0-9]/gi, "_").slice(0, 40);
-      a.download = `${title}_modified.wav`;
+      a.download = `${title}_modified.mp3`;
       document.body.appendChild(a); a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(dlUrl);
@@ -417,16 +466,33 @@ export default function Mp3Converter() {
     }
   };
 
-  const maxTrim = audioDuration || (preview?.duration_seconds || 300);
-  const activeVoiceSemitones = VOICE_SEMITONES[effects.voice];
+ const maxTrim =
+  audioDuration || (preview?.duration_seconds || 300);
 
-  // Check if user has changed any effect from default
+const selectedEnd = effects.trimEnd || maxTrim;
+
+const trimStartPercent =
+  maxTrim > 0
+    ? (effects.trimStart / maxTrim) * 100
+    : 0;
+
+const trimEndPercent =
+  maxTrim > 0
+    ? (selectedEnd / maxTrim) * 100
+    : 100;
+
+const activeVoiceSemitones =
+  VOICE_SEMITONES[effects.voice];
+
   const isEdited =
-    effects.volume !== 100 ||
-    effects.voice !== "Original" ||
-    effects.speed !== 1 ||           // ── NEW: speed check ──
-    effects.trimStart !== 0 ||
-    (effects.trimEnd > 0 && effects.trimEnd !== audioDuration);
+  effects.volume !== 100 ||
+  effects.voice !== "Original" ||
+  effects.speed !== 1 ||
+  effects.trimStart !== 0 ||
+  (
+    effects.trimEnd > 0 &&
+    effects.trimEnd !== audioDuration
+  );
 
   return (
     <>
@@ -574,40 +640,118 @@ export default function Mp3Converter() {
                 )}
               </div>
 
-              {/* Trim */}
-              <div className="mp3-control">
-                <label className="mp3-control-label">
-                  <Scissors size={16} /> Trim
-                  {audioDuration > 0 && (
-                    <span className="mp3-trim-range">
-                      {fmt(effects.trimStart)} → {fmt(effects.trimEnd || audioDuration)}
-                      {" "}<span className="mp3-trim-clip">
-                        (clip: {fmt((effects.trimEnd || audioDuration) - effects.trimStart)})
-                      </span>
-                    </span>
-                  )}
-                </label>
-                <div className="mp3-slider-row">
-                  <div className="mp3-trim-times">
-                    <span>Start: {fmt(effects.trimStart)}</span>
-                    <span>End: {fmt(effects.trimEnd || maxTrim)}</span>
-                  </div>
-                  <input type="range" className="mp3-slider"
-                    min="0" max={maxTrim} step="1" value={effects.trimStart}
-                    onChange={(e) => {
-                      const v = parseFloat(e.target.value);
-                      setEffects({ ...effects, trimStart: Math.min(v, (effects.trimEnd || maxTrim) - 1) });
-                    }} />
-                  <input type="range" className="mp3-slider"
-                    min="0" max={maxTrim} step="1" value={effects.trimEnd || maxTrim}
-                    onChange={(e) => {
-                      const v = parseFloat(e.target.value);
-                      setEffects({ ...effects, trimEnd: Math.max(v, effects.trimStart + 1) });
-                    }} />
-                  <small className="mp3-hint">Applies to both preview and downloaded file</small>
-                </div>
-              </div>
+             {/* Trim */}
+<div className="mp3-control mp3-trim-control">
+  <label className="mp3-control-label">
+    <Scissors size={16} />
+    Trim Audio
+  </label>
 
+  <div className="mp3-trim-summary">
+    <div>
+      <span className="mp3-trim-label">Start</span>
+      <strong>{fmt(effects.trimStart)}</strong>
+    </div>
+
+    <div className="mp3-trim-duration">
+      <span>Selected clip</span>
+      <strong>
+        {fmt(Math.max(0, selectedEnd - effects.trimStart))}
+      </strong>
+    </div>
+
+    <div className="mp3-trim-end">
+      <span className="mp3-trim-label">End</span>
+      <strong>{fmt(selectedEnd)}</strong>
+    </div>
+  </div>
+
+  <div className="mp3-trim-editor">
+    <div className="mp3-trim-track">
+      <div className="mp3-waveform" aria-hidden="true">
+        {Array.from({ length: 40 }).map((_, index) => {
+          const heights = [
+            28, 44, 35, 58, 42, 68, 32, 52,
+            76, 46, 62, 38, 70, 50, 30, 64,
+            42, 78, 55, 36, 66, 48, 72, 40,
+            58, 34, 74, 46, 62, 38, 70, 52,
+            32, 60, 44, 76, 50, 36, 64, 42
+          ];
+
+          return (
+            <span
+              key={index}
+              style={{
+                height: `${heights[index]}%`,
+              }}
+            />
+          );
+        })}
+      </div>
+
+      <div
+        className="mp3-trim-selection"
+        style={{
+          left: `${trimStartPercent}%`,
+          width: `${Math.max(
+            0,
+            trimEndPercent - trimStartPercent
+          )}%`,
+        }}
+      />
+    </div>
+
+    <input
+      type="range"
+      className="mp3-trim-handle mp3-trim-handle-start"
+      min="0"
+      max={maxTrim}
+      step="0.1"
+      value={effects.trimStart}
+      aria-label="Trim start"
+      onChange={(e) => {
+        const value = parseFloat(e.target.value);
+
+        setEffects({
+          ...effects,
+          trimStart: Math.min(
+            value,
+            selectedEnd - 0.1
+          ),
+        });
+
+        if (isPlaying) stopAudio();
+      }}
+    />
+
+    <input
+      type="range"
+      className="mp3-trim-handle mp3-trim-handle-end"
+      min="0"
+      max={maxTrim}
+      step="0.1"
+      value={selectedEnd}
+      aria-label="Trim end"
+      onChange={(e) => {
+        const value = parseFloat(e.target.value);
+
+        setEffects({
+          ...effects,
+          trimEnd: Math.max(
+            value,
+            effects.trimStart + 0.1
+          ),
+        });
+
+        if (isPlaying) stopAudio();
+      }}
+    />
+  </div>
+
+  <div className="mp3-trim-instructions">
+    Drag the handles to choose the part you want to keep
+  </div>
+</div>
               {/* Actions */}
               <div className="mp3-actions">
                 <button className="mp3-preview-btn" onClick={togglePlay}>

@@ -777,3 +777,26 @@
   flex: 1;
   min-width: 0;
 }
+
+.format-download-section {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.format-download-hint {
+  margin: 0 0 0.7rem;
+  color: #64748b;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.format-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65rem;
+}
+
+.dark .format-download-hint {
+  color: #94a3b8;
+}

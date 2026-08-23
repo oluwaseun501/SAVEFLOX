@@ -105,52 +105,68 @@ export default function Hero() {
 
 const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-const triggerDownload = async (qualityType, platform) => {
-  setDownloading(qualityType);
+const triggerDownload = async (qualityType, platform, formatId = null) => {
+  const downloadKey = qualityType === "hd" ? "hd" : `normal-${formatId || "best"}`;
+  setDownloading(downloadKey);
+
   try {
+    const downloadData = {
+      url,
+      platform,
+      quality: qualityType === "hd" ? "hd" : "normal",
+    };
+
+    // Only normal downloads send a selected format_id.
+    // HD remains unchanged.
+    if (qualityType !== "hd" && formatId) {
+      downloadData.format_id = formatId;
+    }
+
     if (isMobile()) {
-      // Mobile: navigate directly to the GET endpoint.
-      // This avoids the iOS/Android restriction on programmatic blob downloads
-      // after long async operations.
-      const params = new URLSearchParams({
-        url,
-        platform,
-        quality: qualityType === "hd" ? "hd" : "normal",
-        format_type: "video",
-      });
+      const params = new URLSearchParams(downloadData);
       window.location.href = `${API_BASE_URL}/download?${params}`;
       return;
     }
 
-    // Desktop: use existing fetch → blob → anchor approach
     const response = await fetch(`${API_BASE_URL}/download`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        url,
-        platform,
-        quality: qualityType === "hd" ? "hd" : "normal",
-        format_type: "video",
-      }),
+      body: JSON.stringify(downloadData),
     });
-    if (!response.ok) throw new Error("Download failed");
+
+    if (!response.ok) {
+      let message = "Download failed";
+      try {
+        const data = await response.json();
+        message = data.error || message;
+      } catch {
+        // The response was not JSON.
+      }
+      throw new Error(message);
+    }
+
     const blob = await response.blob();
     const contentDisposition = response.headers.get("Content-Disposition");
+
     let filename = `${platform}_video.mp4`;
+
     if (contentDisposition) {
       const match = contentDisposition.match(/filename="?([^"]+)"?/);
       if (match) filename = match[1];
     }
+
     const downloadUrl = URL.createObjectURL(blob);
     const a = document.createElement("a");
+
     a.href = downloadUrl;
     a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+
     URL.revokeObjectURL(downloadUrl);
-  } catch {
-    setError("Download failed. Please try again.");
+  } catch (err) {
+    setError(err.message || "Download failed. Please try again.");
   } finally {
     setDownloading(null);
   }
@@ -177,13 +193,27 @@ const triggerDownload = async (qualityType, platform) => {
     finally { setSlideDownloading((prev) => ({ ...prev, [slideIndex]: false })); }
   };
 
-  const handleDownload = (qualityType = "normal") => {
-    if (!url || !preview) return;
-    const platform = detectPlatformFromUrl(url);
-    if (!platform) return;
-    if (qualityType === "normal") { setAdModal("normal"); triggerDownload(qualityType, platform); }
-    else { setAdModal("hd"); setPendingDownload(() => () => triggerDownload(qualityType, platform)); }
-  };
+ const handleDownload = (qualityType = "normal", formatId = null) => {
+  if (!url || !preview) return;
+
+  const platform = detectPlatformFromUrl(url);
+  if (!platform) return;
+
+  if (qualityType === "normal") {
+    setAdModal("normal");
+    triggerDownload(qualityType, platform, formatId);
+  } else {
+    // HD behavior remains unchanged.
+    setAdModal("hd");
+    setPendingDownload(() => () => triggerDownload("hd", platform));
+  }
+};
+
+const normalFormats =
+  Array.isArray(preview?.formats) && preview.formats.length > 0
+    ? preview.formats
+    : [{ format_id: null, ext: "mp4", height: null }];
+
 
   return (
     <>
@@ -292,17 +322,52 @@ const triggerDownload = async (qualityType, platform) => {
                   </button>
                 </div>
               ) : (
-                <div className="download-actions">
-                  <button className="dl-btn dl-btn--normal" onClick={() => handleDownload("normal")} disabled={downloading !== null}>
-                    {downloading === "normal" ? <Loader size={18} className="spinner" /> : <Download size={18} />}
-                    {downloading === "normal" ? "Downloading..." : "Download Video"}
-                  </button>
-                  <button className="dl-btn dl-btn--hd" onClick={() => handleDownload("hd")} disabled={downloading !== null}>
-                    {downloading === "hd" ? <Loader size={18} className="spinner" /> : <Download size={18} />}
-                    {downloading === "hd" ? "Downloading..." : "Download Video HD"}
-                    {downloading !== "hd" && <span className="dl-hd-badge">HD</span>}
-                  </button>
-                </div>
+                  <div className="download-actions">
+                      <p className="format-download-hint">
+    If one download option doesn’t work, please try the next one.
+  </p>
+  {normalFormats.map((format, index) => {
+    const downloadKey = `normal-${format.format_id || "best"}`;
+    const qualityLabel = format.height
+      ? `${format.height}p`
+      : format.ext?.toUpperCase() || "Video";
+
+    return (
+      <button
+        key={format.format_id || `format-${index}`}
+        className="dl-btn dl-btn--normal"
+        onClick={() => handleDownload("normal", format.format_id)}
+        disabled={downloading !== null}
+      >
+        {downloading === downloadKey ? (
+          <Loader size={18} className="spinner" />
+        ) : (
+          <Download size={18} />
+        )}
+
+        {downloading === downloadKey
+          ? "Downloading..."
+          : `Download ${index + 1} (${qualityLabel})`}
+      </button>
+    );
+  })}
+
+  <button
+    className="dl-btn dl-btn--hd"
+    onClick={() => handleDownload("hd")}
+    disabled={downloading !== null}
+  >
+    {downloading === "hd" ? (
+      <Loader size={18} className="spinner" />
+    ) : (
+      <Download size={18} />
+    )}
+
+    {downloading === "hd" ? "Downloading..." : "Download Video HD"}
+    {downloading !== "hd" && <span className="dl-hd-badge">HD</span>}
+  </button>
+</div>
+             
               )}
             </div>
           )}
