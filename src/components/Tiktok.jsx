@@ -23,7 +23,7 @@ const SLIDESHOW_SERVER_URL = "https://saveflox.onrender.com";
 const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both` });
 
 const isTikTokSlideshow = (u) =>
-  u.toLowerCase().includes("tiktok.com") || u.toLowerCase().includes("vm.tiktok.com") || u.toLowerCase().includes("vt.tiktok.com");
+  u.toLowerCase().includes("/photo/");
 
 export default function Tiktok() {
   const { t } = useTranslation();
