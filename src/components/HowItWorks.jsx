@@ -6,6 +6,7 @@ import GlideIn from "./GlideIn";
 export default function HowItWorks() {
   const { t } = useTranslation();
 
+  
   const steps = [
     {
       icon: <Link2 size={26} />,
