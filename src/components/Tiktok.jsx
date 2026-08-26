@@ -22,8 +22,7 @@ const SLIDESHOW_SERVER_URL = "https://saveflox.onrender.com";
 
 const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both` });
 
-const isTikTokSlideshow = (u) =>
-  u.toLowerCase().includes("/photo/");
+
 
 export default function Tiktok() {
   const { t } = useTranslation();
@@ -59,25 +58,20 @@ export default function Tiktok() {
   if (!platform) { setError("Unsupported platform."); return; }
   setLoading(true); setError(null); setPreview(null);
   try {
-    if (isTikTokSlideshow(targetUrl)) {
-      const response = await fetch(`${SLIDESHOW_SERVER_URL}/tiktok/preview`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: targetUrl }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        setPreview(data);
-      } else {
-        const fallback = await fetch(`${API_BASE_URL}/preview`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: targetUrl, platform }),
-        });
-        const fallbackData = await fallback.json();
-        if (fallbackData.success) { setPreview(fallbackData); }
-        else { setError(fallbackData.error || "Failed to fetch video info"); }
-      }
+    if (platform === "tiktok") {
+  const response = await fetch(`${SLIDESHOW_SERVER_URL}/tiktok/preview`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url: targetUrl }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || "TikTok preview failed");
+  }
+
+  setPreview(data);
     } else {
       const response = await fetch(`${API_BASE_URL}/preview`, {
         method: "POST",
@@ -88,8 +82,12 @@ export default function Tiktok() {
       if (data.success) { setPreview(data); }
       else { setError(data.error || "Failed to fetch video info"); }
     }
-  } catch { setError("Network error. Please try again."); }
-  finally { setLoading(false); }
+  } catch (err) {
+  console.error("Preview error:", err);
+  setError("We couldn't load that video. Please check the link and try again.");
+} finally {
+  setLoading(false);
+}
 };
 
   const handlePasteOrClear = async () => {
@@ -124,14 +122,45 @@ const triggerDownload = async (
   setDownloading(downloadKey);
 
   try {
+    // All TikTok videos use the Node server.
+    if (platform === "tiktok") {
+      const response = await fetch(
+        `${SLIDESHOW_SERVER_URL}/tiktok/download`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ url }),
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "TikTok download failed");
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = downloadUrl;
+      a.download = "tiktok_video.mp4";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+
+      return;
+    }
+
+    // All other platforms continue using Python.
     const downloadData = {
       url,
       platform,
       quality: qualityType === "hd" ? "hd" : "normal",
     };
 
-    // Only normal downloads send format_id.
-    // HD behavior remains unchanged.
     if (qualityType !== "hd" && formatId) {
       downloadData.format_id = formatId;
     }
@@ -144,7 +173,9 @@ const triggerDownload = async (
 
     const response = await fetch(`${API_BASE_URL}/download`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(downloadData),
     });
 
@@ -169,7 +200,9 @@ const triggerDownload = async (
 
     if (contentDisposition) {
       const match = contentDisposition.match(/filename="?([^"]+)"?/);
-      if (match) filename = match[1];
+      if (match) {
+        filename = match[1];
+      }
     }
 
     const downloadUrl = URL.createObjectURL(blob);
@@ -180,14 +213,20 @@ const triggerDownload = async (
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-
     URL.revokeObjectURL(downloadUrl);
-  } catch (err) {
-    setError(err.message || "Download failed. Please try again.");
-  } finally {
-    setDownloading(null);
-  }
+ } catch (err) {
+  console.error("Download error:", err);
+
+  setError(
+    platform === "tiktok"
+      ? "This TikTok could not be downloaded. Please check the link and try again."
+      : "This download could not be completed. Please try again."
+  );
+} finally {
+  setDownloading(null);
+}
 };
+
 
   const triggerSlideDownload = async (slideIndex) => {
     setSlideDownloading((prev) => ({ ...prev, [slideIndex]: true }));
@@ -235,7 +274,7 @@ const triggerDownload = async (
 
   const normalFormats =
   Array.isArray(preview?.formats) && preview.formats.length > 0
-    ? preview.formats
+    ? preview.formats.slice(0, 3)
     : [{ format_id: null, ext: "mp4", height: null }];
 
   return (

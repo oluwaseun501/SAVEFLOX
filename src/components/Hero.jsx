@@ -12,8 +12,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api"
 const SLIDESHOW_SERVER_URL = "https://saveflox.onrender.com";
 const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both` });
 
-const isTikTokSlideshow = (u) =>
-  u.toLowerCase().includes("/photo/");
 
 export default function Hero() {
   const { t } = useTranslation();
@@ -60,117 +58,207 @@ export default function Hero() {
     }
   };
 
-  const handlePreview = async (pastedUrl) => {
-    const targetUrl = (typeof pastedUrl === "string" ? pastedUrl : null) || url;
-    if (!targetUrl) { setError("Please enter a URL"); return; }
+    const handlePreview = async (pastedUrl) => {
+    const targetUrl =
+      (typeof pastedUrl === "string" ? pastedUrl : null) || url;
+
+    if (!targetUrl) {
+      setError("Please enter a URL");
+      return;
+    }
+
     const platform = detectPlatformFromUrl(targetUrl);
-    if (!platform) { setError("Unsupported platform."); return; }
+
+    if (!platform) {
+      setError("Unsupported platform.");
+      return;
+    }
+
     setSlowWarning(false);
-    const slowTimer = setTimeout(() => setSlowWarning(true), 5000);
-    setLoading(true); setError(null); setPreview(null);
-    setSlideDownloading({}); setSlideDone({});
+
+    const slowTimer = setTimeout(() => {
+      setSlowWarning(true);
+    }, 5000);
+
+    setLoading(true);
+    setError(null);
+    setPreview(null);
+    setSlideDownloading({});
+    setSlideDone({});
+
     try {
-      if (isTikTokSlideshow(targetUrl)) {
-        const response = await fetch(`${SLIDESHOW_SERVER_URL}/tiktok/preview`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: targetUrl }),
-        });
-        const data = await response.json();
-        if (data.success) {
-          setPreview(data);
-        } else {
-          const fallback = await fetch(`${API_BASE_URL}/preview`, {
+      if (platform === "tiktok") {
+        const response = await fetch(
+          `${SLIDESHOW_SERVER_URL}/tiktok/preview`,
+          {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url: targetUrl, platform }),
-          });
-          const fallbackData = await fallback.json();
-          if (fallbackData.success) { setPreview(fallbackData); }
-          else { setError(fallbackData.error || "Failed to fetch video info"); }
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ url: targetUrl }),
+          }
+        );
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "TikTok preview failed");
         }
+
+        setPreview(data);
       } else {
         const response = await fetch(`${API_BASE_URL}/preview`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: targetUrl, platform }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url: targetUrl,
+            platform,
+          }),
         });
+
         const data = await response.json();
-        if (data.success) { setPreview(data); }
-        else { setError(data.error || "Failed to fetch video info"); }
+
+        if (data.success) {
+          setPreview(data);
+        } else {
+          console.error("Preview API error:", data.error);
+          setError(
+            "We couldn't load that video. Please check the link and try again."
+          );
+        }
       }
-    } catch { setError("Network error. Please try again."); }
-    finally { clearTimeout(slowTimer); setSlowWarning(false); setLoading(false); }
+    } catch (err) {
+      console.error("Preview error:", err);
+      setError(
+        "We couldn't load that video. Please check the link and try again."
+      );
+    } finally {
+      clearTimeout(slowTimer);
+      setSlowWarning(false);
+      setLoading(false);
+    }
   };
 
 const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-const triggerDownload = async (qualityType, platform, formatId = null) => {
-  const downloadKey = qualityType === "hd" ? "hd" : `normal-${formatId || "best"}`;
-  setDownloading(downloadKey);
+  const triggerDownload = async (
+    qualityType,
+    platform,
+    formatId = null
+  ) => {
+    const downloadKey =
+      qualityType === "hd"
+        ? "hd"
+        : `normal-${formatId || "best"}`;
 
-  try {
-    const downloadData = {
-      url,
-      platform,
-      quality: qualityType === "hd" ? "hd" : "normal",
-    };
+    setDownloading(downloadKey);
 
-    // Only normal downloads send a selected format_id.
-    // HD remains unchanged.
-    if (qualityType !== "hd" && formatId) {
-      downloadData.format_id = formatId;
-    }
+    try {
+      // All TikTok video downloads use Node.
+      if (platform === "tiktok") {
+        const response = await fetch(
+          `${SLIDESHOW_SERVER_URL}/tiktok/download`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ url }),
+          }
+        );
 
-    if (isMobile()) {
-      const params = new URLSearchParams(downloadData);
-      window.location.href = `${API_BASE_URL}/download?${params}`;
-      return;
-    }
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || "TikTok download failed");
+        }
 
-    const response = await fetch(`${API_BASE_URL}/download`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(downloadData),
-    });
+        const blob = await response.blob();
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
 
-    if (!response.ok) {
-      let message = "Download failed";
-      try {
-        const data = await response.json();
-        message = data.error || message;
-      } catch {
-        // The response was not JSON.
+        a.href = downloadUrl;
+        a.download = "tiktok_video.mp4";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        setTimeout(() => {
+          URL.revokeObjectURL(downloadUrl);
+        }, 1000);
+
+        return;
       }
-      throw new Error(message);
+
+      // All other platforms continue using Python.
+      const downloadData = {
+        url,
+        platform,
+        quality: qualityType === "hd" ? "hd" : "normal",
+      };
+
+      if (qualityType !== "hd" && formatId) {
+        downloadData.format_id = formatId;
+      }
+
+      if (isMobile()) {
+        const params = new URLSearchParams(downloadData);
+        window.location.href = `${API_BASE_URL}/download?${params}`;
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/download`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(downloadData),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Download failed");
+      }
+
+      const blob = await response.blob();
+      const contentDisposition =
+        response.headers.get("Content-Disposition");
+
+      let filename = `${platform}_video.mp4`;
+
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+
+        if (match) {
+          filename = match[1];
+        }
+      }
+
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      setTimeout(() => {
+        URL.revokeObjectURL(downloadUrl);
+      }, 1000);
+    } catch (err) {
+      console.error("Download error:", err);
+
+      setError(
+        platform === "tiktok"
+          ? "This TikTok could not be downloaded. Please check the link and try again."
+          : "This download could not be completed. Please try again."
+      );
+    } finally {
+      setDownloading(null);
     }
-
-    const blob = await response.blob();
-    const contentDisposition = response.headers.get("Content-Disposition");
-
-    let filename = `${platform}_video.mp4`;
-
-    if (contentDisposition) {
-      const match = contentDisposition.match(/filename="?([^"]+)"?/);
-      if (match) filename = match[1];
-    }
-
-    const downloadUrl = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-
-    a.href = downloadUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    URL.revokeObjectURL(downloadUrl);
-  } catch (err) {
-    setError(err.message || "Download failed. Please try again.");
-  } finally {
-    setDownloading(null);
-  }
-};
+  };
 
   const triggerSlideDownload = async (slideIndex) => {
     setSlideDownloading((prev) => ({ ...prev, [slideIndex]: true }));
@@ -211,7 +299,7 @@ const triggerDownload = async (qualityType, platform, formatId = null) => {
 
 const normalFormats =
   Array.isArray(preview?.formats) && preview.formats.length > 0
-    ? preview.formats
+    ? preview.formats.slice(0, 3)
     : [{ format_id: null, ext: "mp4", height: null }];
 
 
