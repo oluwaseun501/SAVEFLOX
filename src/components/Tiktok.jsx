@@ -19,8 +19,10 @@ import { coursesByPlatform } from "../data/courseLinksData";
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 const SLIDESHOW_SERVER_URL =
-  import.meta.env.VITE_SLIDESHOW_URL || "http://localhost:3001";
+  import.meta.env.VITE_SLIDESHOW_URL || "https://saveflox.onrender.com";
+  // import.meta.env.VITE_SLIDESHOW_URL || "http://localhost:3001";
 
+// 
 const mountStyle = (delayMs) => ({
   animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both`,
 });

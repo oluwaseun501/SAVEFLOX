@@ -11,7 +11,7 @@ import ServicesStrip from "./ServicesStrip"; // ← ADD THIS IMPORT
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
 const SLIDESHOW_SERVER_URL =
-  import.meta.env.VITE_SLIDESHOW_URL || "http://localhost:3001";
+  import.meta.env.VITE_SLIDESHOW_URL || "https://saveflox.onrender.com";
 const mountStyle = (delayMs) => ({
   animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both`,
 });
@@ -166,10 +166,10 @@ export default function Hero() {
             headers: {
               "Content-Type": "application/json",
             },
-           body: JSON.stringify({
-  url,
-  quality: qualityType === "hd" ? "hd" : "normal",
-}),
+            body: JSON.stringify({
+              url,
+              quality: qualityType === "hd" ? "hd" : "normal",
+            }),
           },
         );
 
@@ -390,20 +390,20 @@ export default function Hero() {
             <div className="hero-preview" style={mountStyle(0)}>
               <div className="preview-header">
                 {preview.thumbnail ? (
-  <img
-    src={preview.thumbnail}
-    alt="Preview"
-    className="preview-thumbnail"
-  />
-) : (
-  <div
-    className="preview-thumbnail"
-    role="img"
-    aria-label="Preview unavailable"
-  >
-    🎬
-  </div>
-)}
+                  <img
+                    src={preview.thumbnail}
+                    alt="Preview"
+                    className="preview-thumbnail"
+                  />
+                ) : (
+                  <div
+                    className="preview-thumbnail"
+                    role="img"
+                    aria-label="Preview unavailable"
+                  >
+                    🎬
+                  </div>
+                )}
                 <div className="preview-info">
                   <h3>{preview.title}</h3>
                   <p>{preview.uploader}</p>
