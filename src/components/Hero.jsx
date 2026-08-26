@@ -8,10 +8,13 @@ import DownloadAdModal from "./DownloadAdModal";
 import { useAdRotation } from "../hooks/useAdRotation";
 import ServicesStrip from "./ServicesStrip"; // ← ADD THIS IMPORT
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
-const SLIDESHOW_SERVER_URL = "https://saveflox.onrender.com";
-const mountStyle = (delayMs) => ({ animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both` });
-
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
+const SLIDESHOW_SERVER_URL =
+  import.meta.env.VITE_SLIDESHOW_URL || "http://localhost:3001";
+const mountStyle = (delayMs) => ({
+  animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both`,
+});
 
 export default function Hero() {
   const { t } = useTranslation();
@@ -48,19 +51,26 @@ export default function Hero() {
   };
 
   const handlePasteOrClear = async () => {
-    if (url) { setUrl(""); setPreview(null); setError(null); setPasteHint(""); }
-    else {
+    if (url) {
+      setUrl("");
+      setPreview(null);
+      setError(null);
+      setPasteHint("");
+    } else {
       try {
         const text = await navigator.clipboard.readText();
-        setUrl(text); setPasteHint("");
+        setUrl(text);
+        setPasteHint("");
         if (text) handlePreview(text);
-      } catch { setPasteHint("Use Ctrl+V to paste"); setTimeout(() => setPasteHint(""), 3000); }
+      } catch {
+        setPasteHint("Use Ctrl+V to paste");
+        setTimeout(() => setPasteHint(""), 3000);
+      }
     }
   };
 
-    const handlePreview = async (pastedUrl) => {
-    const targetUrl =
-      (typeof pastedUrl === "string" ? pastedUrl : null) || url;
+  const handlePreview = async (pastedUrl) => {
+    const targetUrl = (typeof pastedUrl === "string" ? pastedUrl : null) || url;
 
     if (!targetUrl) {
       setError("Please enter a URL");
@@ -88,16 +98,13 @@ export default function Hero() {
 
     try {
       if (platform === "tiktok") {
-        const response = await fetch(
-          `${SLIDESHOW_SERVER_URL}/tiktok/preview`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ url: targetUrl }),
-          }
-        );
+        const response = await fetch(`${SLIDESHOW_SERVER_URL}/tiktok/preview`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ url: targetUrl }),
+        });
 
         const data = await response.json().catch(() => ({}));
 
@@ -125,14 +132,14 @@ export default function Hero() {
         } else {
           console.error("Preview API error:", data.error);
           setError(
-            "We couldn't load that video. Please check the link and try again."
+            "We couldn't load that video. Please check the link and try again.",
           );
         }
       }
     } catch (err) {
       console.error("Preview error:", err);
       setError(
-        "We couldn't load that video. Please check the link and try again."
+        "We couldn't load that video. Please check the link and try again.",
       );
     } finally {
       clearTimeout(slowTimer);
@@ -141,17 +148,11 @@ export default function Hero() {
     }
   };
 
-const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-  const triggerDownload = async (
-    qualityType,
-    platform,
-    formatId = null
-  ) => {
+  const triggerDownload = async (qualityType, platform, formatId = null) => {
     const downloadKey =
-      qualityType === "hd"
-        ? "hd"
-        : `normal-${formatId || "best"}`;
+      qualityType === "hd" ? "hd" : `normal-${formatId || "best"}`;
 
     setDownloading(downloadKey);
 
@@ -165,8 +166,11 @@ const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ url }),
-          }
+           body: JSON.stringify({
+  url,
+  quality: qualityType === "hd" ? "hd" : "normal",
+}),
+          },
         );
 
         if (!response.ok) {
@@ -222,8 +226,7 @@ const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       }
 
       const blob = await response.blob();
-      const contentDisposition =
-        response.headers.get("Content-Disposition");
+      const contentDisposition = response.headers.get("Content-Disposition");
 
       let filename = `${platform}_video.mp4`;
 
@@ -253,7 +256,7 @@ const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       setError(
         platform === "tiktok"
           ? "This TikTok could not be downloaded. Please check the link and try again."
-          : "This download could not be completed. Please try again."
+          : "This download could not be completed. Please try again.",
       );
     } finally {
       setDownloading(null);
@@ -274,40 +277,47 @@ const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       const a = document.createElement("a");
       a.href = downloadUrl;
       a.download = `tiktok_slide_${slideIndex + 1}.jpg`;
-      document.body.appendChild(a); a.click();
-      document.body.removeChild(a); URL.revokeObjectURL(downloadUrl);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
       setSlideDone((prev) => ({ ...prev, [slideIndex]: true }));
-    } catch { setError("Slide download failed. Please try again."); }
-    finally { setSlideDownloading((prev) => ({ ...prev, [slideIndex]: false })); }
+    } catch {
+      setError("Slide download failed. Please try again.");
+    } finally {
+      setSlideDownloading((prev) => ({ ...prev, [slideIndex]: false }));
+    }
   };
 
- const handleDownload = (qualityType = "normal", formatId = null) => {
-  if (!url || !preview) return;
+  const handleDownload = (qualityType = "normal", formatId = null) => {
+    if (!url || !preview) return;
 
-  const platform = detectPlatformFromUrl(url);
-  if (!platform) return;
+    const platform = detectPlatformFromUrl(url);
+    if (!platform) return;
 
-  if (qualityType === "normal") {
-    setAdModal("normal");
-    triggerDownload(qualityType, platform, formatId);
-  } else {
-    // HD behavior remains unchanged.
-    setAdModal("hd");
-    setPendingDownload(() => () => triggerDownload("hd", platform));
-  }
-};
+    if (qualityType === "normal") {
+      setAdModal("normal");
+      triggerDownload(qualityType, platform, formatId);
+    } else {
+      // HD behavior remains unchanged.
+      setAdModal("hd");
+      setPendingDownload(() => () => triggerDownload("hd", platform));
+    }
+  };
 
-const normalFormats =
-  Array.isArray(preview?.formats) && preview.formats.length > 0
-    ? preview.formats.slice(0, 3)
-    : [{ format_id: null, ext: "mp4", height: null }];
-
+  const normalFormats =
+    Array.isArray(preview?.formats) && preview.formats.length > 0
+      ? preview.formats.slice(0, 3)
+      : [{ format_id: null, ext: "mp4", height: null }];
 
   return (
     <>
       <Helmet>
         <title>SaveFlox — Free Online Video Downloader</title>
-        <meta name="description" content="Download videos from TikTok, Instagram, Facebook, Pinterest, Snapchat and more for free. Fast, HD quality, no watermark." />
+        <meta
+          name="description"
+          content="Download videos from TikTok, Instagram, Facebook, Pinterest, Snapchat and more for free. Fast, HD quality, no watermark."
+        />
         <link rel="canonical" href="https://www.saveflox.com/" />
       </Helmet>
 
@@ -316,20 +326,27 @@ const normalFormats =
 
       <section className="hero">
         <div className="hero-content">
-          <div className="hero-icon" style={mountStyle(0)}><Globe size={28} /></div>
+          <div className="hero-icon" style={mountStyle(0)}>
+            <Globe size={28} />
+          </div>
 
           <h1 className="hero-heading" style={mountStyle(150)}>
-            {t("hero_title")}<br /><span>{t("hero_highlight")}</span>
+            {t("hero_title")}
+            <br />
+            <span>{t("hero_highlight")}</span>
           </h1>
 
-          <p className="hero-subtext" style={mountStyle(300)}>{t("hero_subtitle")}</p>
+          <p className="hero-subtext" style={mountStyle(300)}>
+            {t("hero_subtitle")}
+          </p>
 
           <div className="hero-card" style={mountStyle(450)}>
             <div className="hero-input-group">
               <div className="hero-input-wrapper">
                 <Link size={18} className="hero-input-icon" />
                 <input
-                  type="text" value={url}
+                  type="text"
+                  value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder={t("paste_placeholder")}
                   className="hero-input"
@@ -338,24 +355,55 @@ const normalFormats =
                   {url ? "Clear" : "Paste"}
                 </button>
               </div>
-              <button className="hero-btn" onClick={handlePreview} disabled={loading}>
-                {loading ? "Please wait..." : <><Download size={18} /> {t("download")}</>}
+              <button
+                className="hero-btn"
+                onClick={handlePreview}
+                disabled={loading}
+              >
+                {loading ? (
+                  "Please wait..."
+                ) : (
+                  <>
+                    <Download size={18} /> {t("download")}
+                  </>
+                )}
               </button>
             </div>
             <div className="hero-options">
               <span className="hero-options-label">Options:</span>
-              <button className="hero-option-pill active"><Video size={14} />{t("video_mp4")}</button>
+              <button className="hero-option-pill active">
+                <Video size={14} />
+                {t("video_mp4")}
+              </button>
             </div>
           </div>
 
           {pasteHint && <p className="hero-paste-hint">{pasteHint}</p>}
           {loading && <DotsLoader />}
-          {slowWarning && <p className="hero-slow-msg">Taking longer than usual, please wait...</p>}
+          {slowWarning && (
+            <p className="hero-slow-msg">
+              Taking longer than usual, please wait...
+            </p>
+          )}
 
           {preview && (
             <div className="hero-preview" style={mountStyle(0)}>
               <div className="preview-header">
-                <img src={preview.thumbnail} alt="Preview" className="preview-thumbnail" />
+                {preview.thumbnail ? (
+  <img
+    src={preview.thumbnail}
+    alt="Preview"
+    className="preview-thumbnail"
+  />
+) : (
+  <div
+    className="preview-thumbnail"
+    role="img"
+    aria-label="Preview unavailable"
+  >
+    🎬
+  </div>
+)}
                 <div className="preview-info">
                   <h3>{preview.title}</h3>
                   <p>{preview.uploader}</p>
@@ -372,31 +420,92 @@ const normalFormats =
 
               {preview.type === "slideshow" ? (
                 <div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", marginTop: "16px" }}>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(3, 1fr)",
+                      gap: "10px",
+                      marginTop: "16px",
+                    }}
+                  >
                     {preview.slides.map((slide) => (
-                      <div key={slide.index} style={{ position: "relative", borderRadius: "10px", overflow: "hidden", background: "#1a1a2e" }}>
+                      <div
+                        key={slide.index}
+                        style={{
+                          position: "relative",
+                          borderRadius: "10px",
+                          overflow: "hidden",
+                          background: "#1a1a2e",
+                        }}
+                      >
                         <img
                           src={slide.thumbnail || slide.url}
                           alt={`Slide ${slide.index + 1}`}
-                          style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", display: "block" }}
-                          onError={(e) => { e.target.style.display = "none"; }}
+                          style={{
+                            width: "100%",
+                            aspectRatio: "1/1",
+                            objectFit: "cover",
+                            display: "block",
+                          }}
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                          }}
                         />
-                        <span style={{ position: "absolute", top: "6px", left: "6px", background: "rgba(0,0,0,0.65)", color: "#fff", fontSize: "11px", fontWeight: "600", padding: "2px 7px", borderRadius: "20px" }}>
+                        <span
+                          style={{
+                            position: "absolute",
+                            top: "6px",
+                            left: "6px",
+                            background: "rgba(0,0,0,0.65)",
+                            color: "#fff",
+                            fontSize: "11px",
+                            fontWeight: "600",
+                            padding: "2px 7px",
+                            borderRadius: "20px",
+                          }}
+                        >
                           {slide.index + 1}
                         </span>
                         <button
                           onClick={() => triggerSlideDownload(slide.index)}
-                          disabled={slideDownloading[slide.index] || slideDone[slide.index]}
+                          disabled={
+                            slideDownloading[slide.index] ||
+                            slideDone[slide.index]
+                          }
                           style={{
-                            position: "absolute", bottom: "6px", left: "50%", transform: "translateX(-50%)",
-                            background: slideDone[slide.index] ? "#22c55e" : slideDownloading[slide.index] ? "#555" : "rgba(255,255,255,0.92)",
-                            color: slideDone[slide.index] ? "#fff" : slideDownloading[slide.index] ? "#fff" : "#111",
-                            border: "none", borderRadius: "8px", padding: "4px 10px", fontSize: "11px", fontWeight: "600",
-                            cursor: slideDownloading[slide.index] || slideDone[slide.index] ? "default" : "pointer",
-                            whiteSpace: "nowrap", transition: "background 0.2s",
+                            position: "absolute",
+                            bottom: "6px",
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            background: slideDone[slide.index]
+                              ? "#22c55e"
+                              : slideDownloading[slide.index]
+                                ? "#555"
+                                : "rgba(255,255,255,0.92)",
+                            color: slideDone[slide.index]
+                              ? "#fff"
+                              : slideDownloading[slide.index]
+                                ? "#fff"
+                                : "#111",
+                            border: "none",
+                            borderRadius: "8px",
+                            padding: "4px 10px",
+                            fontSize: "11px",
+                            fontWeight: "600",
+                            cursor:
+                              slideDownloading[slide.index] ||
+                              slideDone[slide.index]
+                                ? "default"
+                                : "pointer",
+                            whiteSpace: "nowrap",
+                            transition: "background 0.2s",
                           }}
                         >
-                          {slideDone[slide.index] ? "✓ Saved" : slideDownloading[slide.index] ? "..." : "↓ Save"}
+                          {slideDone[slide.index]
+                            ? "✓ Saved"
+                            : slideDownloading[slide.index]
+                              ? "..."
+                              : "↓ Save"}
                         </button>
                       </div>
                     ))}
@@ -404,63 +513,79 @@ const normalFormats =
                   <button
                     className="dl-btn dl-btn--normal"
                     style={{ marginTop: "14px", width: "100%" }}
-                    onClick={() => preview.slides.forEach((s) => { if (!slideDownloading[s.index] && !slideDone[s.index]) triggerSlideDownload(s.index); })}
+                    onClick={() =>
+                      preview.slides.forEach((s) => {
+                        if (!slideDownloading[s.index] && !slideDone[s.index])
+                          triggerSlideDownload(s.index);
+                      })
+                    }
                   >
-                    <Download size={18} /> Download All ({preview.item_count} images)
+                    <Download size={18} /> Download All ({preview.item_count}{" "}
+                    images)
                   </button>
                 </div>
               ) : (
-                  <div className="download-actions">
-                      <p className="format-download-hint">
-    If one download option doesn’t work, please try the next one.
-  </p>
-  {normalFormats.map((format, index) => {
-    const downloadKey = `normal-${format.format_id || "best"}`;
-    const qualityLabel = format.height
-      ? `${format.height}p`
-      : format.ext?.toUpperCase() || "Video";
+                <div className="download-actions">
+                  <p className="format-download-hint">
+                    If one download option doesn’t work, please try the next
+                    one.
+                  </p>
+                  {normalFormats.map((format, index) => {
+                    const downloadKey = `normal-${format.format_id || "best"}`;
+                    const qualityLabel = format.height
+                      ? `${format.height}p`
+                      : format.ext?.toUpperCase() || "Video";
 
-    return (
-      <button
-        key={format.format_id || `format-${index}`}
-        className="dl-btn dl-btn--normal"
-        onClick={() => handleDownload("normal", format.format_id)}
-        disabled={downloading !== null}
-      >
-        {downloading === downloadKey ? (
-          <Loader size={18} className="spinner" />
-        ) : (
-          <Download size={18} />
-        )}
+                    return (
+                      <button
+                        key={format.format_id || `format-${index}`}
+                        className="dl-btn dl-btn--normal"
+                        onClick={() =>
+                          handleDownload("normal", format.format_id)
+                        }
+                        disabled={downloading !== null}
+                      >
+                        {downloading === downloadKey ? (
+                          <Loader size={18} className="spinner" />
+                        ) : (
+                          <Download size={18} />
+                        )}
 
-        {downloading === downloadKey
-          ? "Downloading..."
-          : `Download ${index + 1} (${qualityLabel})`}
-      </button>
-    );
-  })}
+                        {downloading === downloadKey
+                          ? "Downloading..."
+                          : `Download ${index + 1} (${qualityLabel})`}
+                      </button>
+                    );
+                  })}
 
-  <button
-    className="dl-btn dl-btn--hd"
-    onClick={() => handleDownload("hd")}
-    disabled={downloading !== null}
-  >
-    {downloading === "hd" ? (
-      <Loader size={18} className="spinner" />
-    ) : (
-      <Download size={18} />
-    )}
+                  <button
+                    className="dl-btn dl-btn--hd"
+                    onClick={() => handleDownload("hd")}
+                    disabled={downloading !== null}
+                  >
+                    {downloading === "hd" ? (
+                      <Loader size={18} className="spinner" />
+                    ) : (
+                      <Download size={18} />
+                    )}
 
-    {downloading === "hd" ? "Downloading..." : "Download Video HD"}
-    {downloading !== "hd" && <span className="dl-hd-badge">HD</span>}
-  </button>
-</div>
-             
+                    {downloading === "hd"
+                      ? "Downloading..."
+                      : "Download Video HD"}
+                    {downloading !== "hd" && (
+                      <span className="dl-hd-badge">HD</span>
+                    )}
+                  </button>
+                </div>
               )}
             </div>
           )}
 
-          {error && <div className="hero-error" style={mountStyle(0)}><span>❌ {error}</span></div>}
+          {error && (
+            <div className="hero-error" style={mountStyle(0)}>
+              <span>❌ {error}</span>
+            </div>
+          )}
         </div>
       </section>
 
@@ -483,7 +608,10 @@ const normalFormats =
           backlink={popupVideoAd?.link}
           watchTime={15}
           onCountdownEnd={() => {
-            if (pendingDownload) { pendingDownload(); setPendingDownload(null); }
+            if (pendingDownload) {
+              pendingDownload();
+              setPendingDownload(null);
+            }
           }}
           onClose={() => setAdModal(null)}
         />

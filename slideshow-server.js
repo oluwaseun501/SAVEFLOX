@@ -9,25 +9,31 @@ const PORT = process.env.PORT || process.env.SLIDESHOW_PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-function getVideoUrl(data) {
+function getVideoUrl(data, quality = "normal") {
+  if (quality === "hd") {
+    return (
+      data?.videoHD ||
+      data?.videoSD ||
+      data?.videoWatermark ||
+      null
+    );
+  }
+
   return (
-    data?.video?.noWatermark ||
-    data?.video?.no_watermark ||
-    data?.video?.play ||
-    data?.play ||
-    data?.videoUrl ||
-    data?.url ||
+    data?.videoSD ||
+    data?.videoHD ||
+    data?.videoWatermark ||
     null
   );
 }
-
 function getCoverUrl(data) {
   return (
     data?.cover ||
     data?.video?.cover ||
     data?.dynamicCover ||
     data?.video?.dynamicCover ||
-    ""
+    data?.author?.avatar ||
+    null
   );
 }
 
@@ -35,11 +41,13 @@ async function getTikTokData(url) {
   const result = await Downloader(url, { version: "v3" });
 
   if (!result || result.status !== "success") {
-    throw new Error("Failed to fetch TikTok data");
+    throw new Error(result?.message || "Failed to fetch TikTok data");
   }
 
-  return result.result;
+  // Supports both direct and nested result shapes.
+  return result.result?.result || result.result;
 }
+
 
 async function proxyFile(res, fileUrl, contentType, filename) {
   const response = await axios.get(fileUrl, {
@@ -135,7 +143,7 @@ app.post("/tiktok/preview", async (req, res) => {
 });
 
 app.post("/tiktok/download", async (req, res) => {
-  const { url, index } = req.body;
+  const { url, index, quality = "normal" } = req.body;
 
   if (!url) {
     return res.status(400).json({
@@ -168,7 +176,7 @@ app.post("/tiktok/download", async (req, res) => {
     }
 
     // Download regular TikTok video
-    const videoUrl = getVideoUrl(data);
+    const videoUrl = getVideoUrl(data, quality);
 
     if (!videoUrl) {
       return res.status(404).json({
@@ -191,6 +199,10 @@ app.post("/tiktok/download", async (req, res) => {
       error: error.message || "TikTok download failed",
     });
   }
+});
+
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
 });
 
 app.listen(PORT, () => {
