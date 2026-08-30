@@ -11,7 +11,7 @@ import {
   Loader,
   Gauge,
 } from "lucide-react";
-import lamejs from "lamejs";
+import * as lamejs from "@breezystack/lamejs";
 import "../styles/Mp3Converter.css";
 import { Helmet } from "react-helmet-async";
 import { MP3ConverterSEO } from "./SEOComponents";
