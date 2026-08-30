@@ -120,7 +120,7 @@ export default function DownloadAdModal({
                 style={{ cursor: backlink ? "pointer" : "default", position: "relative" }}
               >
                 {adVideo
-                  ? <video ref={videoRef} className="adm-video" autoPlay src={adVideo} onEnded={() => setCanClose(true)} />
+                  ? <video ref={videoRef} className="adm-video" autoPlay src={adVideo} />
                   : (
                     <div className="adm-placeholder adm-placeholder--video">
                       <div className="adm-fake-video">

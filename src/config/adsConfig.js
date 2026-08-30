@@ -1,13 +1,13 @@
 // src/config/adsConfig.js
-import ads1 from "../ads/ads1.jpg";
-import ads2 from "../ads/ads2.jpg";
-import ads3 from "../ads/ads3.jpg";
-import ads4 from "../ads/ads4.jpg";
-import ads5 from "../ads/ads5.jpg";
-import ads6 from "../ads/ads6.jpg";
+import ads1 from "../ads/ads1.webp";
+import ads2 from "../ads/ads2.webp";
+import ads3 from "../ads/ads3.webp";
+import ads4 from "../ads/ads4.webp";
+import ads5 from "../ads/ads5.webp";
+import ads6 from "../ads/ads6.webp";
 
 
-import adsVid3 from "../ads/adsVid3.mp4";
+import adsVid1 from "../ads/adsVid1.mp4";
 import adsVid2 from "../ads/adsVid2.mp4";
 
 export const ADS = {
@@ -117,10 +117,18 @@ export const ADS = {
 //   "mp3-bottom": [{ image: ads3, link: "https://www.saveflox.com" }],
 
   // ── DOWNLOAD POPUPS ────────────────────
-  "popup-image": [
-    { video: adsVid3, link: "https://selar.com/2v4g0156c6" },
-  ],
+"popup-image": [
+  { image: ads1, link: "https://selar.com/2v4g0156c6" },
+],
   "popup-video": [
-    { video: adsVid2, link: "https://selar.com/kz71028727" },
+    { video: adsVid1, link: "https://selar.com/kz71028727" },
   ],
+
+  "mp3-short-video": [
+  { video: adsVid2, link: "https://selar.com/2v4g0156c6" },
+],
+
+"mp3-long-video": [
+  { video: adsVid1, link: "https://selar.com/kz71028727" },
+],
 };

@@ -1,5 +1,5 @@
-import ads3 from "../ads/ads3.jpg";
-import adsVid3 from "../ads/adsVid3.mp4";
+import ads3 from "../ads/ads3.webp";
+import adsVid2 from "../ads/adsVid2.mp4";
 
 export const ENTRY_ADS = [
   // {
@@ -9,7 +9,7 @@ export const ENTRY_ADS = [
   // },
   // {
   //   type: "video",
-  //   src: adsVid3,
+  //   src: adsVid2,
   //   link: "https://selar.com/2v4g0156c6",
   // },
 ];

@@ -219,8 +219,8 @@ export default function Mp3Converter() {
   const [audioDuration, setAudioDuration] = useState(0);
   const [adModal, setAdModal] = useState(null);
   const [pendingDownload, setPendingDownload] = useState(null);
-  const popupImageAd = useAdRotation("popup-image");
-  const popupVideoAd = useAdRotation("popup-video");
+  const popupShortVideoAd = useAdRotation("mp3-short-video");
+const popupLongVideoAd = useAdRotation("mp3-long-video");
 
   const [effects, setEffects] = useState({
     volume: 100,
@@ -416,9 +416,21 @@ export default function Mp3Converter() {
     }
   };
 
-  // Download with effects baked in
-  const handleDownload = async () => {
-    if (!url) return;
+const startPendingDownload = () => {
+  const download = pendingDownload;
+
+  // Clear the queued download.
+  setPendingDownload(null);
+
+  // Do not call setAdModal(null) here.
+  // The video modal must stay open.
+  if (download) {
+    download();
+  }
+};
+
+const handleDownload = async () => {
+  if (!url) return;
     setDownloading(true); setError(null);
     try {
       const rawBuffer = await getDecodedBuffer();
@@ -760,7 +772,10 @@ const activeVoiceSemitones =
                 </button>
 
                 {/* Original download — straight to download, no popup */}
-                <button className="mp3-download-btn" onClick={downloadOriginal} disabled={downloading}>
+                <button className="mp3-download-btn" onClick={() => {
+  setPendingDownload(() => downloadOriginal);
+  setAdModal("normal");
+}} disabled={downloading}>
                   {downloading ? <Loader size={18} className="mp3-spinner" /> : <Download size={18} />}
                   {downloading ? "Processing…" : "Download Original MP3"}
                 </button>
@@ -799,21 +814,38 @@ const activeVoiceSemitones =
 
       <RelatedServices currentPage="/mp3" />
 
-      {adModal === "edited" && (
-        <DownloadAdModal
-        page="mp3"
-          type="image"
-           adImage={popupImageAd?.image}   
-            backlink={popupImageAd?.link} 
-          skipDelay={5}
-          
-          onSkip={() => {
-            setAdModal(null);
-            if (pendingDownload) { pendingDownload(); setPendingDownload(null); }
-          }}
-          onClose={() => setAdModal(null)}
-        />
-      )}
+     {adModal === "normal" && (
+  <DownloadAdModal
+    page="mp3"
+    type="video"
+    adVideo={popupShortVideoAd?.video}
+    backlink={popupShortVideoAd?.link}
+    watchTime={5}
+    downloadDelay={5}
+    onCountdownEnd={startPendingDownload}
+    onClose={() => {
+      setAdModal(null);
+      setPendingDownload(null);
+    }}
+  />
+)}
+
+{adModal === "edited" && (
+  <DownloadAdModal
+    page="mp3"
+    type="video"
+    adVideo={popupLongVideoAd?.video}
+    backlink={popupLongVideoAd?.link}
+    watchTime={15}
+    downloadDelay={15}
+    onCountdownEnd={startPendingDownload}
+    onClose={() => {
+      setAdModal(null);
+      setPendingDownload(null);
+    }}
+  />
+)}
+       
     </>
   );
 }
