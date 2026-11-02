@@ -6,7 +6,7 @@ import DotsLoader from "./DotsLoader";
 import { Helmet } from "react-helmet-async";
 import DownloadAdModal from "./DownloadAdModal";
 import { useAdRotation } from "../hooks/useAdRotation";
-import ServicesStrip from "./ServicesStrip"; // ← ADD THIS IMPORT
+import ServicesStrip from "./ServicesStrip"; 
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
