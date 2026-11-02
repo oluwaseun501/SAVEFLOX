@@ -13,20 +13,20 @@ import adsVid2 from "../ads/adsVid2.mp4";
 export const ADS = {
   // ── HOME PAGE ──────────────────────────
   "home-top":    [
-    // { image: ads1, link: "https://selar.com/2v4g0156c6" },
+    { image: ads1, link: "https://selar.com/2v4g0156c6" },
     // { image: ads4, link: "https://selar.com/g987516f15" },
     // { image: ads5, link: "https://selar.com/g987516f15" },
     
   ],
   "home-middle": [ 
-    // { image: ads6, link: "https://selar.com/kz71028727" },
+    { image: ads6, link: "https://selar.com/kz71028727" },
     // { image: ads4, link: "https://www.saveflox.com" },
     // { image: ads5, link: "https://www.saveflox.com" },
   ],
   "home-bottom": [ 
-    // { image: ads2, link: "https://www.ghostnum.com" },
-    // { image: ads4, link: "https://selar.com/g987516f15" },
-    // { image: ads5, link: "https://selar.com/9451l2699t" },
+    { image: ads2, link: "https://www.ghostnum.com" },
+    { image: ads4, link: "https://selar.com/g987516f15" },
+    { image: ads5, link: "https://selar.com/9451l2699t" },
   ],
 
   // ── TIKTOK PAGE ────────────────────────
