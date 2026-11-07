@@ -17,9 +17,8 @@ import { coursesByPlatform } from "../data/courseLinksData";
 
 const SNAPCHAT_SERVER_URL = import.meta.env.VITE_SNAPCHAT_SERVER_URL || "http://localhost:3001";
 
-const mountStyle = (delayMs) => ({
-  animation: `fadeSlideIn 0.8s ease-out ${delayMs}ms both`,
-});
+// Removed the animation wrapper so the content is instantly visible
+const mountStyle = () => ({});
 
 export default function Snapchat() {
   const { t } = useTranslation();
@@ -129,19 +128,19 @@ export default function Snapchat() {
 
       <section className="snapchat">
         <div className="snapchat-content">
-          <div className="snapchat-icon" style={mountStyle(0)}>
+          <div className="snapchat-icon" style={mountStyle()}>
             <Ghost size={28} />
           </div>
 
-          <h1 className="snapchat-heading" style={mountStyle(150)}>
+          <h1 className="snapchat-heading" style={mountStyle()}>
             {headingParts[0]}<span>Snapchat</span>{headingParts[1]}
           </h1>
 
-          <p className="snapchat-subtext" style={mountStyle(300)}>
+          <p className="snapchat-subtext" style={mountStyle()}>
             Download Snapchat Spotlight videos instantly without watermark.
           </p>
 
-          <div className="snapchat-card" style={mountStyle(450)}>
+          <div className="snapchat-card" style={mountStyle()}>
             <div className="snapchat-input-group">
               <div className="snapchat-input-wrapper">
                 <Link size={18} className="snapchat-input-icon" />
@@ -173,7 +172,7 @@ export default function Snapchat() {
           {loading && <DotsLoader />}
 
           {preview && (
-            <div className="snapchat-preview" style={mountStyle(0)}>
+            <div className="snapchat-preview" style={mountStyle()}>
               <div className="preview-header">
                 {preview.thumbnail ? (
                   <img src={preview.thumbnail} alt="Preview" className="preview-thumbnail" />
@@ -208,7 +207,7 @@ export default function Snapchat() {
           )}
 
           {error && (
-            <div className="snapchat-error" style={mountStyle(0)}>
+            <div className="snapchat-error" style={mountStyle()}>
               <span>❌ {error}</span>
             </div>
           )}

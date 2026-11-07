@@ -264,3 +264,9 @@
   .snapchat-btn { padding: 0.85rem 1.5rem; justify-content: center; }
   .snapchat-options { justify-content: center; }
 }
+
+
+.snapchat-content > * {
+  opacity: 1 !important;
+  animation-fill-mode: forwards !important;
+}

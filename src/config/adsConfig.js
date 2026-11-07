@@ -6,7 +6,6 @@ import ads4 from "../ads/ads4.webp";
 import ads5 from "../ads/ads5.webp";
 import ads6 from "../ads/ads6.webp";
 
-
 import adsVid1 from "../ads/adsVid1.mp4";
 import adsVid2 from "../ads/adsVid2.mp4";
 
@@ -14,14 +13,9 @@ export const ADS = {
   // ── HOME PAGE ──────────────────────────
   "home-top":    [
     { image: ads1, link: "https://selar.com/2v4g0156c6" },
-    // { image: ads4, link: "https://selar.com/g987516f15" },
-    // { image: ads5, link: "https://selar.com/g987516f15" },
-    
   ],
   "home-middle": [ 
     { image: ads6, link: "https://selar.com/kz71028727" },
-    // { image: ads4, link: "https://www.saveflox.com" },
-    // { image: ads5, link: "https://www.saveflox.com" },
   ],
   "home-bottom": [ 
     { image: ads2, link: "https://www.ghostnum.com" },
@@ -29,21 +23,30 @@ export const ADS = {
     { image: ads5, link: "https://selar.com/9451l2699t" },
   ],
 
-  
   // ── TIKTOK PAGE ────────────────────────
-  "tiktok-top":    [ { image: ads6, link: "https://selar.com/kz71028727" },
-    // { image: ads4, link: "https://www.saveflox.com" },
-    // { image: ads5, link: "https://www.saveflox.com" },
-  ],
-
-  "tiktok-middle": [     { image: ads1, link: "https://selar.com/2v4g0156c6" },
-    // { image: ads4, link: "https://www.saveflox.com" },
-    // { image: ads5, link: "https://www.saveflox.com" },
-  ],
-
-  "tiktok-bottom": [ { image: ads2, link: "https://www.ghostnum.com" },
-   { image: ads4, link: "https://selar.com/g987516f15" },
+  "tiktok-top":    [ { image: ads6, link: "https://selar.com/kz71028727" }],
+  "tiktok-middle": [ { image: ads1, link: "https://selar.com/2v4g0156c6" }],
+  "tiktok-bottom": [ 
+    { image: ads2, link: "https://www.ghostnum.com" },
+    { image: ads4, link: "https://selar.com/g987516f15" },
     { image: ads5, link: "https://selar.com/9451l2699t" },
+  ],
+
+  // ── SNAPCHAT PAGE (NEW) ────────────────
+  "snapchat-top":    [ { image: ads2, link: "https://www.ghostnum.com" },
+    { image: ads4, link: "https://selar.com/g987516f15" },
+    { image: ads5, link: "https://selar.com/9451l2699t" },
+    { image: ads3, link: "https://selar.com/5u7df1t531" },
+  ],
+  "snapchat-middle": [ { image: ads2, link: "https://www.ghostnum.com" },
+    { image: ads4, link: "https://selar.com/g987516f15" },
+    { image: ads5, link: "https://selar.com/9451l2699t" },
+    { image: ads3, link: "https://selar.com/5u7df1t531" },
+  ],
+  "snapchat-bottom": [ { image: ads2, link: "https://www.ghostnum.com" },
+    { image: ads4, link: "https://selar.com/g987516f15" },
+    { image: ads5, link: "https://selar.com/9451l2699t" },
+    { image: ads3, link: "https://selar.com/5u7df1t531" },
   ],
 
   // ── FACEBOOK PAGE ──────────────────────
@@ -55,8 +58,8 @@ export const ADS = {
   "facebook-middle": [ { image: ads2, link: "https://www.ghostnum.com" },
     { image: ads4, link: "https://selar.com/g987516f15" },
     { image: ads5, link: "https://selar.com/9451l2699t" },
-    { image: ads3, link: "https://selar.com/5u7df1t531" },],
-
+    { image: ads3, link: "https://selar.com/5u7df1t531" },
+  ],
   "facebook-bottom": [ { image: ads2, link: "https://www.ghostnum.com" },
     { image: ads4, link: "https://selar.com/g987516f15" },
     { image: ads5, link: "https://selar.com/9451l2699t" },
@@ -106,8 +109,8 @@ export const ADS = {
   "pinterest-middle": [ { image: ads2, link: "https://www.ghostnum.com" },
     { image: ads4, link: "https://selar.com/g987516f15" },
     { image: ads5, link: "https://selar.com/9451l2699t" },
-    { image: ads3, link: "https://selar.com/5u7df1t531" },],
-
+    { image: ads3, link: "https://selar.com/5u7df1t531" },
+  ],
   "pinterest-bottom": [ { image: ads2, link: "https://www.ghostnum.com" },
     { image: ads4, link: "https://selar.com/g987516f15" },
     { image: ads5, link: "https://selar.com/9451l2699t" },
@@ -115,23 +118,23 @@ export const ADS = {
   ],
 
   // ── MP3 CONVERTER ──────────────────────
-//   "mp3-top":    [{ image: ads1, link: "https://www.saveflox.com" },],
-//   "mp3-middle": [{ image: ads2, link: "https://www.saveflox.com" }],
-//   "mp3-bottom": [{ image: ads3, link: "https://www.saveflox.com" }],
+  // "mp3-top":    [{ image: ads1, link: "https://www.saveflox.com" }],
+  // "mp3-middle": [{ image: ads2, link: "https://www.saveflox.com" }],
+  // "mp3-bottom": [{ image: ads3, link: "https://www.saveflox.com" }],
 
   // ── DOWNLOAD POPUPS ────────────────────
-"popup-image": [
-  { image: ads1, link: "https://selar.com/2v4g0156c6" },
-],
+  "popup-image": [
+    { image: ads1, link: "https://selar.com/2v4g0156c6" },
+  ],
   "popup-video": [
     { video: adsVid1, link: "https://selar.com/kz71028727" },
   ],
 
   "mp3-short-video": [
-  { video: adsVid2, link: "https://selar.com/2v4g0156c6" },
-],
+    { video: adsVid2, link: "https://selar.com/2v4g0156c6" },
+  ],
 
-"mp3-long-video": [
-  { video: adsVid1, link: "https://selar.com/kz71028727" },
-],
+  "mp3-long-video": [
+    { video: adsVid1, link: "https://selar.com/kz71028727" },
+  ],
 };
