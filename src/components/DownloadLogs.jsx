@@ -10,6 +10,8 @@ import {
   Search,
   Video,
   XCircle,
+  Globe,
+  Monitor,
 } from "lucide-react";
 import AdminSidebar from "./AdminSidebar";
 import AdminTopbar from "./AdminTopbar";
@@ -99,14 +101,6 @@ function MobileDownloadCard({ log, expanded, onToggle }) {
           <div>
             <span>ISP</span>
             <strong>{log.isp || "—"}</strong>
-          </div>
-          <div>
-            <span>Quality</span>
-            <strong>{log.quality || "—"}</strong>
-          </div>
-          <div>
-            <span>File size</span>
-            <strong>{log.fileSize || "—"}</strong>
           </div>
         </div>
       )}
@@ -362,28 +356,26 @@ export default function DownloadLogs() {
                 <tr>
                   <th>Date / Time</th>
                   <th>Platform</th>
-                  <th>URL</th>
-                  <th>Format</th>
-                  <th>Quality</th>
-                  <th>Size</th>
+                  <th>Format & Quality</th>
                   <th>Status</th>
-                  <th>IP Address</th>
-                  <th>Country</th>
-                  <th>City</th>
-                  <th>ISP</th>
+                  <th>Location</th>
+                  <th>IP / ISP</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="11" className="dl-empty">
+                    <td colSpan="6" className="dl-empty">
                       Loading downloads…
                     </td>
                   </tr>
                 ) : logs.length > 0 ? (
                   logs.map((row, index) => (
                     <tr key={getLogKey(row, index)}>
-                      <td className="dl-cell-time">{row.timestamp}</td>
+                      <td className="dl-cell-time">
+                        <span className="dl-date">{row.timestamp?.split(" ")[0]}</span>
+                        <span className="dl-time">{row.timestamp?.split(" ")[1]}</span>
+                      </td>
                       <td>
                         <span
                           className={`dl-platform-tag ${getPlatformClass(
@@ -393,45 +385,50 @@ export default function DownloadLogs() {
                           {row.platform}
                         </span>
                       </td>
-                      <td className="dl-cell-url" title={row.url}>
-                        {row.url}
-                      </td>
                       <td>
-                        <span
-                          className={`dl-format-tag ${getFormatClass(
-                            row.format,
-                          )}`}
-                        >
-                          {row.format === "MP3" ? (
-                            <Music size={11} />
-                          ) : (
-                            <Video size={11} />
-                          )}
-                          {row.format}
-                        </span>
+                        <div className="dl-format-cell">
+                          <span className={`dl-format-tag ${getFormatClass(row.format)}`}>
+                            {row.format === "MP3" ? <Music size={12} /> : <Video size={12} />}
+                            {row.format}
+                          </span>
+                          <span className="dl-quality">{row.quality} · {row.fileSize}</span>
+                          <span className="dl-url" title={row.url}>{row.url}</span>
+                        </div>
                       </td>
-                      <td>{row.quality}</td>
-                      <td>{row.fileSize}</td>
                       <td>
                         {row.status === "success" ? (
                           <span className="dl-status success">
-                            <CheckCircle2 size={13} /> Success
+                            <CheckCircle2 size={14} /> Success
                           </span>
                         ) : (
                           <span className="dl-status failed">
-                            <XCircle size={13} /> Failed
+                            <XCircle size={14} /> Failed
                           </span>
                         )}
                       </td>
-                      <td className="dl-cell-mono">{row.ip}</td>
-                      <td>{row.country}</td>
-                      <td>{row.city || "—"}</td>
-                      <td>{row.isp || "—"}</td>
+                      <td>
+                        <div className="dl-location-cell">
+                          <Globe size={13} className="dl-icon-muted" />
+                          <div>
+                            <strong>{row.country || "Unknown"}</strong>
+                            <small>{row.city || "—"}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="dl-location-cell">
+                          <Monitor size={13} className="dl-icon-muted" />
+                          <div>
+                            <strong className="dl-mono">{row.ip || "—"}</strong>
+                            <small>{row.isp || "—"}</small>
+                          </div>
+                        </div>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="11" className="dl-empty">
+                    <td colSpan="6" className="dl-empty">
                       No downloads match your filters.
                     </td>
                   </tr>

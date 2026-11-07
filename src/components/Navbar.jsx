@@ -79,6 +79,7 @@ export default function Navbar() {
   const navLinks = [
     { key: "home",      path: "/" },
     { key: "tiktok",    path: "/tiktok-downloader" },
+    { key: "snapchat",  path: "/snapchat-downloader" }, 
     { key: "twitter",   path: "/twitter-downloader" },
     { key: "instagram", path: "/instagram-downloader" },
     { key: "facebook",  path: "/facebook-downloader" },

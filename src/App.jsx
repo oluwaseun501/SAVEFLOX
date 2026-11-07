@@ -6,6 +6,7 @@ import Twitter from "./components/Twitter";
 import Instagram from "./components/Instagram";
 import Facebook from "./components/Facebook";
 import Pinterest from "./components/Pinterest";
+import Snapchat from "./components/Snapchat";
 import Mp3Converter from "./components/Mp3Converter";
 import WhyChoose from "./components/WhyChoose";
 import HowItWorks from "./components/HowItWorks";
@@ -238,6 +239,15 @@ function App() {
               </>
             }
           />
+          <Route
+  path="/snapchat-downloader"
+  element={
+    <>
+      <Seo title="Snapchat Spotlight Downloader — SaveFlox" description="Download Snapchat Spotlight videos instantly." />
+      <Snapchat />
+    </>
+  }
+/>
           <Route
             path="/mp3-converter"
             element={
