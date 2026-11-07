@@ -17,9 +17,6 @@ import { coursesByPlatform } from "../data/courseLinksData";
 
 const SNAPCHAT_SERVER_URL = import.meta.env.VITE_SNAPCHAT_SERVER_URL || "http://localhost:3001";
 
-// Removed the animation wrapper so the content is instantly visible
-const mountStyle = () => ({});
-
 export default function Snapchat() {
   const { t } = useTranslation();
   const [url, setUrl] = useState("");
@@ -29,13 +26,10 @@ export default function Snapchat() {
   const [downloading, setDownloading] = useState(null);
   const [pasteHint, setPasteHint] = useState("");
   const [adModal, setAdModal] = useState(null);
-  const [pendingDownload, setPendingDownload] = useState(null);
   const popupImageAd = useAdRotation("popup-image");
-  const popupVideoAd = useAdRotation("popup-video");
 
-  const handlePreview = async (pastedUrl) => {
-    const targetUrl = (typeof pastedUrl === "string" ? pastedUrl : null) || url;
-    if (!targetUrl) {
+  const handlePreview = async () => {
+    if (!url) {
       setError("Please enter a URL");
       return;
     }
@@ -46,15 +40,11 @@ export default function Snapchat() {
       const response = await fetch(`${SNAPCHAT_SERVER_URL}/snapchat/preview`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: targetUrl }),
+        body: JSON.stringify({ url }),
       });
-
       const data = await response.json();
-      if (data.success) {
-        setPreview(data);
-      } else {
-        setError(data.error || "Failed to fetch video info");
-      }
+      if (data.success) setPreview(data);
+      else setError(data.error || "Failed to fetch video info");
     } catch (err) {
       setError("Network error. Please try again.");
     } finally {
@@ -71,7 +61,7 @@ export default function Snapchat() {
       try {
         const text = await navigator.clipboard.readText();
         setUrl(text);
-        if (text) handlePreview(text);
+        if (text) handlePreview();
       } catch {
         setPasteHint("Use Ctrl+V to paste");
         setTimeout(() => setPasteHint(""), 3000);
@@ -87,11 +77,7 @@ export default function Snapchat() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
-
-      if (!response.ok) {
-        throw new Error("Snapchat download failed");
-      }
-
+      if (!response.ok) throw new Error("Snapchat download failed");
       const blob = await response.blob();
       const downloadUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -114,33 +100,34 @@ export default function Snapchat() {
     triggerDownload();
   };
 
-  const headingParts = t("download_videos", { platform: "###" }).split("###");
-
   return (
     <>
       <Helmet>
-        <title>Snapchat Spotlight Downloader — SaveFlox | Download Free</title>
-        <meta name="description" content="Download Snapchat Spotlight videos for free in HD quality. Fast, safe, no app needed." />
-        <link rel="canonical" href="https://www.saveflox.com/snapchat-downloader" />
+        <title>Snapchat Spotlight Downloader — SaveFlox</title>
+        <meta name="description" content="Download Snapchat Spotlight videos free." />
       </Helmet>
 
       <ServicesStrip currentPage="/snapchat-downloader" />
 
       <section className="snapchat">
         <div className="snapchat-content">
-          <div className="snapchat-icon" style={mountStyle()}>
+          
+          {/* Icon */}
+          <div className="snapchat-icon">
             <Ghost size={28} />
           </div>
 
-          <h1 className="snapchat-heading" style={mountStyle()}>
-            {headingParts[0]}<span>Snapchat</span>{headingParts[1]}
+          {/* Title */}
+          <h1 className="snapchat-heading">
+            Download <span>Snapchat</span> Videos
           </h1>
 
-          <p className="snapchat-subtext" style={mountStyle()}>
+          <p className="snapchat-subtext">
             Download Snapchat Spotlight videos instantly without watermark.
           </p>
 
-          <div className="snapchat-card" style={mountStyle()}>
+          {/* Main Box */}
+          <div className="snapchat-card">
             <div className="snapchat-input-group">
               <div className="snapchat-input-wrapper">
                 <Link size={18} className="snapchat-input-icon" />
@@ -148,7 +135,7 @@ export default function Snapchat() {
                   type="text"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  placeholder={t("paste_link", { platform: "Snapchat" })}
+                  placeholder="Paste Snapchat Spotlight link here..."
                   className="snapchat-input"
                 />
                 <button className="snapchat-paste-btn" onClick={handlePasteOrClear}>
@@ -156,14 +143,7 @@ export default function Snapchat() {
                 </button>
               </div>
               <button className="snapchat-btn" onClick={handlePreview} disabled={loading}>
-                {loading ? "Please wait..." : <><Download size={18} /> {t("download")}</>}
-              </button>
-            </div>
-
-            <div className="snapchat-options">
-              <span className="snapchat-options-label">Options:</span>
-              <button className="snapchat-option-pill active">
-                <Video size={14} /> {t("video_mp4")}
+                {loading ? "Please wait..." : <><Download size={18} /> Download</>}
               </button>
             </div>
           </div>
@@ -172,34 +152,24 @@ export default function Snapchat() {
           {loading && <DotsLoader />}
 
           {preview && (
-            <div className="snapchat-preview" style={mountStyle()}>
+            <div className="snapchat-preview">
               <div className="preview-header">
                 {preview.thumbnail ? (
                   <img src={preview.thumbnail} alt="Preview" className="preview-thumbnail" />
                 ) : (
-                  <div className="preview-thumbnail" role="img" aria-label="Preview unavailable">🎬</div>
+                  <div className="preview-thumbnail">🎬</div>
                 )}
                 <div className="preview-info">
                   <h3>{preview.title}</h3>
-                  <p>👤 Snapchat User</p>
-                  <p>⏱️ 0:15</p>
                 </div>
               </div>
-
               <div className="download-actions">
-                <p className="format-download-hint">
-                  If the download doesn't work, please try again.
-                </p>
                 <button
                   className="dl-btn dl-btn--normal"
                   onClick={handleDownload}
                   disabled={downloading !== null}
                 >
-                  {downloading === "normal" ? (
-                    <Loader size={18} className="spinner" />
-                  ) : (
-                    <Download size={18} />
-                  )}
+                  {downloading === "normal" ? <Loader size={18} className="spinner" /> : <Download size={18} />}
                   {downloading === "normal" ? "Downloading..." : "Download Video (MP4)"}
                 </button>
               </div>
@@ -207,7 +177,7 @@ export default function Snapchat() {
           )}
 
           {error && (
-            <div className="snapchat-error" style={mountStyle()}>
+            <div className="snapchat-error">
               <span>❌ {error}</span>
             </div>
           )}
