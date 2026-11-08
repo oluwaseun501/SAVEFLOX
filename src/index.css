@@ -15,6 +15,7 @@
 }
 
 
+
 /* Exclude animation-driven elements from the global transition */
 .dots-loader span,
 .animate-fadeSlideIn,
