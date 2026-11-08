@@ -28,8 +28,11 @@ export default function Snapchat() {
   const [adModal, setAdModal] = useState(null);
   const popupImageAd = useAdRotation("popup-image");
 
-  const handlePreview = async () => {
-    if (!url) {
+  // FIXED: Accepts an optional pastedUrl argument
+  const handlePreview = async (pastedUrl) => {
+    const targetUrl = (typeof pastedUrl === "string" ? pastedUrl : null) || url;
+    
+    if (!targetUrl) {
       setError("Please enter a URL");
       return;
     }
@@ -40,7 +43,7 @@ export default function Snapchat() {
       const response = await fetch(`${API_BASE_URL}/preview`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, platform: "snapchat" }),
+        body: JSON.stringify({ url: targetUrl, platform: "snapchat" }),
       });
       const data = await response.json();
       if (data.success) setPreview(data);
@@ -61,7 +64,7 @@ export default function Snapchat() {
       try {
         const text = await navigator.clipboard.readText();
         setUrl(text);
-        if (text) handlePreview();
+        if (text) handlePreview(text); // FIXED: Pass the text directly
       } catch {
         setPasteHint("Use Ctrl+V to paste");
         setTimeout(() => setPasteHint(""), 3000);
@@ -70,7 +73,7 @@ export default function Snapchat() {
   };
 
   const triggerDownload = async () => {
-    setDownloading("hd"); // We use "hd" for the loading state
+    setDownloading("hd");
     try {
       const response = await fetch(`${API_BASE_URL}/download`, {
         method: "POST",
@@ -109,7 +112,6 @@ export default function Snapchat() {
     triggerDownload();
   };
 
-  // Standard formats for UI display (snapchat only gives 1)
   const normalFormats = preview?.formats?.length > 0 
     ? preview.formats 
     : [{ format_id: "best", ext: "mp4", height: null }];
@@ -153,7 +155,7 @@ export default function Snapchat() {
                   {url ? "Clear" : "Paste"}
                 </button>
               </div>
-              <button className="snapchat-btn" onClick={handlePreview} disabled={loading}>
+              <button className="snapchat-btn" onClick={() => handlePreview()} disabled={loading}>
                 {loading ? "Please wait..." : <><Download size={18} /> Download</>}
               </button>
             </div>
@@ -176,7 +178,6 @@ export default function Snapchat() {
                 </div>
               </div>
               
-              {/* STANDARD DOWNLOAD ACTIONS UI */}
               <div className="download-actions">
                 <p className="format-download-hint">
                   If one download option doesn’t work, please try the next one.
