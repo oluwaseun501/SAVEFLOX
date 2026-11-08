@@ -17,6 +17,9 @@ const SLOT_ORDER = [
   "tiktok-top",
   "tiktok-middle",
   "tiktok-bottom",
+  "snapchat-top",     
+  "snapchat-middle",  
+  "snapchat-bottom",  
   "twitter-top",
   "twitter-middle",
   "twitter-bottom",
@@ -34,9 +37,21 @@ const SLOT_ORDER = [
   "popup-video",
 ];
 
+const PLATFORM_FILTERS = [
+  "All Platforms",
+  "Home",
+  "TikTok",
+  "Snapchat",
+  "Twitter",
+  "Facebook",
+  "Instagram",
+  "Pinterest",
+  "Popups",
+  "Other",
+];
+
 function getDate(value) {
   if (!value) return null;
-
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 }
@@ -266,6 +281,7 @@ export default function AdPerformance() {
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [selectedGroup, setSelectedGroup] = useState(null);
+  const [platformFilter, setPlatformFilter] = useState("All Platforms"); // NEW STATE
 
   useEffect(() => {
     let cancelled = false;
@@ -328,14 +344,36 @@ export default function AdPerformance() {
     });
   }, [adClicks, rangeBounds]);
 
+  // NEW: Apply platform filter
+  const platformFilteredClicks = useMemo(() => {
+    if (platformFilter === "All Platforms") return filteredClicks;
+
+    return filteredClicks.filter((row) => {
+      const slot = (row.slot || "").toLowerCase();
+      
+      if (platformFilter === "Home") return slot.startsWith("home-");
+      if (platformFilter === "TikTok") return slot.startsWith("tiktok-");
+      if (platformFilter === "Snapchat") return slot.startsWith("snapchat-");
+      if (platformFilter === "Twitter") return slot.startsWith("twitter-");
+      if (platformFilter === "Facebook") return slot.startsWith("facebook-");
+      if (platformFilter === "Instagram") return slot.startsWith("instagram-");
+      if (platformFilter === "Pinterest") return slot.startsWith("pinterest-");
+      if (platformFilter === "Popups") return slot.startsWith("popup-");
+      
+      // "Other" catches anything else (course links, etc)
+      const knownPrefixes = ["home-", "tiktok-", "snapchat-", "twitter-", "facebook-", "instagram-", "pinterest-", "popup-"];
+      return !knownPrefixes.some(prefix => slot.startsWith(prefix));
+    });
+  }, [filteredClicks, platformFilter]);
+
   const slotGroups = useMemo(
-    () => buildSlotGroups(filteredClicks),
-    [filteredClicks],
+    () => buildSlotGroups(platformFilteredClicks),
+    [platformFilteredClicks],
   );
 
   const isInvalidCustomRange = range === "custom" && rangeBounds?.invalid;
   const rangeLabel = getRangeLabel(range, customStart, customEnd);
-  const totalClicks = filteredClicks.length;
+  const totalClicks = platformFilteredClicks.length;
 
   return (
     <div className="admin">
@@ -363,14 +401,26 @@ export default function AdPerformance() {
 
           <section
             className="ad-filter-bar"
-            aria-label="Ad performance date filters"
+            aria-label="Ad performance filters"
           >
             <div className="ad-filter-heading">
-              <span className="ad-filter-eyebrow">Date range</span>
+              <span className="ad-filter-eyebrow">Filters</span>
               <span className="ad-filter-current">{rangeLabel}</span>
             </div>
 
             <div className="ad-filter-controls">
+              
+              {/* NEW: Platform Dropdown */}
+              <select 
+                className="ad-platform-select"
+                value={platformFilter}
+                onChange={(e) => setPlatformFilter(e.target.value)}
+              >
+                {PLATFORM_FILTERS.map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+
               <div
                 className="ad-filter-presets"
                 role="group"
@@ -438,8 +488,8 @@ export default function AdPerformance() {
             </div>
           ) : slotGroups.length === 0 ? (
             <div className="ad-empty-card">
-              <strong>No clicks found for this date range.</strong>
-              <span>Try another filter or choose a wider custom range.</span>
+              <strong>No clicks found for this filter.</strong>
+              <span>Try another platform, date range, or custom filter.</span>
             </div>
           ) : (
             <div className="ad-perf-grid">

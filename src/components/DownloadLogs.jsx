@@ -21,6 +21,7 @@ import { analyticsAPI, authAPI } from "../services/api";
 const PLATFORMS = [
   "All",
   "TikTok",
+  "Snapchat",
   "Instagram",
   "Facebook",
   "Twitter",
@@ -56,12 +57,20 @@ function MobileDownloadCard({ log, expanded, onToggle }) {
       >
         <div className="dl-mobile-card-top">
           <span className={`dl-platform-tag ${getPlatformClass(log.platform)}`}>
-            {log.platform || "Unknown platform"}
+            {log.platform || "Unknown"}
           </span>
-          <span className={`dl-status ${isSuccess ? "success" : "failed"}`}>
-            {isSuccess ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
-            {isSuccess ? "Success" : "Failed"}
-          </span>
+          
+          <div className="dl-mobile-top-right">
+             <span className={`dl-status ${isSuccess ? "success" : "failed"}`}>
+                {isSuccess ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
+                {isSuccess ? "Success" : "Failed"}
+            </span>
+            <ChevronDown
+              className="dl-mobile-chevron"
+              size={16}
+              aria-hidden="true"
+            />
+          </div>
         </div>
 
         <div className="dl-mobile-url" title={log.url}>
@@ -76,11 +85,6 @@ function MobileDownloadCard({ log, expanded, onToggle }) {
           </span>
           <span>{log.quality || "—"}</span>
           <span>{log.fileSize || "—"}</span>
-          <ChevronDown
-            className="dl-mobile-chevron"
-            size={16}
-            aria-hidden="true"
-          />
         </div>
       </button>
 
@@ -194,9 +198,7 @@ export default function DownloadLogs() {
         if (!mounted) return;
         setEmail(response.data?.user?.email || "admin@saveflux.com");
       })
-      .catch(() => {
-        // Keep the default admin email when the profile request is unavailable.
-      });
+      .catch(() => {});
 
     return () => {
       mounted = false;
@@ -212,30 +214,10 @@ export default function DownloadLogs() {
 
   const exportCsv = () => {
     const headers = [
-      "Timestamp",
-      "Platform",
-      "URL",
-      "Format",
-      "Quality",
-      "Size",
-      "Status",
-      "IP",
-      "Country",
-      "City",
-      "ISP",
+      "Timestamp", "Platform", "URL", "Format", "Quality", "Size", "Status", "IP", "Country", "City", "ISP",
     ];
     const rows = logs.map((log) => [
-      log.timestamp,
-      log.platform,
-      log.url,
-      log.format,
-      log.quality,
-      log.fileSize,
-      log.status,
-      log.ip,
-      log.country,
-      log.city || "",
-      log.isp || "",
+      log.timestamp, log.platform, log.url, log.format, log.quality, log.fileSize, log.status, log.ip, log.country, log.city || "", log.isp || "",
     ]);
     const csv = [headers, ...rows]
       .map((row) =>
@@ -246,9 +228,7 @@ export default function DownloadLogs() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `download-logs-${new Date()
-      .toISOString()
-      .slice(0, 10)}.csv`;
+    anchor.download = `download-logs-${new Date().toISOString().slice(0, 10)}.csv`;
     anchor.click();
     URL.revokeObjectURL(url);
   };
@@ -256,7 +236,6 @@ export default function DownloadLogs() {
   return (
     <div className="dl-shell">
       <AdminSidebar />
-
       <main className="dl-main">
         <AdminTopbar email={email} />
 
@@ -265,8 +244,7 @@ export default function DownloadLogs() {
             <div>
               <h1 className="dl-title">Downloads Log</h1>
               <p className="dl-subtitle">
-                Monitor every download in real time — filter, search and export
-                the activity.
+                Monitor every download in real time — filter, search and export.
               </p>
             </div>
             <button
@@ -275,38 +253,17 @@ export default function DownloadLogs() {
               onClick={exportCsv}
               disabled={loading || logs.length === 0}
             >
-              <FileDown size={16} />
-              Export CSV
+              <FileDown size={16} /> Export CSV
             </button>
           </div>
 
           {error && <div className="admin-error-banner">{error}</div>}
 
           <div className="dl-stats">
-            <StatCard
-              icon={<DownloadIcon size={18} />}
-              label="Total Downloads"
-              value={stats.total.toLocaleString()}
-              tone="blue"
-            />
-            <StatCard
-              icon={<CheckCircle2 size={18} />}
-              label="Success Rate"
-              value={`${stats.successRate}%`}
-              tone="green"
-            />
-            <StatCard
-              icon={<Video size={18} />}
-              label="MP4 Downloads"
-              value={stats.mp4.toLocaleString()}
-              tone="blue"
-            />
-            <StatCard
-              icon={<Music size={18} />}
-              label="MP3 Downloads"
-              value={stats.mp3.toLocaleString()}
-              tone="green"
-            />
+            <StatCard icon={<DownloadIcon size={18} />} label="Total Downloads" value={stats.total.toLocaleString()} tone="blue" />
+            <StatCard icon={<CheckCircle2 size={18} />} label="Success Rate" value={`${stats.successRate}%`} tone="green" />
+            <StatCard icon={<Video size={18} />} label="MP4 Downloads" value={stats.mp4.toLocaleString()} tone="blue" />
+            <StatCard icon={<Music size={18} />} label="MP3 Downloads" value={stats.mp3.toLocaleString()} tone="green" />
           </div>
 
           <div className="dl-filters">
@@ -322,30 +279,19 @@ export default function DownloadLogs() {
                 }}
               />
             </div>
-
             <select value={platform} onChange={updateFilter(setPlatform)}>
               {PLATFORMS.map((item) => (
-                <option key={item} value={item}>
-                  {item === "All" ? "All platforms" : item}
-                </option>
+                <option key={item} value={item}>{item === "All" ? "All platforms" : item}</option>
               ))}
             </select>
-
             <select value={format} onChange={updateFilter(setFormat)}>
               {FORMATS.map((item) => (
-                <option key={item} value={item}>
-                  {item === "All" ? "All formats" : item}
-                </option>
+                <option key={item} value={item}>{item === "All" ? "All formats" : item}</option>
               ))}
             </select>
-
             <select value={status} onChange={updateFilter(setStatus)}>
               {STATUSES.map((item) => (
-                <option key={item} value={item}>
-                  {item === "All"
-                    ? "All statuses"
-                    : item.charAt(0).toUpperCase() + item.slice(1)}
-                </option>
+                <option key={item} value={item}>{item === "All" ? "All statuses" : item.charAt(0).toUpperCase() + item.slice(1)}</option>
               ))}
             </select>
           </div>
@@ -364,11 +310,7 @@ export default function DownloadLogs() {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td colSpan="6" className="dl-empty">
-                      Loading downloads…
-                    </td>
-                  </tr>
+                  <tr><td colSpan="6" className="dl-empty">Loading downloads…</td></tr>
                 ) : logs.length > 0 ? (
                   logs.map((row, index) => (
                     <tr key={getLogKey(row, index)}>
@@ -377,11 +319,7 @@ export default function DownloadLogs() {
                         <span className="dl-time">{row.timestamp?.split(" ")[1]}</span>
                       </td>
                       <td>
-                        <span
-                          className={`dl-platform-tag ${getPlatformClass(
-                            row.platform,
-                          )}`}
-                        >
+                        <span className={`dl-platform-tag ${getPlatformClass(row.platform)}`}>
                           {row.platform}
                         </span>
                       </td>
@@ -397,13 +335,9 @@ export default function DownloadLogs() {
                       </td>
                       <td>
                         {row.status === "success" ? (
-                          <span className="dl-status success">
-                            <CheckCircle2 size={14} /> Success
-                          </span>
+                          <span className="dl-status success"><CheckCircle2 size={14} /> Success</span>
                         ) : (
-                          <span className="dl-status failed">
-                            <XCircle size={14} /> Failed
-                          </span>
+                          <span className="dl-status failed"><XCircle size={14} /> Failed</span>
                         )}
                       </td>
                       <td>
@@ -427,11 +361,7 @@ export default function DownloadLogs() {
                     </tr>
                   ))
                 ) : (
-                  <tr>
-                    <td colSpan="6" className="dl-empty">
-                      No downloads match your filters.
-                    </td>
-                  </tr>
+                  <tr><td colSpan="6" className="dl-empty">No downloads match your filters.</td></tr>
                 )}
               </tbody>
             </table>
@@ -449,47 +379,32 @@ export default function DownloadLogs() {
                     key={key}
                     log={row}
                     onToggle={() =>
-                      setExpandedMobileId((current) =>
-                        current === key ? null : key,
-                      )
+                      setExpandedMobileId((current) => (current === key ? null : key))
                     }
                   />
                 );
               })
             ) : (
-              <div className="dl-mobile-state">
-                No downloads match your filters.
-              </div>
+              <div className="dl-mobile-state">No downloads match your filters.</div>
             )}
           </div>
 
           <div className="dl-pagination">
             <div className="dl-page-info">
-              Showing <strong>{logs.length}</strong> of <strong>{total}</strong>{" "}
-              downloads
+              Showing <strong>{logs.length}</strong> of <strong>{total}</strong> downloads
             </div>
             <div className="dl-page-controls">
               <button
                 type="button"
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
                 disabled={page === 1 || loading}
-                aria-label="Previous page"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <span className="dl-page-number">
-                {page} / {totalPages}
-              </span>
+              ><ChevronLeft size={16} /></button>
+              <span className="dl-page-number">{page} / {totalPages}</span>
               <button
                 type="button"
-                onClick={() =>
-                  setPage((current) => Math.min(totalPages, current + 1))
-                }
+                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
                 disabled={page === totalPages || loading}
-                aria-label="Next page"
-              >
-                <ChevronRight size={16} />
-              </button>
+              ><ChevronRight size={16} /></button>
             </div>
           </div>
         </div>
