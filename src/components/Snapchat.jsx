@@ -37,11 +37,10 @@ export default function Snapchat() {
     setError(null);
     setPreview(null);
     try {
-      // CHANGED: Using the generic /preview endpoint
       const response = await fetch(`${API_BASE_URL}/preview`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, platform: "snapchat" }), // Added platform
+        body: JSON.stringify({ url, platform: "snapchat" }),
       });
       const data = await response.json();
       if (data.success) setPreview(data);
@@ -71,13 +70,12 @@ export default function Snapchat() {
   };
 
   const triggerDownload = async () => {
-    setDownloading("normal");
+    setDownloading("hd"); // We use "hd" for the loading state
     try {
-      // CHANGED: Using the generic /download endpoint
       const response = await fetch(`${API_BASE_URL}/download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, platform: "snapchat" }), // Added platform
+        body: JSON.stringify({ url, platform: "snapchat", quality: "hd" }),
       });
 
       if (!response.ok) {
@@ -110,6 +108,11 @@ export default function Snapchat() {
     setAdModal("normal");
     triggerDownload();
   };
+
+  // Standard formats for UI display (snapchat only gives 1)
+  const normalFormats = preview?.formats?.length > 0 
+    ? preview.formats 
+    : [{ format_id: "best", ext: "mp4", height: null }];
 
   return (
     <>
@@ -169,16 +172,54 @@ export default function Snapchat() {
                 )}
                 <div className="preview-info">
                   <h3>{preview.title}</h3>
+                  <p>👤 Snapchat User</p>
                 </div>
               </div>
+              
+              {/* STANDARD DOWNLOAD ACTIONS UI */}
               <div className="download-actions">
+                <p className="format-download-hint">
+                  If one download option doesn’t work, please try the next one.
+                </p>
+                {normalFormats.map((format, index) => {
+                  const downloadKey = `normal-${format.format_id || "best"}`;
+                  const qualityLabel = format.height ? `${format.height}p` : "Video";
+
+                  return (
+                    <button
+                      key={format.format_id || `format-${index}`}
+                      className="dl-btn dl-btn--normal"
+                      onClick={handleDownload}
+                      disabled={downloading !== null}
+                    >
+                      {downloading === downloadKey ? (
+                        <Loader size={18} className="spinner" />
+                      ) : (
+                        <Download size={18} />
+                      )}
+                      {downloading === downloadKey
+                        ? "Downloading..."
+                        : `Download ${index + 1} (${qualityLabel})`}
+                    </button>
+                  );
+                })}
+
                 <button
-                  className="dl-btn dl-btn--normal"
+                  className="dl-btn dl-btn--hd"
                   onClick={handleDownload}
                   disabled={downloading !== null}
                 >
-                  {downloading === "normal" ? <Loader size={18} className="spinner" /> : <Download size={18} />}
-                  {downloading === "normal" ? "Downloading..." : "Download Video (MP4)"}
+                  {downloading === "hd" ? (
+                    <Loader size={18} className="spinner" />
+                  ) : (
+                    <Download size={18} />
+                  )}
+                  {downloading === "hd"
+                    ? "Downloading..."
+                    : "Download Video HD"}
+                  {downloading !== "hd" && (
+                    <span className="dl-hd-badge">HD</span>
+                  )}
                 </button>
               </div>
             </div>
