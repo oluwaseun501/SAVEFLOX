@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, Link, Ghost, Video, Loader } from "lucide-react";
+import { Download, Link, Ghost, Loader } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import "../styles/Snapchat.css";
 import AdSlot from "./AdSlot";
@@ -15,7 +15,7 @@ import ServicesStrip from "./ServicesStrip";
 import CourseLinks from "./CourseLinks";
 import { coursesByPlatform } from "../data/courseLinksData";
 
-const SNAPCHAT_SERVER_URL = import.meta.env.VITE_SNAPCHAT_SERVER_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://server.saveflox.com/api";
 
 export default function Snapchat() {
   const { t } = useTranslation();
@@ -37,10 +37,11 @@ export default function Snapchat() {
     setError(null);
     setPreview(null);
     try {
-      const response = await fetch(`${SNAPCHAT_SERVER_URL}/snapchat/preview`, {
+      // CHANGED: Using the generic /preview endpoint
+      const response = await fetch(`${API_BASE_URL}/preview`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, platform: "snapchat" }), // Added platform
       });
       const data = await response.json();
       if (data.success) setPreview(data);
@@ -72,12 +73,22 @@ export default function Snapchat() {
   const triggerDownload = async () => {
     setDownloading("normal");
     try {
-      const response = await fetch(`${SNAPCHAT_SERVER_URL}/snapchat/download`, {
+      // CHANGED: Using the generic /download endpoint
+      const response = await fetch(`${API_BASE_URL}/download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, platform: "snapchat" }), // Added platform
       });
-      if (!response.ok) throw new Error("Snapchat download failed");
+
+      if (!response.ok) {
+        let message = "Download failed";
+        try {
+          const data = await response.json();
+          message = data.error || message;
+        } catch {}
+        throw new Error(message);
+      }
+
       const blob = await response.blob();
       const downloadUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -88,7 +99,7 @@ export default function Snapchat() {
       document.body.removeChild(a);
       URL.revokeObjectURL(downloadUrl);
     } catch (err) {
-      setError("Download failed. Please try again.");
+      setError(err.message || "Download failed. Please try again.");
     } finally {
       setDownloading(null);
     }
@@ -112,12 +123,10 @@ export default function Snapchat() {
       <section className="snapchat">
         <div className="snapchat-content">
           
-          {/* Icon */}
           <div className="snapchat-icon">
             <Ghost size={28} />
           </div>
 
-          {/* Title */}
           <h1 className="snapchat-heading">
             Download <span>Snapchat</span> Videos
           </h1>
@@ -126,7 +135,6 @@ export default function Snapchat() {
             Download Snapchat Spotlight videos instantly without watermark.
           </p>
 
-          {/* Main Box */}
           <div className="snapchat-card">
             <div className="snapchat-input-group">
               <div className="snapchat-input-wrapper">
